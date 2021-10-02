@@ -7,7 +7,7 @@ from scipy import integrate
 import sys, os, shutil
 import maxent_routines as maxent
 
-skrams_exe=
+skrams_exe="/home/quxin/softwares/DFT_plus_DMFT/build/analy_con/skrams"
 
 def InverseFourier(Gm, freq, tau, beta, Nf=40):
     """Inverse Fourier transform which
