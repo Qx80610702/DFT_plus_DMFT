@@ -12,6 +12,7 @@
 /src/projecting_embending/build/Makefile
 *.o
 *.so
+*.mod
 .cache
 .vscode
 html
