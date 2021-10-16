@@ -266,21 +266,21 @@ fi
 #====================================
 #    PART 4: maxent
 #====================================
-if [ ! -f $root_dir/bin/maxent_routines.* ]; then
+if [ ! -f $root_dir/build/analy_con/maxent ]; then
+  test -d $root_dir/build/analy_continuation || mkdir $root_dir/build/analy_continuation
   cd $root_dir/src/analytic_continuation/maxent
-  test -f *.so && rm *.so
 
-  f2py --opt='-O2' --fcompiler=intelem -c maxent_routines.f90 -m maxent_routines --opt='-fast'  --link-lapack_opt
+  ifort -L\${MKLROOT}/lib/intel64 -lmkl_rt -lpthread -lm -ldl maxentropy.f90 -o maxent
+  cp maxent $root_dir/build/analy_continuation/maxent
 
-  cp maxent_routines.*.so $root_dir/bin/
   cd $root_dir
 fi
 
 #====================================
 #    PART 5: skrams
 #====================================
-if [ ! -f $root_dir/build/analy_con/skrams ];then
-  test -d $root_dir/build/analy_con || mkdir $root_dir/build/analy_con
+if [ ! -f $root_dir/build/analy_continuation/skrams ];then
+  test -d $root_dir/build/analy_continuation || mkdir $root_dir/build/analy_continuation
   cd $root_dir/src/analytic_continuation/skrams
   test -f skrams && rm skrams
   
@@ -288,7 +288,7 @@ if [ ! -f $root_dir/build/analy_con/skrams ];then
   $CXX -O2 -funroll-all-loops -DNO_ARG_CHECK skrams.cc -o skrams
   echo "skrams building finish"
 
-  cp skrams $root_dir/build/analy_con/skrams
+  cp skrams $root_dir/build/analy_continuation/skrams
   cd $root_dir
 fi
 
@@ -508,12 +508,14 @@ EOF1
 chmod +x run_dmft
 
 #========Gw_AC.py=======
+sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/analy_continuation/maxent\""" Gw_AC.py
 if [ ! -x Gw_AC.py ];then
   chmod +x Gw_AC.py
 fi
 
 #========Sigma_AC.py=======
-sed -i "/^skrams_exe=/c"skrams_exe=\"$root_dir/build/analy_con/skrams\""" Sigma_AC.py
+sed -i "/^skrams_exe=/c"skrams_exe=\"$root_dir/build/analy_continuation/skrams\""" Sigma_AC.py
+sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/analy_continuation/maxent\""" Sigma_AC.py
 if [ ! -x Sigma_AC.py ];then
   chmod +x Sigma_AC.py
 fi

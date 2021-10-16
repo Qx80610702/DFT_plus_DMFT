@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 import numpy as np
+from mpi4py import MPI
 from scipy import random
 from scipy import optimize
 from scipy import interpolate
 from scipy import integrate
 import sys, os, shutil
-import maxent_routines as maxent
 
-skrams_exe="/home/quxin/softwares/DFT_plus_DMFT/build/analy_con/skrams"
+skrams_exe="/home/quxin/softwares/DFT_plus_DMFT/build/analy_continuation/skrams"
+maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/build/analy_continuation/maxent"
 
 def InverseFourier(Gm, freq, tau, beta, Nf=40):
     """Inverse Fourier transform which
@@ -32,12 +33,20 @@ def InverseFourier(Gm, freq, tau, beta, Nf=40):
         if abs(ah-1.0)<1e-3: ah=1.0
         return ah
 
+    def fourpart(t,Gm,freq,ah,beta):
+        sum=0.0
+        Nw = freq.shape[0]
+        for iw in range(Nw):
+            sum += np.cos(freq[iw]*t)*Gm[iw].real + \
+                   np.sin(freq[iw]*t)*( Gm[iw].imag+ah/freq[iw] )
+        return 2.0*sum/beta-0.5*ah
+
     Gtau = np.zeros(len(tau), dtype=float)
     df = Gm[-1].real*freq[-1]/np.pi
     print('df=', df)
     ah = FindHighFrequency(Gm,freq,Nf)
     for it,t in enumerate(tau): 
-        Gtau[it] = maxent.fourpart(t,Gm,freq,ah,beta)
+        Gtau[it] = fourpart(t,Gm,freq,ah,beta)
     Gtau[0] += df
     Gtau[-1] -= df
 
@@ -87,110 +96,25 @@ def Broad(width, om, fw):
         fwn.append(yn)
     return np.array(fwn)
 
-def MaximumEntropy(p, tau, Gt):
-    beta = tau[-1]
-
-    random.seed( 1 ) # seed for random numbers
-
-    if 'x0' in p:
-        omega = GiveTanMesh(p['x0'],p['L'],p['Nw'])
-    else:
-        omega = np.linspace(-p['L'],p['L'],2*p['Nw']+1)
-    dom = np.array([0.5*(omega[1]-omega[0])]+[0.5*(omega[i+1]-omega[i-1]) for i in range(1,len(omega)-1)]+[0.5*(omega[-1]-omega[-2])])
-
-    Gt = -Gt
-    fsg=-1
-    normalization = Gt[0]+Gt[-1]
-    Ker = maxent.initker_fermion(omega,dom,beta,tau)
-    
-    print('beta=', beta)
-    print('normalization=', normalization)
-
-    # Set error
-    if p['idg']:
-        sxt = np.ones(len(tau))/(p['deltag']**2)
-    else:
-        sxt = Gt*p['deltag']
-        for i in range(len(sxt)):
-            if sxt[i]<1e-5: sxt[i]=1e-5
-        sxt = 1./sxt**2
-    
-    # Set model
-    if p['iflat']==0:
-        model = normalization*np.ones(len(omega))/np.sum(dom)
-    elif p['iflat']==1:
-        model = np.exp(-omega**2/p['gwidth'])
-        model *= normalization/np.dot(model,dom)
-    else:
-        dat=loadtxt('model.dat').transpose()
-        fm=interpolate.interp1d(dat[0],dat[1])
-        model = fm(omega)
-        model *= normalization/np.dot(model,dom)
-        #savetxt('brisi_test', vstack((tau, fsg*dot(model,Ker))).transpose())
-        
-    print('Model normalization=', np.dot(model,dom))
-
-    # Set starting Aw(omega)
-    Aw = random.rand(len(omega))
-    Aw = Aw * (normalization/np.dot(Aw,dom))
-    print('Aw normalization=', np.dot(Aw,dom))
-
-    dlda = maxent.initdlda(omega,dom,Ker,sxt)
-    
-    temp=10.
-    rfac=1.
-    alpha=p['alpha0']
-    
-    for itt in range(p['Nitt']):
-        print(itt, 'Restarting maxent with rfac=', rfac, 'alpha=', alpha)
-        iseed = random.randint(0,sys.maxsize)
-        
-        maxent.maxent(Aw,rfac,alpha,temp,Ker,sxt,Gt,model,dom,p['Asteps'],iseed)
-        S = maxent.entropy(Aw,model,dom)
-        Trc = maxent.lambdac(alpha,Aw,omega,dom,dlda)
-        
-        ratio = -2*S*alpha/Trc
-        print('Finished maxent with alpha=',alpha,'-2*alpha*S=',-2*alpha*S,'Trace=',Trc, 'S=', S)
-        print('   ratio=', ratio)
-
-        np.savetxt('dos_'+str(itt), np.vstack((omega,Aw)).transpose())
-        temp=0.001
-        rfac=0.05
-    
-        if abs(ratio-1)<p['min_ratio']: break
-    
-        if (abs(ratio)<0.05):
-            alpha *= 0.5
-        else:
-            alpha *= (1.+0.001*(random.rand()-0.5))/ratio
-        
-    for itt in range(p['Nr']):
-        print('Smoothing itt ', itt)
-        Aw = Broad(p['bwdth'],omega,Aw)
-        Aw *= (normalization/np.dot(Aw,dom)) # Normalizing Aw
-        
-        np.savetxt('dos_'+str(p['Nitt']), np.vstack((omega,Aw)).transpose())
-        
-        temp=0.005
-        rfac=0.005
-        iseed = random.randint(0,sys.maxsize)
-        maxent.maxent(Aw,rfac,alpha,temp,Ker,sxt,Gt,model,dom,p['Asteps'],iseed)
-        
-        S = maxent.entropy(Aw,model,dom)
-        Trc = maxent.lambdac(alpha,Aw,omega,dom,dlda)
-        ratio = -2*S*alpha/Trc
-        print('Finished smoothing run with alpha=',alpha,'-2*alpha*S=',-2*alpha*S,'Trace=',Trc)
-        print('   ratio=', ratio)
-        
-    np.savetxt('gtn', np.vstack((tau, fsg*np.dot(Aw,Ker))).transpose())
-    Aw = Broad(p['bwdth'],omega,Aw)
-    np.savetxt('dos.out', np.vstack((omega,Aw)).transpose())
-    return (Aw, omega)
-
 if __name__ == '__main__':
+    #MPI initializing
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
+    #Parsing command line
     if len(sys.argv)<2:
-        print("give input file Sigma(i\omega_n)!!!")
-        exit
+        DMFT_step=1
+        for step_dir in os.listdir("impurity_solving/"):
+            N=int(step_dir[-1])
+            if N > DMFT_step:
+                DMFT_step=N
+    else: 
+        DMFT_step = int(sys.argv[1])
+    
+    #Number of inequivalent impuritys
+    sym = open("../DFT/outputs_to_DMFT/symmetry.dat",'r')
+    ineq_num=int(sym.readlines()[1])
 
     # Read maxent_params.dat
     if not os.path.exists("maxent_params.dat"):
@@ -198,37 +122,93 @@ if __name__ == '__main__':
         exit
     exec(open("maxent_params.dat").read())
 
-    Sfile = sys.argv[1]
-    Sdata = np.loadtxt(Sfile)
+    # Read imaginary time self-energy
+    Sw = []
+    iorb2ineqm = []
+    Norb=0
+    for ineq in range(ineq_num):
+        Sw_tmp=np.loadtxt("impurity_solving/step" \
+                        +str(DMFT_step)+"/impurity"\
+                        +str(ineq)+"/Sigma.dat", dtype=float)
+        Norb += int((Sw_tmp.shape[1]-1)/2)
+        Sw.append(Sw_tmp)
+        for m in range(int((Sw_tmp.shape[1]-1)/2)):
+            iorb2ineqm.append([ineq,m])
 
-    Nomega = Sdata.shape[0]
-    Norb = int((Sdata.shape[1]-1)/2)
-
-    freq = Sdata[:,0]
-    beta = np.pi/freq[0]
-    tau = np.linspace(0, beta, params['Ntau']+1)
+    #Construct folder
+    if rank ==0:
+      if os.path.exists("self-energy"):
+          shutil.rmtree("self-energy")
+      os.mkdir("self-energy")
+      for imp in range(ineq_num):
+          os.mkdir("self-energy/impurity"+str(imp))
+    comm.Barrier()
 
     for iorb in range(Norb):
-        os.system("test -d orb" + str(iorb) + " && rm -rf orb" + str(iorb))
-        os.mkdir("orb"+str(iorb))
-        os.chdir("orb"+str(iorb))
+        if iorb%size!=rank : 
+            continue
 
+        imp = iorb2ineqm[iorb][0]
+        mag = iorb2ineqm[iorb][1]
+
+        os.mkdir("self-energy/impurity"+str(imp)+"/orb"+str(mag))
+        os.chdir("self-energy/impurity"+str(imp)+"/orb"+str(mag))
+
+        Nomega = Sw[imp].shape[0]
+        freq = Sw[imp][:,0]
+        beta = np.pi/freq[0]
+        tau = np.linspace(0, beta, params['Ntau']+1)
+        
+        #=============Analytical continuation=============================
         # Construct auxiliary function and invert Fourier transform
-        Auxw = 1.0/(freq[:]*1j-Sdata[:,1+2*iorb]-Sdata[:,2+2*iorb]*1j)
+        Auxw = 1.0/(freq[:]*1j-Sw[imp][:,1+2*mag]-Sw[imp][:,2+2*mag]*1j)
         Auxt = InverseFourier(Auxw, freq, tau, beta, params['Nf'])
 
-        # Analytic continuation of auxiliary
-        (Aw, omega) = MaximumEntropy(params, tau, Auxt)
-        # np.savetxt('dos', np.vstack((omega,Aw)).transpose())
+        #write Gtau.dat
+        Gf=open("Gtau.dat",'w')
+        for i in range(tau.shape[0]):
+            print("{:23.15e}".format(tau[i]), file=Gf, end='')
+            print("{:25.15e}".format(Auxt[i]), file=Gf)
+        Gf.close()
 
-        # Performs Kramars-Kronig
+        Gtau = np.loadtxt("Gtau.dat")
+
+        #write maxent_input.dat
+        ofs=open("maxent_input.dat", 'w')
+        ofs.write("%d         #Nt:Number of time points\n"%Gtau.shape[0])
+        ofs.write("%d         #idg:error scheme: idg=1 -> sigma=deltag ; idg=0 -> sigma=deltag*G(tau)\n"%params['idg'])
+        ofs.write(str(params['deltag']) + "         #deltag:error\n")
+        ofs.write("%.15f          #beta:inverse temperature\n"%Gtau[-1,0])
+        ofs.write("%d         #Nw:number of frequencies\n"%params['Nw'])
+        ofs.write(str(params['Dw']) + "         #Dw:delta of frequency\n")
+        ofs.write("%d         #Asteps:number of annealig steps\n"%params['Asteps'])
+        ofs.write(str(params['alpha0']) + "         #alpha0:starting alpha\n")
+        ofs.write("%d         #Nr:number of smooth runs\n"%params['Nr'])
+        ofs.write("%d         #iflat:iflat=0 : constant model, iflat=1 : gaussian of width gwidth, iflat=2 : input using file model.dat\n"%params['iflat'])
+        ofs.close()
+
+        #Analytical continuation
+        os.system(maxent_exe + " 1>running.log 2>running.error")
+        #Smothing
+        DOS=np.loadtxt("dos")
+        Aw = Broad(params['bwdth'], DOS[:,0], DOS[:,1])
+
+        dosf=open("dos.out",'w')
+        for i in range(DOS.shape[0]):
+            print("{:23.15e}".format(DOS[i, 0]), file=dosf, end=' ')
+            print("{:25.15e}".format(Aw[i]), file=dosf)
+        dosf.close()
+
+        #=======================Performs Kramars-Kronig===================
+        Aux_omega = np.loadtxt("dos.out")
+        omega=Aux_omega[:,0]
         izero = np.argmin(abs(omega))
         if abs(omega[izero])<1e-6:
             omega_n = np.hstack([omega[:izero],omega[izero+1:]])
-            Aw_n = np.hstack([Aw[:izero],Aw[izero+1:]])
+            Aw_n = np.hstack([Aux_omega[:izero,1],Aux_omega[izero+1:,1]])
         else:
             omega_b = omega
-            Aw_n = Aw
+            Aw_n = Aux_omega[:,1]
         np.savetxt('dosn', np.vstack((omega_n,Aw_n)).transpose())
 
         os.system(skrams_exe + " -cn 2 -s -pi dosn > Gc")
@@ -237,23 +217,32 @@ if __name__ == '__main__':
         Sc = Sfreq[:]-1.0/(Gcdata[:,1]+Gcdata[:,2]*1j)
         np.savetxt('sig.out', np.array([Sfreq,Sc.real,Sc.imag]).transpose())
 
-        os.chdir("../")
+        os.chdir("../../../")
 
-    sigma0=np.loadtxt("orb0/sig.out")
-    Sigma = np.zeros((sigma0.shape[0],2*Norb+1), dtype=float)
-    Sigma[:,0] = sigma0[:,0]
-    Sigma[:,1] = sigma0[:,1]
-    Sigma[:,2] = sigma0[:,2]
-    for iorb in range(1,Norb):
-        sigma_tmp = np.loadtxt("orb" + str(iorb) + "/sig.out")
-        Sigma[:,2*iorb+1] = sigma_tmp[:,1]
-        Sigma[:,2*iorb+2] = sigma_tmp[:,2]
+    comm.Barrier()
 
-    sigmaf=open("Sigma.dat",'w')
-    for i in range(Sigma.shape[0]):
-        print("{:23.15e}".format(Sigma[i, 0]), file=sigmaf, end='')
-        for iorb in range(Norb):
-            print("{:25.15e}".format(Sigma[i, 2*iorb+1]), file=sigmaf, end='')
-            print("{:25.15e}".format(Sigma[i, 2*iorb+2]), file=sigmaf, end='')
-        print('', file=sigmaf)
-    sigmaf.close()
+    if rank==0 :
+        for imp in range(ineq_num):
+            os.chdir("self-energy/impurity"+str(imp))
+
+            sigma0=np.loadtxt("orb0/sig.out")
+            mag_num = len(os.listdir("./"))
+            Sigma_data = np.zeros((sigma0.shape[0],2*mag_num+1), dtype=float)
+            Sigma_data[:,0] = sigma0[:,0]
+            Sigma_data[:,1] = sigma0[:,1]
+            Sigma_data[:,2] = sigma0[:,2]
+            for m in range(1,mag_num):
+                sigma_tmp = np.loadtxt("orb" + str(m) + "/sig.out")
+                Sigma_data[:,2*m+1] = sigma_tmp[:,1]
+                Sigma_data[:,2*m+2] = sigma_tmp[:,2]
+
+            sigmaf=open("Sigma_omega.dat",'w')
+            for i in range(Sigma_data.shape[0]):
+                print("{:23.15e}".format(Sigma_data[i, 0]), file=sigmaf, end='')
+                for m in range(mag_num):
+                    print("{:25.15e}".format(Sigma_data[i, 2*m+1]), file=sigmaf, end='')
+                    print("{:25.15e}".format(Sigma_data[i, 2*m+2]), file=sigmaf, end='')
+                print('', file=sigmaf)
+            sigmaf.close()
+
+            os.chdir("../../")
