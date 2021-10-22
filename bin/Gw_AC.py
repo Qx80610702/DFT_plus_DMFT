@@ -1,10 +1,54 @@
 #!/usr/bin/env python
 import numpy as np
+from scipy import integrate, interpolate, optimize
 import os, sys, shutil
 from mpi4py import MPI
-from Sigma_AC import Broad
 
-maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/build/analy_continuation/maxent"
+maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/build/maxent/maxent"
+
+def Broad(width, om, fw):
+    " Broadens the data with gaussian of width=width"
+    def MakeTanMesh(N, tanc, tanw, b0, b1):
+        if not(b0<b1): print("Relation must hold: b0<b1!")
+        if not(b0<tanw and tanw<b1): print("Relation mesu hold: b0<tanw<b1!")
+        if not(b0>0): print("b0 must be positive!")
+        du = np.arctan(((tanc-b0)/tanw))
+        b1n = np.arctan((b1-tanc)/tanw)+du
+        m0 = [tanc + tanw * np.tan(b1n*(i-1)/(N-2)-du) for i in range(1,N)]
+        return np.hstack( (-np.array(m0[::-1]), np.array([0]+m0) ) )
+
+    if width<1e-5: return fw
+    
+    w=width
+    x = MakeTanMesh(200,0.0,w,w/50,w*20)
+    fwi = interpolate.interp1d(om, fw)
+    fwn=[]
+    for im in range(len(om)):
+        x1 = list(filter(lambda t: t>=om[im]-x[-1] and t<=om[im]-x[0], om))
+        x2 = list(filter(lambda t: t>=om[0] and t<=om[-1], x+om[im]))
+        eps = sorted(np.hstack((x1, x2)))
+        x3 = om[im]-eps
+        gs = np.exp(-x3**2/(2*w**2))/(np.sqrt(2*np.pi)*w)
+        yn = integrate.trapz(fwi(eps) * gs, x=eps)
+        fwn.append(yn)
+    return np.array(fwn)
+
+def GiveTanMesh(x0,L,Nw):
+    def fun(x,x0,L,Nw):
+        "x[0]=d, x[1]=w"
+        d=x[0]
+        w=x[1]
+        #print 'd=', d, 'w=', w
+        return np.array([L-w/np.tan(d), x0-w*np.tan(np.pi/(2*Nw)-d/Nw) ])
+    
+    xi=x0/L
+    d0 = Nw/2.*(np.tan(np.pi/(2*Nw))-np.sqrt(np.tan(np.pi/(2*Nw))**2 - 4*xi/Nw))
+    w0 = L*d0
+
+    sol=optimize.root(fun, [d0,w0], args=(x0,L,Nw) )
+    (d,w) = sol.x
+    om = w*np.tan(np.linspace(0,1,2*Nw+1)*(np.pi-2*d) -np.pi/2+d)
+    return om
 
 if __name__ == '__main__':
     #MPI initializing

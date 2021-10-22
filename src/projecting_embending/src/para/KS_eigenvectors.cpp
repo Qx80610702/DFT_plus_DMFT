@@ -1,5 +1,5 @@
 #include "KS_eigenvectors.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 
 #define MKL_Complex16 std::complex<double>
 #include <mkl.h>

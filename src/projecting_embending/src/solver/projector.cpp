@@ -3,14 +3,14 @@
 #include "../para/overlap_matrix.h"
 #include "math_zone.h"
 #include "../constants.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 
 #include <mpi.h>
 #include <omp.h> 
 #include <memory>
 
-#define MKL_Complex16 std::complex<double>
-#include <mkl.h>
+  #define MKL_Complex16 std::complex<double>
+  #include <mkl.h>
 
 //test
 #include <fstream>

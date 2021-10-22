@@ -1,6 +1,6 @@
 #include "alps_cthyb.h"
 
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../timer.h"
 #include "math_zone.h"
 #include "../constants.h"

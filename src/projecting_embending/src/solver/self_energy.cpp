@@ -1,6 +1,6 @@
 #include "self_energy.h"
 
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../timer.h"
 #include "../constants.h"
 
@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <cstdlib>
 
 #define MKL_Complex16 std::complex<double>
 #include <mkl.h>
@@ -30,7 +31,7 @@ namespace DMFT
     return true;
   }
 
-  void self_energy::initial_guess(const int impurity_solver, const bool SOC,
+  void self_energy::initial_guess(const int axis_flag, const bool SOC,
             const int nspin, DFT_output::atoms_info& atom)
   {
     debug::codestamp("self_energy::initial_guess");
@@ -38,14 +39,14 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const std::complex<double> zero(0.0,0.0);
 
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4)
-    {
-      this->sigma_imag.sigma_new_access().resize(atom.inequ_atoms());
-      this->sigma_imag.correlated_sigma_access().resize(atom.inequ_atoms());
-    }
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+            sigma_correlatd = this->correlated_sigma(axis_flag);
+    
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+              sigma_new = this->sigma_new(axis_flag);
+
+    sigma_new.resize(atom.inequ_atoms());
+    sigma_correlatd.resize(atom.inequ_atoms());
 
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
     {
@@ -57,66 +58,54 @@ namespace DMFT
       std::vector<std::vector<std::complex<double>>>& 
           Vdca = this->dc.Vdc()[ineq];
 
-      const auto& freq = this->sigma_imag.Matsubara_freq();
-
-      if(impurity_solver==1 || 
-         impurity_solver==2 || 
-         impurity_solver==3 ||
-         impurity_solver==4)
-      {
-        const int n_omega=sigma_imag.nomega();
+      const int n_omega=this->nomega(axis_flag);
         
-        this->sigma_imag.sigma_new_access()[ineq].resize(nspin_tmp);
-        this->sigma_imag.correlated_sigma_access()[ineq].resize(nspin_tmp);
+      sigma_new[ineq].resize(nspin_tmp);
+      sigma_correlatd[ineq].resize(nspin_tmp);
  
-        for(int is=0; is<nspin_tmp; is++)
+      for(int is=0; is<nspin_tmp; is++)
+      {
+        sigma_new[ineq][is].resize(n_omega);
+        sigma_correlatd[ineq][is].resize(n_omega);
+
+        for(int i_omega=0; i_omega<n_omega; i_omega++)
         {
-          this->sigma_imag.sigma_new_access()[ineq][is].resize(n_omega);
-          this->sigma_imag.correlated_sigma_access()[ineq][is].resize(n_omega);
+          sigma_new[ineq][is][i_omega].resize(m_tot*m_tot);
+          sigma_correlatd[ineq][is][i_omega].resize(m_tot*m_tot);
 
-          for(int i_omega=0; i_omega<n_omega; i_omega++)
-          {
-            this->sigma_imag.sigma_new_access()[ineq][is][i_omega].resize(m_tot*m_tot);
-            this->sigma_imag.correlated_sigma_access()[ineq][is][i_omega].resize(m_tot*m_tot);
-
-            for(int m_index=0; m_index<m_tot*m_tot; m_index++)
-                this->sigma_imag.sigma_new_access()[ineq][is][i_omega][m_index] = Vdca[is][m_index];
-
-            // for(int m_index=0; m_index<m_tot*m_tot; m_index++)
-            //     this->sigma_imag.sigma_new_access()[ineq][i_omega][is][m_index] = zero;
-
-          }//is
-        }//i_omega
-      }//impurity_solver==1
+          for(int m_index=0; m_index<m_tot*m_tot; m_index++)
+              sigma_new[ineq][is][i_omega][m_index] = Vdca[is][m_index];
+        }//is
+      }//i_omega
     }//iatom
 
     return;
   }
 
   void self_energy::evalute_lattice_sigma(
-        const int impurity_solver, const int mag, 
+        const int axis_flag, const int mag, 
         const int nspin, const std::vector<int>& wbands,
         DFT_output::atoms_info& atom, 
         const std::vector<std::vector<std::vector<
         std::complex<double>>>>&  projector )
   {
-    // debug::codestamp("self_energy::evalute_lattice_sigma");
+    debug::codestamp("self_energy::evalute_lattice_sigma");
 
     const int natom = atom.total_atoms();
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int norb = atom.norb();
-    const int omega_num = this->nomega(impurity_solver);
+    const int omega_num = this->nomega(axis_flag);
     const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
 
     int nbands = wbands[0];
     if(nspin==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
     std::vector<std::vector<std::vector<std::complex<double>>>>&
-          latt_sigma=this->lattice_sigma(impurity_solver);
+          latt_sigma=this->lattice_sigma(axis_flag);
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-          dleta_sigma=this->correlated_sigma(impurity_solver);
-
+          dleta_sigma=this->correlated_sigma(axis_flag);
+ 
     if(latt_sigma.empty())
     {
       latt_sigma.resize(nspin);
@@ -125,7 +114,7 @@ namespace DMFT
         latt_sigma[ispin].resize(omega_num);
         for(int iomega=0; iomega<omega_num; iomega++)
         {
-          latt_sigma[ispin][iomega].resize(wbands[ispin]*wbands[ispin],zero);
+          latt_sigma[ispin][iomega].resize(wbands[ispin]*wbands[ispin], zero);
         }
       }
     }
@@ -212,115 +201,116 @@ namespace DMFT
     return;
   }
 
-  void self_energy::subtract_double_counting(const int impurity_solver)
+  void self_energy::subtract_double_counting(const int axis_flag)
   {
     debug::codestamp("self_energy::subtract_double_counting");
 
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4 )
-    {
-      std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-          sigma_correlatd = this->sigma_imag.correlated_sigma_access();
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+            sigma_correlatd = this->correlated_sigma(axis_flag);
+    
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+              sigma_new = this->sigma_new(axis_flag);
 
-      if(sigma_correlatd.empty())
+    //Allocation
+    if(sigma_correlatd.empty())
+    {
+      sigma_correlatd.resize(this->dc.Vdc().size());
+      for(int ineq=0; ineq<this->dc.Vdc().size(); ineq++)
       {
-        sigma_correlatd.resize(this->dc.Vdc().size());
-        for(int ineq=0; ineq<this->dc.Vdc().size(); ineq++)
+        sigma_correlatd[ineq].resize(this->dc.Vdc()[ineq].size());    
+        for(int is=0; is<this->dc.Vdc().at(0).size(); is++)
         {
-          sigma_correlatd[ineq].resize(this->dc.Vdc().at(ineq).size());    
-          for(int is=0; is<this->dc.Vdc().at(0).size(); is++)
-          {
-            sigma_correlatd[ineq][is].resize(sigma_imag.nomega());
-            for(int iomega=0; iomega<sigma_imag.nomega(); iomega++)
-            {
-              sigma_correlatd[ineq][is][iomega].resize(this->dc.Vdc().at(ineq).at(is).size());
-            }//is
-          }//i_omega
-        }//ineq
-      }
+          sigma_correlatd[ineq][is].resize(this->nomega(axis_flag));
+          for(int iomega=0; iomega<this->nomega(axis_flag); iomega++)
+            sigma_correlatd[ineq][is][iomega].resize(this->dc.Vdc()[ineq][is].size());
+        }//i_omega
+      }//ineq
     }
 
     for(int ineq=0; ineq<this->dc.Vdc().size(); ineq++)
     {
       const int nspin = this->dc.Vdc().at(0).size();
+      const int omega_number = this->nomega(axis_flag);
 
-      if(impurity_solver==1 || 
-         impurity_solver==2 || 
-         impurity_solver==3 ||
-         impurity_solver==4)
+      for(int ispin=0; ispin<nspin; ispin++)
       {
-        const int omega_number = sigma_imag.nomega();
-
-        std::vector<std::vector<std::vector<std::complex<double>>>>&
-            sigma_corr = this->sigma_imag.correlated_sigma_access()[ineq];
-        
-        std::vector<std::vector<std::vector<std::complex<double>>>>&
-            sigma_new = this->sigma_imag.sigma_new_access()[ineq];
-
-        for(int ispin=0; ispin<nspin; ispin++)
+        const int m_index_number = this->dc.Vdc().at(ineq).at(ispin).size();
+        for(int m_index=0; m_index<m_index_number; m_index++)
         {
-          const int m_index_number = this->dc.Vdc().at(ineq).at(ispin).size();
-          for(int m_index=0; m_index<m_index_number; m_index++)
-          {
-            std::complex<double> tmp=this->dc.Vdc().at(ineq).at(ispin).at(m_index);
-            for(int iomega=0; iomega<omega_number; iomega++)
-            {
-              sigma_corr[ispin][iomega][m_index] = sigma_new[ispin][iomega][m_index] - tmp;
-            }//i_omega
-          }//m_index
-        }//ispin
-      }//impurity_solver==1
+          std::complex<double> tmp=this->dc.Vdc().at(ineq).at(ispin).at(m_index);
+          for(int iomega=0; iomega<omega_number; iomega++)
+            sigma_correlatd[ineq][ispin][iomega][m_index] = sigma_new[ineq][ispin][iomega][m_index] - tmp;
+        }//m_index
+      }//ispin
     }//ineq
 
     return;  
   }
 
-  int self_energy::nomega(const int impurity_solver)
+  int self_energy::nomega(const int axis_flag)
   {
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4)
+    switch(axis_flag)
     {
+    case 0:
       return this->sigma_imag.nomega();
+      break;
+    case 1:
+      return this->sigma_real.nomega();
+      break;
+    default:
+      std::cout << "Error parameter of axis_flag" << std::endl;
+      std::exit(EXIT_FAILURE);
     }
   }
 
   std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-              self_energy::sigma_new(const int impurity_solver)
+              self_energy::sigma_new(const int axis_flag)
   {
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4)
+    switch(axis_flag)
     {
+    case 0:
       return this->sigma_imag.sigma_new_access();
+      break;
+    case 1:
+      return this->sigma_real.sigma_new_access();
+      break;
+    default:
+      std::cout << "Error parameter of axis_flag" << std::endl;
+      std::exit(EXIT_FAILURE);
     }
   }
 
   std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-              self_energy::correlated_sigma(const int impurity_solver)
+              self_energy::correlated_sigma(const int axis_flag)
   {
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4)
+    switch(axis_flag)
     {
+    case 0:
       return this->sigma_imag.correlated_sigma_access();
+      break;
+    case 1:
+      return this->sigma_real.correlated_sigma_access();
+      break;
+    default:
+      std::cout << "Error parameter of axis_flag" << std::endl;
+      std::exit(EXIT_FAILURE);
     }
   }
 
   std::vector<std::vector<std::vector<std::complex<double>>>>&
-        self_energy::lattice_sigma(const int impurity_solver)
+        self_energy::lattice_sigma(const int axis_flag)
   {
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4)
+    switch(axis_flag)
     {
+    case 0:
       return this->sigma_imag.lattice_sigma_access();
+      break;
+    case 1:
+      return this->sigma_real.lattice_sigma_access();
+      break;
+    default:
+      std::cout << "Error parameter of axis_flag" << std::endl;
+      std::exit(EXIT_FAILURE);
     }
   }
 

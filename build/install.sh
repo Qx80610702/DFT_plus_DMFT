@@ -86,7 +86,7 @@ EOF
 
   make
   if [ $? -eq 0 ]; then
-    cp CTHYB $root_dir/build/impurity_solver/CTHYB-LG/
+    mv CTHYB $root_dir/build/impurity_solver/CTHYB-LG/
   else
     echo "Errors in building LG-CTHYB"
     exit
@@ -94,14 +94,14 @@ EOF
   cd $root_dir
 else
   cd $root_dir/src/impurity_solver/CTHYB-LG
-  make clean
-  make
-  if [ $? -eq 0 ]; then
-    cp CTHYB $root_dir/build/impurity_solver/CTHYB-LG/
-  else
-    echo "Errors in building LG-CTHYB"
-    exit
-  fi
+  # make clean
+  # make
+  # if [ $? -eq 0 ]; then
+  #   cp CTHYB $root_dir/build/impurity_solver/CTHYB-LG/
+  # else
+  #   echo "Errors in building LG-CTHYB"
+  #   exit
+  # fi
   cd $root_dir
 fi
 
@@ -160,8 +160,8 @@ EOF
 
   make all
   if [ $? -eq 0 ]; then
-    cp ctqmc $root_dir/build/impurity_solver/Rutgers/ctqmc
-    cp ctqmcf $root_dir/build/impurity_solver/Rutgers/ctqmcf
+    mv ctqmc $root_dir/build/impurity_solver/Rutgers/ctqmc
+    mv ctqmcf $root_dir/build/impurity_solver/Rutgers/ctqmcf
   else
     echo "Errors in building Rutgers-CTHYB"
     exit
@@ -185,9 +185,7 @@ LIBRARY = -L\${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 VPATH=../src \\
 :../src/para \\
-:../src/debug \\
-:../src/solver \\
-:../src/post_processing \\
+:../src/solver
 
 #============================
 #     Objects
@@ -220,8 +218,7 @@ alps_cthyb.o \\
 alps_cthyb_segment.o \\
 rutgers_cthyb.o \\
 math_zone.o \\
-post_processing.o \\
-spectral_function.o 
+spectrum.o 
 
 #====================
 #   Target
@@ -244,7 +241,7 @@ EOF
 
   if [ $? -eq 0 ]
   then
-    cp ../bin/projection_embeding $root_dir/build/
+    mv ../bin/projection_embeding $root_dir/build/
   else
     echo "Errors in building projecting_embeding"
     exit
@@ -259,41 +256,25 @@ else
     echo "Errors in building projecting_embeding"
     exit
   fi
-  cp ../bin/projection_embeding $root_dir/build/
+  mv ../bin/projection_embeding $root_dir/build/
   cd $root_dir
 fi
 
 #====================================
 #    PART 4: maxent
 #====================================
-if [ ! -f $root_dir/build/analy_con/maxent ]; then
-  test -d $root_dir/build/analy_continuation || mkdir $root_dir/build/analy_continuation
-  cd $root_dir/src/analytic_continuation/maxent
+if [ ! -f $root_dir/build/maxent/maxent ]; then
+  test -d $root_dir/build/maxent || mkdir $root_dir/build/maxent
+  cd $root_dir/src/maxent
 
   ifort -L\${MKLROOT}/lib/intel64 -lmkl_rt -lpthread -lm -ldl maxentropy.f90 -o maxent
-  cp maxent $root_dir/build/analy_continuation/maxent
+  mv maxent $root_dir/build/maxent/
 
   cd $root_dir
 fi
 
 #====================================
-#    PART 5: skrams
-#====================================
-if [ ! -f $root_dir/build/analy_continuation/skrams ];then
-  test -d $root_dir/build/analy_continuation || mkdir $root_dir/build/analy_continuation
-  cd $root_dir/src/analytic_continuation/skrams
-  test -f skrams && rm skrams
-  
-  echo "Start building skrams ......"
-  $CXX -O2 -funroll-all-loops -DNO_ARG_CHECK skrams.cc -o skrams
-  echo "skrams building finish"
-
-  cp skrams $root_dir/build/analy_continuation/skrams
-  cd $root_dir
-fi
-
-#====================================
-#    PART 6: job script
+#    PART 5: job script
 #====================================
 cd $root_dir/bin/
 test -f run_dmft && rm run_dmft
@@ -508,14 +489,13 @@ EOF1
 chmod +x run_dmft
 
 #========Gw_AC.py=======
-sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/analy_continuation/maxent\""" Gw_AC.py
+sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/maxent/maxent\""" Gw_AC.py
 if [ ! -x Gw_AC.py ];then
   chmod +x Gw_AC.py
 fi
 
 #========Sigma_AC.py=======
-sed -i "/^skrams_exe=/c"skrams_exe=\"$root_dir/build/analy_continuation/skrams\""" Sigma_AC.py
-sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/analy_continuation/maxent\""" Sigma_AC.py
+sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/maxent/maxent\""" Sigma_AC.py
 if [ ! -x Sigma_AC.py ];then
   chmod +x Sigma_AC.py
 fi

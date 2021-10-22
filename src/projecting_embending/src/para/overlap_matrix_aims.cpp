@@ -1,5 +1,5 @@
 #include "overlap_matrix_aims.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 
 #include <fstream>
 #include <iostream>

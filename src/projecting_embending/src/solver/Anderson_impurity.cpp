@@ -1,7 +1,7 @@
 #include "Anderson_impurity.h"
 #include "../mpi_environment.h"
 #include "math_zone.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../timer.h"
 #include "../constants.h"
 
@@ -192,101 +192,62 @@ namespace DMFT
       }//ineq
     }
     
-std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>
-    sigma_test = this->sigma.sigma_new(1);
-for(auto& iter1 : sigma_test)
-  for(auto& iter2 : iter1)
-    for(auto& iter3 : iter2)
-      for(auto& iter4 :iter3) iter4 = zero;
-
     //evaluation
-    for(int ineq=0; ineq<ineq_num; ineq++)
+    int ik_count=0;
+    for(int ik=0; ik<nks; ik++)
     {
-      const int iatom = atom.ineq_iatom(ineq);
-      const int m_tot=norb_sub[iatom];
+      if(ik%nprocs != myid) continue;
 
-      int ik_count=0;
-      for(int ik=0; ik<nks; ik++)
+      this->sigma.evalute_lattice_sigma(
+            0, mag, nspin, wbands, atom,
+            proj.proj_access(ik_count) );
+
+      const std::vector<std::vector<std::vector<std::complex<double>>>>&
+            latt_sigma = this->sigma.lattice_sigma(0);
+
+      for(int is=0; is<nspin; is++)
       {
-        if(ik%nprocs != myid) continue;
-       
-// this->sigma.evalute_lattice_sigma_test(
-//               1, mag, nspin, wbands, atom,
-//               proj.proj_access(ik_count), 
-//               this->sigma.sigma_new(1), work_mat);
+        const std::vector<double>& epsilon = space.eigen_val()[is][ik];    
+        
+        const int mkl_threads = mkl_get_max_threads();
+        mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
 
-// const std::vector<std::vector<std::vector<std::complex<double>>>>&
-//       latt_sigma_test = this->sigma.lattice_sigma(1);
-
-// #pragma omp parallel for
-// for(int iomega=0; iomega<nomega; iomega++)
-// {
-//   for(int is=0; is<nspin; is++)
-//   {
-//     const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[ineq][is];
-//     const std::vector<std::complex<double>>& latt_sigmb = latt_sigma_test[is][iomega];
-//     for(int iband1=0; iband1<wbands[is]; iband1++)
-//     {
-//       for(int m1=0; m1<m_tot; m1++)
-//       {
-//         for(int iband2=0; iband2<wbands[is]; iband2++)
-//         {
-//           for(int m2=0; m2<m_tot; m2++)
-//           {
-//             sigma_test[ineq][is][iomega][m1*m_tot+m2] += 
-//                   fk[ik]*projector[iband1*m_tot+m1]*
-//                   latt_sigmb[iband1*wbands[is]+iband2]*
-//                   std::conj(projector[iband2*m_tot+m2]);
-//           }//m2
-//         }//iband2
-//       }//m1
-//     }//iband1
-//   }
-// }
-        this->sigma.evalute_lattice_sigma(
-              1, mag, nspin, wbands, atom,
-              proj.proj_access(ik_count) );
-
-        const std::vector<std::vector<std::vector<std::complex<double>>>>&
-              latt_sigma = this->sigma.lattice_sigma(1);
-
-        for(int is=0; is<nspin; is++)
+        #pragma omp parallel
         {
-          auto& Gf = this->Green_fun_omega[ineq][is];
-
-          const std::vector<double>& epsilon = space.eigen_val()[is][ik];    
-          const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
+          std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
+          std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
+          int info_trf, info_tri;
           
-          const int mkl_threads = mkl_get_max_threads();
-          mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-
-          #pragma omp parallel
+          #pragma omp for
+          for(int iomega=0; iomega<nomega; iomega++)
           {
-            std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
-            std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-            int info_trf, info_tri;
-            
-            #pragma omp for
-            for(int iomega=0; iomega<nomega; iomega++)
+            const std::vector<std::complex<double>>& latt_sigmb = latt_sigma[is][iomega];
+
+            for(int iband1=0; iband1<wbands[is]; iband1++)
             {
-              const std::vector<std::complex<double>>& latt_sigmb = latt_sigma[is][iomega];
-
-              for(int iband1=0; iband1<wbands[is]; iband1++)
+              for(int iband2=0; iband2<wbands[is]; iband2++)
               {
-                for(int iband2=0; iband2<wbands[is]; iband2++)
-                {
-                  int band_index = iband1*wbands[is]+iband2;
+                int band_index = iband1*wbands[is]+iband2;
 
-                  if(iband1==iband2)
-                      Gf_latt[band_index] = im*freq[iomega] + mu
-                            -epsilon[iband1] - latt_sigmb[band_index];
-                  else
-                      Gf_latt[band_index] = -latt_sigmb[band_index];
+                if(iband1==iband2)
+                    Gf_latt[band_index] = im*freq[iomega] + mu
+                          -epsilon[iband1] - latt_sigmb[band_index];
+                else
+                    Gf_latt[band_index] = -latt_sigmb[band_index];
 
-                }//iband2
-              }//iband1
+              }//iband2
+            }//iband1
 
-              general_complex_matrix_inverse(&Gf_latt[0], wbands[is], &ipiv[0], info_trf, info_tri);
+            general_complex_matrix_inverse(&Gf_latt[0], wbands[is], &ipiv[0], info_trf, info_tri);
+
+            for(int ineq=0; ineq<ineq_num; ineq++)
+            {
+              const int iatom = atom.ineq_iatom(ineq);
+              const int m_tot=norb_sub[iatom];
+
+              auto& Gf = this->Green_fun_omega[ineq][is];
+
+              const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
 
               for(int m1=0; m1<m_tot; m1++)
               {
@@ -305,28 +266,20 @@ for(auto& iter1 : sigma_test)
                   }//iband1
                 }//m2
               }//m1
+            }//ineq
 
-              // for(int m=0; m<m_tot; m++)
-              // {
-              //   for(int iband1=0; iband1<wbands[is]; iband1++)
-              //   {
-              //     int index1=iband1*m_tot + m;
-              //     for(int iband2=0; iband2<wbands[is]; iband2++)
-              //     {
-              //       int index2=iband2*m_tot + m;
-              //       Gf[iomega][m*m_tot+m] += std::conj(projector[index1])*Gf_latt[iband1*wbands[is]+iband2]
-              //                               *projector[index2]*fk[ik];
-              //     }//iband2
-              //   }//iband1
-              // }//m
-
-            }//iomega
-          }//omp parallel
-          mkl_set_num_threads(mkl_threads);
-        }//is
-        ik_count++;
-      }//ik
-
+          }//iomega
+        }//omp parallel
+        mkl_set_num_threads(mkl_threads);
+      }//is
+      ik_count++;
+    }//ik
+    
+    for(int ineq=0; ineq<ineq_num; ineq++)
+    {
+      const int iatom = atom.ineq_iatom(ineq);
+      const int m_tot=norb_sub[iatom];
+      
       //reduce operation  
       for(int is=0; is<nspin; is++)
       {
@@ -339,40 +292,6 @@ for(auto& iter1 : sigma_test)
         }
       }
 
-//test
-// for(int is=0; is<nspin; is++)
-// {
-//   for(int iomega=0; iomega<nomega; iomega++)
-//   {
-//     std::vector<std::complex<double>> tmp = sigma_test[ineq][is][iomega];
-//     MPI_Allreduce(&tmp[0], &sigma_test[ineq][is][iomega][0],
-//                   m_tot*m_tot, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
-//   }
-// }
-// if(mpi_rank()==0)
-// {
-// std::ofstream ofss("Sw_omega.dat", std::ios::out);
-// for(int iomega=0; iomega<nomega; iomega++)
-// {
-//   ofss << std::setw(22) << std::fixed << std::setprecision(15) << freq[iomega]*Hartree_to_eV;
-//   for(int is=0; is<2; is++)
-//   {
-//     for(int m=0; m<m_tot; m++)
-//       if(nspin==1)
-//         ofss << std::setw(22) << std::fixed << std::setprecision(15)
-//          << sigma_test[ineq][0][iomega][m*m_tot+m].real()*Hartree_to_eV
-//          << std::setw(22) << std::fixed << std::setprecision(15)
-//          << sigma_test[ineq][0][iomega][m*m_tot+m].imag()*Hartree_to_eV;
-//       else
-//         ofss << std::setw(22) << std::fixed << std::setprecision(15)
-//          << sigma_test[ineq][is][iomega][m*m_tot+m].real()*Hartree_to_eV
-//          << std::setw(22) << std::fixed << std::setprecision(15)
-//          << sigma_test[ineq][is][iomega][m*m_tot+m].imag()*Hartree_to_eV;  
-//   }
-//   ofss << std::endl;
-// }
-// ofss.close();
-// }
       //=============================================
       //   Local symmetry operation
       //=============================================
@@ -418,7 +337,6 @@ for(int iomega=0; iomega<nomega; iomega++)
 }
 ofs_gf.close();
 }
-
     }//ineq
 
     //==========================================================================
@@ -476,7 +394,7 @@ ofs_gf.close();
             G0 = this->Weiss_omega[ineq];
 
       std::vector<std::vector<std::vector<std::complex<double>>>>&
-            local_sigma = this->sigma.sigma_new(1)[ineq];
+            local_sigma = this->sigma.sigma_new(0)[ineq];
 
       #pragma omp parallel for
       for(int iomega=0; iomega<nomega; iomega++)
@@ -552,9 +470,7 @@ ofs_gf.close();
         {
           hyb[ineq][is].resize(ntau+1);
           for(int itau=0; itau<ntau+1; itau++)
-          {
             hyb[ineq][is][itau].resize(m_tot*m_tot,zero);
-          }
         }
       }
     }
@@ -573,9 +489,7 @@ ofs_gf.close();
           {
             auto& hybc = hybb[itau];
             for(int m_index=0; m_index<m_tot*m_tot; m_index++)
-            {
               hybc[m_index] = zero;
-            }//m_index
           }//itqu
         }//is
       }//ineq
@@ -594,9 +508,7 @@ ofs_gf.close();
         {
           this->Weiss_tau[ineq][is].resize(ntau+1);
           for(int itau=0; itau<ntau+1; itau++)
-          {
             this->Weiss_tau[ineq][is][itau].resize(m_tot*m_tot,zero);
-          }
         }
       }
     }
@@ -615,9 +527,7 @@ ofs_gf.close();
           {
             auto& Weissc = Weissb[itau];
             for(int m_index=0; m_index<m_tot*m_tot; m_index++)
-            {
               Weissc[m_index] = zero;
-            }//m_index
           }//itqu
         }//is
       }//ineq
@@ -625,9 +535,7 @@ ofs_gf.close();
 
     std::unique_ptr<double[]> tau(new double [ntau+1]);
     for(int itau=0; itau<ntau+1; itau++)
-    {
       tau[itau] = (beta/ntau)*itau;
-    }
     tau[0] = 1.0e-3*beta/ntau;
     tau[ntau] = beta - 1.0e-3*beta/ntau;
 

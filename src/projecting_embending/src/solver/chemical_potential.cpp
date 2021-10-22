@@ -1,6 +1,6 @@
 #include "chemical_potential.h"
 #include "../mpi_environment.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../constants.h"
 #include "math_zone.h"
 
@@ -11,13 +11,15 @@
 #include <cmath>
 #include <cstdlib> 
 #include <iomanip>
+#include <fstream>
+#include <string>
 
 //test
 #include <fstream>
 namespace DFT_plus_DMFT
 {
   void chemical_potential::update_chemical_potential(
-        const int impurity_solver,
+        const int axis_flag,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
@@ -27,12 +29,19 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("chemical_potential::update_chemical_potential");
 
-    if(impurity_solver==1 ||
-       impurity_solver==2 ||
-       impurity_solver==3 ||
-       impurity_solver==4 )
+    switch(axis_flag)
+    {
+    case 0:
       this->evaluate_mu_bisection_imag(
           band, atom, proj, sigma, in, space);
+      break;
+    case 1:
+      // ;
+      break;
+    default:
+      std::cout << "Error parameter of axis_flag" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
 
     return;
   }
@@ -93,8 +102,8 @@ namespace DFT_plus_DMFT
     }
 
     if(mpi_rank()==0)
-      std::cout << "\nChemical potential: " << std::setw(12) << std::fixed << std::setprecision(6) 
-                  << this->sigma_corrected_mu*Hartree_to_eV << "eV" << std::endl;
+      std::cout << "\nChemical potential: " << std::setw(15) << std::fixed << std::setprecision(9) 
+                  << this->sigma_corrected_mu*Hartree_to_eV << " eV" << std::endl;
 
     return;
   }
@@ -134,11 +143,12 @@ namespace DFT_plus_DMFT
     {
       if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
 
-      sigma.evalute_lattice_sigma(1, mag, nspin, wbands, 
-                      atom, proj.proj_access(ik_count) );
+      sigma.evalute_lattice_sigma(
+          0, mag, nspin, wbands, atom, 
+          proj.proj_access(ik_count) );
 
       const std::vector<std::vector<std::vector<std::complex<double>>>>&
-            latt_sigma = sigma.lattice_sigma(1);
+            latt_sigma = sigma.lattice_sigma(0);
   
       for(int is=0; is<nspin; is++)
       {
@@ -198,9 +208,8 @@ namespace DFT_plus_DMFT
                       one/(im*freq[iomega] + mu - epsilon[iband]-sigma_oo) ).real();
 
           sum_tmp += weight[ik]/(1.0+std::exp(beta*(epsilon[iband]+sigma_oo-mu)));
-
+        
         }//iband
-
       }//is
       ik_count++;
     }//ik
@@ -286,6 +295,54 @@ namespace DFT_plus_DMFT
     MPI_Allreduce(&sum_tmp, &nele_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     
     return nele_sum;
+  }
+
+  void chemical_potential::read_chemical_potential()
+  {
+    debug::codestamp("chemical_potential::read_chemical_potential");
+
+    char word[100], word_low[100];
+
+    std::ifstream ifs("DMFT_running.log", std::ios::in);
+    if (!ifs)  
+	  {
+	  	std::cout << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    ifs.seekg(0);   //set the position at the beginning of the file
+
+    while(ifs.good())
+    {
+      ifs.getline(word, 100);   
+      if(ifs.eof()) break;
+      
+      DMFT::input_info::strtolower(word, word_low);
+
+      std::string line(word_low);
+
+      if(!line.empty())
+      {
+        line.erase(0, line.find_first_not_of(" "));
+        line.erase(line.find_last_not_of(" ") + 1);
+      }
+
+      if(!line.empty())
+      {
+        size_t pos=line.find("chemical potential:");
+        if(pos==std::string::npos) continue;
+
+        line.erase(0,line.find_first_of(':')+1);
+        line.erase(line.rfind("ev"));
+
+        line.erase(0, line.find_first_not_of(" "));
+        line.erase(line.find_last_not_of(" ") + 1);
+
+        this->sigma_corrected_mu = atof(line.c_str())/Hartree_to_eV;
+      }
+    }
+    ifs.close();
+
+    return;
   }
 
 }

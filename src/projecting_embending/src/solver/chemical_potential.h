@@ -19,7 +19,7 @@ namespace DFT_plus_DMFT
     ~chemical_potential(){};
     
     void update_chemical_potential(
-         const int impurity_solver,
+         const int axis_flag,
          DFT_output::KS_bands& band, 
          DFT_output::atoms_info& atom, 
          DFT_plus_DMFT::projector& proj,
@@ -53,6 +53,9 @@ namespace DFT_plus_DMFT
          DFT_output::KS_bands& band,
          DFT_plus_DMFT::Hilbert_space& space,
          const double beta, const double mu);
+
+    //Read chemical potential from DMFT_running.log; Used for spectrum function calculation
+    void read_chemical_potential();       
     
     //interfaces
     double mu_corrected(){return sigma_corrected_mu;}

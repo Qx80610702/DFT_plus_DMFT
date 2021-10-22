@@ -1,6 +1,6 @@
 #include "Kanamori_parameterization.h"
 #include "../constants.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 
 #include <fstream>
 #include <iomanip>
