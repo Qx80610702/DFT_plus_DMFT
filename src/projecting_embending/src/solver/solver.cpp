@@ -1,6 +1,6 @@
 #include "solver.h"
 #include "../mpi_environment.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../timer.h"
 #include "projector.h"
 #include "../constants.h"
@@ -15,17 +15,40 @@ namespace DFT_plus_DMFT
 {
   solver::solver(argument_lists& args):
   DMFT_iteration_step(args.global_step),
-  flag_eva_sigma_only(args.sigma_only)
+  flag_eva_sigma_only(args.sigma_only),
+  flag_eva_spectrum(args.cal_spectrum)
   {;}
 
-  bool solver::solve()
+  void solver::solve()
   {
     debug::codestamp("solver::sovle");
 
-    this->reading_inputs();
+    if(this->flag_eva_spectrum) this->cal_spectrum_func();
+    else this->DMFT_solve();
     
+    return;
+  }
+
+  void solver::DMFT_solve()
+  {
+    debug::codestamp("solver::DMFT_sovle");
+
+    double time;
+    double seconds;
+    timer::timestamp(time);
+
+    this->reading_inputs();
+
+    const int impurity_solver = *(int*)pars.in.parameter("impurity_solver");
+    if(impurity_solver==1 || 
+       impurity_solver==2 || 
+       impurity_solver==3 ||
+       impurity_solver==4 )
+       flag_axis = 0;       //imaginary axis
+    else flag_axis = 1;     //real axis
+
     this->flag_convergency = this->scf_update();
-    if(this->flag_eva_sigma_only || this->flag_convergency) return true;  //Only calculated the self enegy of last step
+    if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
 
     if(mpi_rank()==0)
     {
@@ -61,21 +84,99 @@ namespace DFT_plus_DMFT
           this->pars.atom, this->pars.in);
 
     if(this->DMFT_iteration_step==1)
-      this->imp.sigma.initial_guess( *(int*)this->pars.in.parameter("impurity_solver"), 
-                  this->pars.bands.soc(), this->pars.bands.nspins(), this->pars.atom );
+      this->imp.sigma.initial_guess( 
+            this->flag_axis, 
+            this->pars.bands.soc(), 
+            this->pars.bands.nspins(), 
+            this->pars.atom );
     
-    this->imp.sigma.subtract_double_counting(*(int*)pars.in.parameter("impurity_solver"));
+    this->imp.sigma.subtract_double_counting(this->flag_axis);
 
     this->Umat.update_coulomb_tensor(1, this->pars.atom);
 
     this->Mu.update_chemical_potential(
-             *(int*)this->pars.in.parameter("impurity_solver"),
-             this->pars.bands, this->pars.atom, this->proj, 
+             this->flag_axis, this->pars.bands, 
+             this->pars.atom, this->proj, 
              this->imp.sigma, this->pars.in, this->space );
 
     this->update_Anderson_impurities();
 
-    return false;
+    //prepare the file needed by impurity solver
+    if(mpi_rank()==0) this->output_to_impurity_solver(); 
+
+    timer::get_time(time, seconds);
+    if(mpi_rank()==0)
+      std::cout << "\nProjecting and embending time consuming (seconds): " << seconds << "\n" << std::endl;
+
+    return;
+  }
+
+  void solver::cal_spectrum_func()
+  {
+    debug::codestamp("solver::cal_spectrum_func");
+
+    double time;
+    double seconds;
+    timer::timestamp(time);
+
+    if(mpi_rank()==0)
+    {
+      std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+      std::cout << "<><><><><><><><><> Calculating spectrum <><><><><><><><><>\n";
+      std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;  
+    }
+
+    this->flag_axis = 1;   //real axis
+
+    this->reading_inputs();
+
+    this->imp.sigma.sigma_real.read_AC_sigma(
+          this->pars.bands, 
+          this->pars.in, 
+          this->pars.atom );
+
+    this->space.KS_bands_window(
+          this->pars.bands, 
+          this->pars.atom,
+          this->pars.in );
+    
+    this->Mu.evaluate_mu_bisection_imag_DFT(
+          this->pars.bands, this->pars.atom, 
+          this->pars.in, this->space );
+    
+    this->proj.elaluate_projector(
+          *(int*)pars.in.parameter("DFT_solver"),
+          pars.bands, this->space, this->pars.atom );
+    
+    this->imp.evaluate_local_occupation( 
+          this->pars.in, this->pars.bands, 
+          this->proj, this->pars.atom,
+          this->space, this->Mu.mu_DFT(),
+          *(int*)this->pars.in.parameter("n_omega"),
+          *(int*)this->pars.in.parameter("magnetism") );
+
+    this->imp.sigma.dc.cal_double_counting( 
+          *(int*)this->pars.in.parameter("double_counting"), 
+          this->pars.bands.soc(), this->pars.bands.nspins(), 
+          this->pars.atom, this->pars.in);
+    
+    this->imp.sigma.subtract_double_counting(this->flag_axis);
+    
+    this->Mu.read_chemical_potential();
+
+    this->Aw.eva_spectrum(
+          this->Mu.mu_corrected(),
+          this->pars.bands, this->pars.atom, 
+          this->proj, this->imp.sigma, 
+          this->pars.in, this->space );
+
+    if(mpi_rank()==0) this->Aw.out_spectrum();
+
+    timer::get_time(time, seconds);
+    if(mpi_rank()==0)
+      std::cout << "\nSpectrum evaluation time consuming (seconds): " << seconds << "\n" << std::endl;
+
+    return;
   }
 
   void solver::reading_inputs()
@@ -100,10 +201,7 @@ namespace DFT_plus_DMFT
 
     bool convergency=false;
 
-    if(*(int*)pars.in.parameter("impurity_solver")==1 ||
-       *(int*)pars.in.parameter("impurity_solver")==2 ||
-       *(int*)pars.in.parameter("impurity_solver")==3 ||
-       *(int*)pars.in.parameter("impurity_solver")==4 )
+    if(this->flag_axis==0)
     {
       this->imp.sigma.sigma_imag.nomega() = nomega;
       this->imp.sigma.sigma_imag.inverse_T() = beta;
@@ -160,13 +258,11 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::update_Anderson_impurities"); 
 
-    this->imp.evaluate_impurity_level(this->space, this->pars.bands, 
-            this->proj, this->pars.atom);
+    this->imp.evaluate_impurity_level(
+            this->space, this->pars.bands, 
+            this->proj, this->pars.atom );
 
-    if(*(int*)this->pars.in.parameter("impurity_solver")==1 ||
-       *(int*)this->pars.in.parameter("impurity_solver")==2 ||
-       *(int*)this->pars.in.parameter("impurity_solver")==3 ||
-       *(int*)this->pars.in.parameter("impurity_solver")==4 )
+    if(this->flag_axis==0)
     {
       this->imp.evaluate_Weiss_hybridization_imag(
             this->pars.bands, this->proj, 
@@ -175,12 +271,12 @@ namespace DFT_plus_DMFT
             *(int*)this->pars.in.parameter("magnetism"));
 
       // if(*(int*)this->pars.in.parameter("impurity_solver")!=4) 
-        this->imp.evaluate_delta_Weiss_tau(
-              *(int*)this->pars.in.parameter("impurity_solver"),
-              this->pars.atom, this->pars.bands.nspins(),
-              *(double*)this->pars.in.parameter("beta"),
-              *(int*)this->pars.in.parameter("n_tau"),
-              *(int*)this->pars.in.parameter("n_omega"));
+      this->imp.evaluate_delta_Weiss_tau(
+            *(int*)this->pars.in.parameter("impurity_solver"),
+            this->pars.atom, this->pars.bands.nspins(),
+            *(double*)this->pars.in.parameter("beta"),
+            *(int*)this->pars.in.parameter("n_tau"),
+            *(int*)this->pars.in.parameter("n_omega"));
     }
 
 // timer::get_time(time,seconds);
@@ -199,19 +295,6 @@ namespace DFT_plus_DMFT
     this->Umat.out_coulomb_tensor(1, this->DMFT_iteration_step,
                   *(int*)this->pars.in.parameter("impurity_solver"),
                   this->pars.atom, this->pars.bands);
-  }
-
-  void solver::post_processing()
-  {
-    debug::codestamp("solver::post_processing");
-
-    if(mpi_rank()==0)
-      this->post.spectrum.evaluate_local_spectrum(
-          this->pars.in, this->pars.atom, 
-          this->pars.bands, 
-          this->imp.Matsubara_Gf(),
-          this->imp.Matsubara_Gf_save(),
-          this->imp.sigma.sigma_imag.Matsubara_freq() );
   }
 
 }

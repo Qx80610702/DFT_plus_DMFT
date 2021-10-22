@@ -71,6 +71,5 @@ namespace DMFT
 
     double beta;
     int n_omega;
-    
   };
 }

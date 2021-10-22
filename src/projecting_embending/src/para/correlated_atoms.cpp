@@ -1,5 +1,5 @@
 #include "correlated_atoms.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../constants.h"
 #include "input.h"
 #include "../mpi_environment.h"

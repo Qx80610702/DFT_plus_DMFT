@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   std::cout.rdbuf(fileBuf);
 
   // Parsing commond line
-  argument_lists args_val ={1,false};
+  argument_lists args_val ={1,false,false};
   if(argc>1)
   {
     std::vector<std::string> all_args(argv+1,argv+argc);
@@ -35,20 +35,8 @@ int main(int argc, char **argv)
     }
   }
 
-  double time;
-  double seconds;
-  timer::timestamp(time);
-
   DFT_DMFT_solver psolver(args_val);
-
-  bool converg = psolver.solve();
-  
-  //prepare the file needed by impurity solver
-  if(mpi_rank()==0 && !psolver.convergency() && !args_val.sigma_only) psolver.output_to_impurity_solver(); 
-
-  timer::get_time(time, seconds);
-  if(mpi_rank()==0 && !psolver.convergency())
-    std::cout << "\nProjecting and embending time consuming (seconds): " << seconds << "\n" << std::endl;
+  psolver.solve();
 
   std::cout.rdbuf(coutBuf);
 
@@ -81,6 +69,8 @@ bool parsing_commond_line(std::vector<std::string>& all_args, argument_lists& ar
       args.global_step = atoi(arg.substr(pos_seg+1).c_str());
     else if(std::strcmp("eva.sigma_only", arg.substr(pos_begin, pos_seg-pos_begin).c_str())==0)
       args.sigma_only = (bool)atoi(arg.substr(pos_seg+1).c_str());
+    else if(std::strcmp("eva.spectrum", arg.substr(pos_begin, pos_seg-pos_begin).c_str())==0)
+      args.cal_spectrum = (bool)atoi(arg.substr(pos_seg+1).c_str());
     else
     {
       std::cout << "Illegal arguments : " << arg << '\n';

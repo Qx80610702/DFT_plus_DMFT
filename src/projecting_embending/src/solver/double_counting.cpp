@@ -1,6 +1,6 @@
 #include "double_counting.h"
 #include "../mpi_environment.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../constants.h"
 
 #include <iomanip>

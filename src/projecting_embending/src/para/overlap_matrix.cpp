@@ -1,5 +1,5 @@
 #include "overlap_matrix.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 
 #include <iostream>
 #include <cstdlib>

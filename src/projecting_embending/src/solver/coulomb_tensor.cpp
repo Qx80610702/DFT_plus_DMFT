@@ -1,6 +1,6 @@
 #include "coulomb_tensor.h"
 
-#include "../debug/debug.h"
+#include "../debug.h"
 
 namespace DMFT
 {

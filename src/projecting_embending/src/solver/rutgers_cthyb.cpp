@@ -1,6 +1,6 @@
 #include "rutgers_cthyb.h"
 
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../constants.h"
 
 #include <cmath>

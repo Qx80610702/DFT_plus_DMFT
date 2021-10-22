@@ -1,12 +1,10 @@
 /bin/run_dmft
-/bin/__pycache__/
-/build/analy_continuation/
+/build/maxent/
 /build/impurity_solver/
 /build/libraries/
 /build/projection_embeding
 /libraries/gsl-2.6/
-/src/analytic_continuation/skrams/skrams
-/src/analytic_continuation/maxent/maxent
+/src/maxent/maxent
 /src/impurity_solver/CTHYB-LG/
 /src/impurity_solver/Rutgers/
 /src/projecting_embending/bin/projection_embeding

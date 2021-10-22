@@ -1,5 +1,5 @@
 #include "KS_bands.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../mpi_environment.h"
 
 #include <fstream>

@@ -25,13 +25,13 @@ namespace DMFT
     bool read_sigma_save(const int impurity_solver, const bool SOC,
                          const int nspin, DFT_output::atoms_info& atom);
     
-    void initial_guess(const int impurity_solver, const bool SOC, 
+    void initial_guess(const int axis_flag, const bool SOC, 
                        const int nspin, DFT_output::atoms_info& atom);
 
-    void subtract_double_counting(const int impurity_solver);
+    void subtract_double_counting(const int axis_flag);  //0: imaginary axis, 1:real axis
 
     void evalute_lattice_sigma(
-        const int impurity_solver, const int mag, 
+        const int axis_flag, const int mag, 
         const int nspin, const std::vector<int>& wbands, 
         DFT_output::atoms_info& atom,
         const std::vector<std::vector<std::vector<
@@ -44,16 +44,16 @@ namespace DMFT
     // =================================================
     //             interface
     // =================================================
-    int nomega(const int impurity_solver);
+    int nomega(const int axis_flag); //0: imaginary axis, 1:real axis
 
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-              sigma_new(const int impurity_solver);
+              sigma_new(const int axis_flag); //0: imaginary axis, 1:real axis
 
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-              correlated_sigma(const int impurity_solver);
+              correlated_sigma(const int axis_flag); //0: imaginary axis, 1:real axis
 
     std::vector<std::vector<std::vector<std::complex<double>>>>&
-              lattice_sigma(const int impurity_solver);
+              lattice_sigma(const int axis_flag); //0: imaginary axis, 1:real axis
               
 void evalute_lattice_sigma_test(
     const int impurity_solver, const int mag, 
@@ -64,6 +64,7 @@ void evalute_lattice_sigma_test(
     std::vector<std::vector<std::vector<
     std::vector<std::complex<double>>>>>& sigma_loc,
     std::vector<std::vector<std::vector<
-    std::complex<double>>>>& lattice_sigma_tmp);    
+    std::complex<double>>>>& lattice_sigma_tmp);
+
   };
 }

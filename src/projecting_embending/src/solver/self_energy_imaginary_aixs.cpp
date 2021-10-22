@@ -1,6 +1,6 @@
 #include "self_energy_imaginary_aixs.h"
 
-#include "../debug/debug.h"
+#include "../debug.h"
 
 #include <fstream>
 #include <iostream>

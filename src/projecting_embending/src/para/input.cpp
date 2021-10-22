@@ -1,6 +1,6 @@
 #include "input.h"
 #include "../constants.h"
-#include "../debug/debug.h"
+#include "../debug.h"
 #include "../mpi_environment.h"
 
 #include <fstream>
@@ -208,7 +208,7 @@ namespace DMFT
       ifs.getline(word, 100);   
       if(ifs.eof()) break;
       
-      this->strtolower(word, word_low);
+      DMFT::input_info::strtolower(word, word_low);
 
       std::string line(word_low);
 
