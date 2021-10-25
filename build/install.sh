@@ -369,8 +369,7 @@ do
   #==================================================
   #     Run projecting and embeding
   #==================================================
-  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT \\
-  -dmft.step=\$i -eva.sigma_only=0
+  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -dmft.step \$i
 
   if [ \$? -ne 0 ]; then
     echo "Errors occured in running projecting_embeding"

@@ -115,49 +115,68 @@ def out_kpoints_to_dft_solver(DFT_solver, kponits):
         ofs.close()
         
 if __name__ == '__main__':
-    matplotlib.rcParams['lines.linewidth']=0.5
+    matplotlib.rcParams['lines.linewidth'] = 0.5
     matplotlib.rcParams['xtick.direction'] = 'in'
     matplotlib.rcParams['ytick.direction'] = 'out'
     # matplotlib.rcParams['figure.dpi'] = 500
     # matplotlib.rcParams['savefig.dpi'] = 500
 
-    omega = np.loadtxt("self-energy/impurity0/Sigma_omega.dat")[::-1,0]
-    eup=omega[0]
-    edw=omega[-1]
+    #=======parameters========
+    Awf = " "
+    eup = 20.0
+    edw = -20.0
+    Etciks = 2.0
+    intensity = 1.0
+    showcolorbar = 1
+    outfig = "bands.png"
+
+    #======frequency====
+    omega = np.loadtxt("self-energy/impurity0/Sigma_omega.dat")[:,0]
+    eup=omega[-1]
+    edw=omega[0]
 
     # ====pasrsing command line======
-    Awf = ""
-    yincr = 1.0
     if(len(sys.argv)<2):
         print("Please give spectrum file")
         exit
     else:
-        for i in range(1,len(sys.argv)):
-            if sys.argv[i].find('=') != -1:
-                if sys.argv[i][0] == '-':
-                    pars=sys.argv[i].split("=")
-                    if pars[0] == "-eup": eup=float(pars[1])
-                    elif pars[0] == "-edw": edw=float(pars[1])
-                    elif pars[0] == "-yincr": yincr=float(pars[1])
-                else: print("Unsupported parameters ", sys.argv[i].split('=')[0])
-            else: Awf=sys.argv[i]
+        i=1
+        while i < len(sys.argv):
+            if sys.argv[i].find('-') == -1:
+                Awf=sys.argv[i]
+                i = i + 1
+            else:
+                if sys.argv[i].lower() == "-eup": eup=float(sys.argv[i+1])
+                elif sys.argv[i].lower() == "-edw": edw=float(sys.argv[i+1])
+                elif sys.argv[i].lower() == "-eticks": Etciks=float(sys.argv[i+1])
+                elif sys.argv[i].lower() == "-contrast": intensity=float(sys.argv[i+1])
+                elif sys.argv[i].lower() == "-colorbar": showcolorbar=int(sys.argv[i+1])
+                elif sys.argv[i].lower() == "-o": outfig=sys.argv[i+1]
+                else: 
+                    print("Unsupported parameters ", sys.argv[i])
+                    exit
+                i = i + 2
+    
+    if Awf == " " :
+        print("Please give spectrum file")
+        exit
 
     Awk = np.loadtxt(Awf)
 
     max_index = 0
     for i in range(len(omega)):
-        if omega[i] <= eup:
+        if omega[i] >= eup:
           max_index=i
           break
     
     min_index = len(omega)
     for i in range(len(omega)):
-        if omega[i] <= edw:
+        if omega[i] >= edw:
           min_index=i
           break
 
-    omegaw = omega[max_index:min_index+1]
-    Awkw = Awk[max_index:min_index+1,:]
+    omegaw = omega[min_index:max_index+1]
+    Awkw = Awk[min_index:max_index+1,:]
 
     #======Parsing high symmetry k-points======
     DFT_solver = parsing_DFT_solver()
@@ -166,9 +185,11 @@ if __name__ == '__main__':
     kpath, knames, nks = read_kpath()
     kpoints, sym_kpt = cal_kpoints(kpath, knames, nks, rlatvec)
 
+    vmm = [0,max(map(max,Awkw))*intensity]
+
     plt.xticks([])
-    plt.imshow(Awkw, interpolation='bilinear', cmap=cm.hot, aspect='auto' )
-    plt.colorbar()
+    plt.imshow(Awkw, origin='lower', interpolation='bilinear', cmap=cm.plasma, vmin=vmm[0], vmax=vmm[1], aspect='auto')
+    if showcolorbar==1: plt.colorbar()
 
     #===== x axis=====
     tickx = []
@@ -177,18 +198,24 @@ if __name__ == '__main__':
         tickx += [ int(ik) ]
         if names.lower()=="gamma":
             names = "$\\Gamma$"
+        elif names.lower()=="delta":
+            names = "$\\Delta$"
+        elif names.lower()=="lambda":
+            names = "$\\Lambda$"
+        elif names.lower()=="sigma":
+            names = "$\\Sigma$"
         tickn += [ names ]
         plt.axvline(float(ik), color='w',linestyle="-")
     plt.xticks(tickx, tickn)
 
     #====y axis====
     exec(open("maxent_params.dat").read())
-    npoints=int(yincr/float(params['Dw']))
+    npoints=int(Etciks/float(params['Dw']))
     plt.yticks(np.arange(0,len(omegaw),npoints), omegaw[::npoints])
 
-    # # plt.imshow( Awk, interpolation='bilinear', cmap=_cmap_, \
-    #         # origin='lower', vmin=vmm[0], vmax=vmm[1], \
-    #         # extent=[xmin,xmax,ymin,ymax], aspect=(xmax-xmin)*0.8/(ymax-ymin) )
+    if eup>0.0 and edw <0.0:
+        Fermi = int(abs(edw)/float(params['Dw']))
+        plt.axhline(Fermi, color='w', linestyle=":")
 
-    plt.savefig('bands.png')
+    plt.savefig(outfig)
     plt.show()

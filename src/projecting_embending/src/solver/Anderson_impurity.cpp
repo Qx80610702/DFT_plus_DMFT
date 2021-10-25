@@ -304,39 +304,39 @@ namespace DMFT
             local_symmetry, corr_L, m_tot, &this->Green_fun_omega[ineq][is][iomega][0] );
 
 // tests
-if(mpi_rank()==0)
-{
-std::ofstream ofs_gf("Gf_omega.dat", std::ios::out);
-for(int iomega=0; iomega<nomega; iomega++)
-{
-  for(int is=0; is<2; is++)
-  {
-    for(int m1=0; m1<m_tot; m1++)
-       for(int m2=0; m2<m_tot; m2++)
-        if(nspin==1)
-          ofs_gf << std::setw(5) << iomega
-           << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
-           << std::setw(15) << std::fixed << std::setprecision(9)
-           << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/Hartree_to_eV
-           << std::setw(15) << std::fixed << std::setprecision(9) 
-           << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/Hartree_to_eV
-           << std::setw(15) << std::fixed << std::setprecision(9) 
-           << std::sqrt(std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/Hartree_to_eV,2) +
-              std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/Hartree_to_eV,2))<< '\n';
-        else
-          ofs_gf << std::setw(5) << iomega 
-           << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
-           << std::setw(15) << std::fixed << std::setprecision(9)
-           << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/Hartree_to_eV
-           << std::setw(15) << std::fixed << std::setprecision(9) 
-           << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/Hartree_to_eV 
-           << std::setw(15) << std::fixed << std::setprecision(9) 
-           << std::sqrt(std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/Hartree_to_eV,2) +
-              std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/Hartree_to_eV,2))<< '\n';  
-  }
-}
-ofs_gf.close();
-}
+// if(mpi_rank()==0)
+// {
+// std::ofstream ofs_gf("Gf_omega.dat", std::ios::out);
+// for(int iomega=0; iomega<nomega; iomega++)
+// {
+//   for(int is=0; is<2; is++)
+//   {
+//     for(int m1=0; m1<m_tot; m1++)
+//        for(int m2=0; m2<m_tot; m2++)
+//         if(nspin==1)
+//           ofs_gf << std::setw(5) << iomega
+//            << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
+//            << std::setw(15) << std::fixed << std::setprecision(9)
+//            << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/Hartree_to_eV
+//            << std::setw(15) << std::fixed << std::setprecision(9) 
+//            << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/Hartree_to_eV
+//            << std::setw(15) << std::fixed << std::setprecision(9) 
+//            << std::sqrt(std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/Hartree_to_eV,2) +
+//               std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/Hartree_to_eV,2))<< '\n';
+//         else
+//           ofs_gf << std::setw(5) << iomega 
+//            << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
+//            << std::setw(15) << std::fixed << std::setprecision(9)
+//            << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/Hartree_to_eV
+//            << std::setw(15) << std::fixed << std::setprecision(9) 
+//            << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/Hartree_to_eV 
+//            << std::setw(15) << std::fixed << std::setprecision(9) 
+//            << std::sqrt(std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/Hartree_to_eV,2) +
+//               std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/Hartree_to_eV,2))<< '\n';  
+//   }
+// }
+// ofs_gf.close();
+// }
     }//ineq
 
     //==========================================================================
@@ -582,34 +582,34 @@ ofs_gf.close();
 //===========================================
 //           write delta_tau.txt
 //===========================================
-if(mpi_rank()==0)
-{
-  std::ofstream ofs("Delta_tau.dat", std::ios::out);
-  for(int itau=0; itau<ntau+1; itau++)
-  {
-    ofs << std::setw(5) << itau;
+// if(mpi_rank()==0)
+// {
+//   std::ofstream ofs("Delta_tau.dat", std::ios::out);
+//   for(int itau=0; itau<ntau+1; itau++)
+//   {
+//     ofs << std::setw(5) << itau;
   
-    for(int m=0; m<m_tot; m++)
-    {
-      if(nspin==2)
-      {
-        ofs << std::setw(22) << std::fixed << std::setprecision(15) << 
-        std::pow(Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
-        << std::setw(22) << std::fixed << std::setprecision(15)
-        << std::pow(Hartree_to_eV,2)*hyb[ineq][1][itau][m*m_tot+m].real();
-      }
-      else
-      {
-        ofs << std::setw(22) << std::fixed << std::setprecision(15) << 
-        std::pow(Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
-        << std::setw(22) << std::fixed << std::setprecision(15)
-        << std::pow(Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real();
-      }
-    }//m_index
-    ofs << '\n';
-  }//itau
-  ofs.close();
-}
+//     for(int m=0; m<m_tot; m++)
+//     {
+//       if(nspin==2)
+//       {
+//         ofs << std::setw(22) << std::fixed << std::setprecision(15) << 
+//         std::pow(Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
+//         << std::setw(22) << std::fixed << std::setprecision(15)
+//         << std::pow(Hartree_to_eV,2)*hyb[ineq][1][itau][m*m_tot+m].real();
+//       }
+//       else
+//       {
+//         ofs << std::setw(22) << std::fixed << std::setprecision(15) << 
+//         std::pow(Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
+//         << std::setw(22) << std::fixed << std::setprecision(15)
+//         << std::pow(Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real();
+//       }
+//     }//m_index
+//     ofs << '\n';
+//   }//itau
+//   ofs.close();
+// }
     }//ineq
 
     return;

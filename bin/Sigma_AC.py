@@ -88,9 +88,10 @@ if __name__ == '__main__':
     if len(sys.argv)<2:
         DMFT_step=1
         for step_dir in os.listdir("impurity_solving/"):
-            N=int(step_dir[-1])
-            if N > DMFT_step:
-                DMFT_step=N
+            if step_dir.find("step") != -1:
+                N=int(step_dir.split("p")[-1])
+                if N > DMFT_step:
+                    DMFT_step=N
     else: 
         DMFT_step = int(sys.argv[1])
     
@@ -202,7 +203,10 @@ if __name__ == '__main__':
             os.chdir("self-energy/impurity"+str(imp))
 
             sigma0=np.loadtxt("orb0/sig.out")
-            mag_num = len(os.listdir("./"))
+            mag_num=0
+            for dir in os.listdir("./"):
+                if dir.find("orb") != -1:
+                    mag_num = mag_num + 1
             Sigma_data = np.zeros((sigma0.shape[0],2*mag_num+1), dtype=float)
             Sigma_data[:,0] = sigma0[:,0]
             Sigma_data[:,1] = sigma0[:,1]
