@@ -29,7 +29,10 @@ class spectrum
 
   private:
   //Spectrum function; Awk[is][iomega][ik]
-  std::vector<std::vector<std::vector<double>>> Awk;       
+  std::vector<std::vector<std::vector<double>>> Awk;    
+
+  //Spectrum function; DOS[is][iomega]
+  std::vector<std::vector<double>> DOS;    
 
   //Spectrum function; Aw_loc[ineq][is][iomega][m] 
   std::vector<std::vector<std::vector<std::vector<double>>>> Aw_loc;   

@@ -7,7 +7,11 @@ from mpi4py import MPI
 maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/build/maxent/maxent"
 
 def Broad(width, om, fw):
-    " Broadens the data with gaussian of width=width"
+    '''
+      Broadens the data with gaussian of width=width; 
+      gotten from EDMFT http://hauleweb.rutgers.edu/tutorials/index.html
+    '''
+
     def MakeTanMesh(N, tanc, tanw, b0, b1):
         if not(b0<b1): print("Relation must hold: b0<b1!")
         if not(b0<tanw and tanw<b1): print("Relation mesu hold: b0<tanw<b1!")
@@ -34,6 +38,9 @@ def Broad(width, om, fw):
     return np.array(fwn)
 
 def GiveTanMesh(x0,L,Nw):
+    '''
+      gotten from EDMFT http://hauleweb.rutgers.edu/tutorials/index.html
+    '''
     def fun(x,x0,L,Nw):
         "x[0]=d, x[1]=w"
         d=x[0]
@@ -164,7 +171,10 @@ if __name__ == '__main__':
             os.chdir("Aw_loc/impurity"+str(imp))
 
             dos0=np.loadtxt("orb0/dos.out")
-            mag_num = len(os.listdir("./"))
+            mag_num=0
+            for dir in os.listdir("./"):
+                if dir.find("orb") != -1:
+                    mag_num = mag_num + 1
             Aw_data = np.zeros((dos0.shape[0],mag_num+1), dtype=float)
             for m in range(mag_num):
                 dos_tmp=np.loadtxt("orb" + str(m) + "/dos.out")

@@ -47,33 +47,29 @@ int main(int argc, char **argv)
 
 bool parsing_commond_line(std::vector<std::string>& all_args, argument_lists& args)
 {
-  for(const std::string& arg : all_args)
+  for(std::vector<std::string>::iterator iter=all_args.begin(); iter!=all_args.end(); iter += 2)
   {
+    std::string param = *iter;
+    std::string value = *(iter+1);
+    
     size_t pos_begin=0;
-    if (arg.substr(0,2)=="--") pos_begin=2;
-    else if(arg.substr(0,1)=="-") pos_begin=1;
+    if (param.substr(0,2)=="--") pos_begin=2;
+    else if(param.substr(0,1)=="-") pos_begin=1;
     else
     {
-      std::cout << "Error argument : " << arg << '\n';
+      std::cout << "Error argument : " << param << '\n';
       std::exit(EXIT_FAILURE);
     }
 
-    size_t pos_seg = arg.find('=');
-    if(pos_seg == std::string::npos)
-    {
-      std::cout << "Error argument : " << arg << '\n';
-      std::exit(EXIT_FAILURE);
-    }
-
-    if(std::strcmp("dmft.step", arg.substr(pos_begin, pos_seg-pos_begin).c_str())==0)
-      args.global_step = atoi(arg.substr(pos_seg+1).c_str());
-    else if(std::strcmp("eva.sigma_only", arg.substr(pos_begin, pos_seg-pos_begin).c_str())==0)
-      args.sigma_only = (bool)atoi(arg.substr(pos_seg+1).c_str());
-    else if(std::strcmp("eva.spectrum", arg.substr(pos_begin, pos_seg-pos_begin).c_str())==0)
-      args.cal_spectrum = (bool)atoi(arg.substr(pos_seg+1).c_str());
+    if(std::strcmp("dmft.step", param.substr(pos_begin).c_str())==0)
+      args.global_step = atoi(value.c_str());
+    else if(std::strcmp("eva.sigma_only", param.substr(pos_begin).c_str())==0)
+      args.sigma_only = (bool)atoi(value.c_str());
+    else if(std::strcmp("eva.spectrum", param.substr(pos_begin).c_str())==0)
+      args.cal_spectrum = (bool)atoi(value.c_str());
     else
     {
-      std::cout << "Illegal arguments : " << arg << '\n';
+      std::cout << "Illegal arguments : " << param << '\n';
       std::exit(EXIT_FAILURE);
     }
   }

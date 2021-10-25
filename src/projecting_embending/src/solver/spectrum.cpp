@@ -49,6 +49,10 @@ void spectrum::eva_spectrum(
       this->Awk[is][iomega].resize(nks,0.0);
   }
 
+  this->DOS.resize(nspin);
+  for(int is=0; is<nspin; is++)
+    this->DOS[is].resize(nomega, 0.0);
+
   this->Aw_loc.resize(ineq_num);
   for(int ineq=0; ineq<ineq_num; ineq++)
   {
@@ -153,6 +157,11 @@ void spectrum::eva_spectrum(
                     MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
     }
   }
+  
+  for(int is=0; is<nspin; is++)
+    for(int iomega=0; iomega<nomega; iomega++)
+      for(int ik=0; ik<nks; ik++)
+        this->DOS[is][iomega] = this->Awk[is][iomega][ik]*fk[ik];
 
   for(int ineq=0; ineq<ineq_num; ineq++)
   {
@@ -190,13 +199,29 @@ void spectrum::out_spectrum()
     ss << "Awk_spin" << is << ".dat";
     std::ofstream ofs(ss.str().c_str(), std::ios::out);
 
-    //Inverse order of omega for plotting using matplot imshow
-    for(std::vector<std::vector<double>>::reverse_iterator iter1=this->Awk[is].rbegin(); iter1!=this->Awk[is].rend(); iter1++)
+    for(std::vector<std::vector<double>>::iterator iter1=this->Awk[is].begin(); iter1!=this->Awk[is].end(); iter1++)
     {
       for(double iter2 : *iter1)
         ofs << std::fixed << std::setprecision(6) << iter2 << " ";
       ofs << std::endl;
     }
+    ofs.close();
+  }
+
+  for(int is=0; is<this->Awk.size(); is++)
+  {
+    std::stringstream ss;
+    ss << "DOS_spin" << is << ".dat";
+    std::ofstream ofs(ss.str().c_str(), std::ios::out);
+
+    for(int iomega=0; iomega<this->DOS[is].size(); iomega++)
+    {
+      double omega=this->freq[iomega]*Hartree_to_eV;
+      
+      ofs << std::fixed << std::setprecision(6) << omega << " "
+          << std::fixed << std::setprecision(6) << this->DOS[is][iomega] << std::endl ;
+    }
+    
     ofs.close();
   }
 

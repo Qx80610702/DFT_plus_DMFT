@@ -1,3 +1,5 @@
+! Program implementing maximum entropy method; contributed from G.L.
+
 program maxentropy
   IMPLICIT NONE
   INTEGER :: nt, nw
