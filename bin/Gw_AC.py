@@ -77,6 +77,18 @@ if __name__ == '__main__':
     sym = open("../DFT/outputs_to_DMFT/symmetry.dat",'r')
     ineq_num=int(sym.readlines()[1])
 
+    impurity_solver="pacs_cthyb"
+    for line in open("./DMFT.in"):
+        strings = line.strip().split()
+        if strings[0].lower() == "impurity_solver":
+            impurity_solver=strings[1]
+
+    Gtf="GtRaw.dat"
+    if impurity_solver == "pacs_cthyb":
+        Gtf="GtRaw.dat"
+    elif impurity_solver == "rutgers_cthyb":
+        Gtf="Gt.dat"
+
     # Read maxent_params.dat
     if not os.path.exists("maxent_params.dat"):
         print("Please give file maxent_prams.dat!!!")
@@ -90,7 +102,7 @@ if __name__ == '__main__':
     for ineq in range(ineq_num):
         Gt_tmp=np.loadtxt("impurity_solving/step" \
                         +str(DMFT_step)+"/impurity"\
-                        +str(ineq)+"/Gt.dat", dtype=float)
+                        +str(ineq)+"/" + Gtf, dtype=float)
         Norb += Gt_tmp.shape[1]-1
         Gt_data.append(Gt_tmp)
         for m in range(Gt_tmp.shape[1]-1):

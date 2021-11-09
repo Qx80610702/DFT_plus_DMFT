@@ -93,7 +93,7 @@ namespace DMFT
 
       if(std::strcmp("alps_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 1;
       else if(std::strcmp("alps_cthyb_segment",str_val[0].c_str())==0) this->flag_impurity_solver = 2;
-      else if(std::strcmp("lg_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 3;
+      else if(std::strcmp("pacs_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 3;
       else if(std::strcmp("rutgers_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 4;
       else
       {
@@ -106,7 +106,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: impurity_solver is not given and set default value rutgers_cthyb" << std::endl;
+      if(mpi_rank()==0) std::cout << "Warning: impurity_solver is not given and set default value pacs_cthyb" << std::endl;
         this->flag_impurity_solver = 3;
     }
 

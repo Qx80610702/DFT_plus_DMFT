@@ -51,49 +51,52 @@ fi
 #====================================
 test -d $root_dir/build/impurity_solver || mkdir $root_dir/build/impurity_solver
 
-#========  LG_CTHYB ========
-if [ ! -f $root_dir/build/impurity_solver/CTHYB-LG/CTHYB ]
+#========  PACS_CTHYB ========
+if [ ! -f $root_dir/build/impurity_solver/PACS/pacs.cthyb ]
 then
-  test -d $root_dir/build/impurity_solver/CTHYB-LG || mkdir $root_dir/build/impurity_solver/CTHYB-LG
+  test -d $root_dir/build/impurity_solver/PACS || mkdir $root_dir/build/impurity_solver/PACS
   cd $root_dir/src/impurity_solver
-  test -d CTHYB-LG || mkdir CTHYB-LG
-  cd CTHYB-LG
+  test -d PACS_cthyb && rm -rf PACS_cthyb
 
-  cp ../CTHYB-LG.tar.gz .
-  tar -zxvf CTHYB-LG.tar.gz
-  rm CTHYB-LG.tar.gz
+  tar -zxvf PACS_cthyb.tar.gz
+  cd PACS_cthyb
 
 cat > Makefile << EOF
-FC        = $MPI_FC
-FC_FLAGS  = -O3 -xHost -nogen-interface # -ipo -traceback -implicitnone -warn all -check bounds  
-#LIB   = -lmkl_intel_thread -lmkl_intel_lp64 -lmkl_core -liomp5 -lpthread
-LIB   =  -L\${MKLROOT}/lib/intel64 -lmkl_rt -lpthread -lm -ldl
+FC         = $MPI_FC
+FC_FLAGS   = -O3 -xHost -nogen-interface # -ipo -traceback -implicitnone -warn all -check bounds   
+#FC        = mpif90
+#FC_FLAGS  = -Wall -Wextra -pedantic -Wconversion -fbacktrace -fbounds-check -ffree-line-length-none
+LIB        =  -L\${MKLROOT}/lib/intel64 -lmkl_rt -lpthread -lm -ldl
 
 .suffixes : .mod .o .f90
 
 %.o:  %.f90
 	\$(FC) \$(FC_FLAGS) -c \$<
 
-SRC = GlobalVariables.f90 ctqmc_math.f90 MPI_mod.f90 Segment_Util.f90 Segment_MonteCarlo.f90 Segment_Phys.f90 Segment_Main.f90  
+SRC = GlobalVariables.f90 \\
+      ctqmc_math.f90 MPI_mod.f90 \\
+      Segment_Util.f90 Segment_MonteCarlo.f90 Segment_Phys.f90 \\
+      Segment_LibraryMode.f90  Input_Parameters.f90 main.f90 
 
 OBJ = \$(SRC:.f90=.o)
 
 intel: \$(OBJ)
-	\$(FC) \$(OBJ) \$(FC_FLAGS) -o CTHYB \$(LIB)  
+	\$(FC) \$(OBJ) \$(FC_FLAGS) -o ./pacs.cthyb \$(LIB)  
 clean:
-	rm -f *.o *.mod *~ CTHYB
+	rm -f *.o *.mod *~ ./pacs.cthyb
 EOF
 
   make
+
   if [ $? -eq 0 ]; then
-    mv CTHYB $root_dir/build/impurity_solver/CTHYB-LG/
+    mv pacs.cthyb $root_dir/build/impurity_solver/PACS/
   else
-    echo "Errors in building LG-CTHYB"
+    echo "Errors in building PACS-CTHYB"
     exit
   fi
   cd $root_dir
 else
-  cd $root_dir/src/impurity_solver/CTHYB-LG
+  cd $root_dir/src/impurity_solver/PACS_cthyb
   # make clean
   # make
   # if [ $? -eq 0 ]; then
@@ -213,7 +216,7 @@ double_counting.o \\
 coulomb_tensor.o \\
 Kanamori_parameterization.o \\
 Anderson_impurity.o \\
-LG_cthyb.o \\
+PACS_cthyb.o \\
 alps_cthyb.o \\
 alps_cthyb_segment.o \\
 rutgers_cthyb.o \\
@@ -284,13 +287,20 @@ cat > run_dmft <<EOF1
 EXE_DMFT=$root_dir/build/projection_embeding
 EXE_ALPS_CTHYB=$root_dir/build/impurity_solver/ALPS-CTHYB/bin/hybmat
 EXE_ALPS_CTHYB_SEGMENT=$root_dir/build/impurity_solver/ALPS-CTHYB-SEGMENT/bin/alps_cthyb
-EXE_LG_CTHYB=$root_dir/build/impurity_solver/CTHYB-LG/CTHYB
+EXE_PACS_CTHYB=$root_dir/build/impurity_solver/PACS/pacs.cthyb
 EXE_RUTGERS_CTHYB=$root_dir/build/impurity_solver/Rutgers/ctqmc
 
 #===========================================
 #            PART 1
 #Determine the number of process and threads
 #===========================================
+nodes=1
+num_threads=1
+
+if [ \$# -eq 0 ];then
+  echo "Warrning: Arguments nodes and num_threads are not given, and you will run the job with 1 process and 1 thread!!!"
+fi
+
 while [ \$# != 0 ]
 do
   case \$1 in
@@ -304,7 +314,6 @@ do
   ;;
   *)
     echo "ERROR: option \$1 does not exist"
-    exit
   esac
 
   shift;
@@ -317,7 +326,7 @@ nprocess=\`echo "\$nodes * \$num_threads" | bc\`
 #===================================================
 
 #==============impurity solver type=================
-impurity_solver=\`grep -i "impurity_solver" DMFT.in | grep -v "#" | awk '{print \$2}'\`
+impurity_solver=\`grep -i "impurity_solver" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
 impurity_solver_lower_case=\`echo \$impurity_solver | tr A-Z a-z\`
 case \$impurity_solver_lower_case in
   "alps_cthyb")
@@ -326,11 +335,14 @@ case \$impurity_solver_lower_case in
   "alps_cthyb_segment")
     impurity_solver_type=2
   ;;
-  "lg_cthyb")
+  "pacs_cthyb")
     impurity_solver_type=3
   ;;
   "rutgers_cthyb")
     impurity_solver_type=4
+  ;;
+  "")
+    impurity_solver_type=3
   ;;
   *)
     echo "ERROR: unsupported impurity solver"
@@ -339,10 +351,13 @@ esac
 #echo "impurity_solver_type: \$impurity_solver_type"
 
 #===============magnetism===================
-magnetism=\`grep -i "magnetism" DMFT.in | grep -v "#" | awk '{print \$2}' | tr A-Z a-z\`
+magnetism=\`grep -i "magnetism" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}' | tr A-Z a-z\`
 
 #=============DMFT iteration step=================
-DMFT_step=\`grep -i "DMFT_step" DMFT.in | grep -v "#" | awk '{print \$2}'\`
+DMFT_step=\`grep -i "max_DMFT_step" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
+if [ -z \$DMFT_step ];then
+  DMFT_step=10
+fi
 
 if [ -d impurity_solving ]
 then
@@ -460,7 +475,7 @@ do
         fi
       fi
     elif [ \$impurity_solver_type -eq 3 ]; then
-      mpirun \$EXE_LG_CTHYB 1>CTHYB.log 2>CTHYB.error
+      mpirun \$EXE_PACS_CTHYB 1>PACS_cthyb.log 2>PACS_cthyb.error
 
       if [ \$? -ne 0 ];then
         echo "Errors occured in running impurity solver solving \$dir_imp !!!"
@@ -485,7 +500,39 @@ do
 done #DMFT self-consistency loop
 EOF1
 
+test -f cal_spectrum && rm cal_spectrum
+cat > cal_spectrum << EOF2
+#!/bin/bash
+nodes=1
+num_threads=1
+
+if [ \$# -eq 0 ];then
+  echo "Warrning: Arguments nodes and num_threads are not given, and you will run the job with 1 process and 1 thread!!!"
+fi
+
+while [ \$# != 0 ]
+do
+  case \$1 in
+  "-nodes")
+    shift
+    nodes=\$1
+  ;;
+  "-num_threads")
+    shift
+    num_threads=\$1
+  ;;
+  *)
+    echo "ERROR: option \$1 does not exist"
+  esac
+
+  shift;
+done
+
+mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads $root_dir/build/projection_embeding -eva.spectrum 1
+EOF2
+
 chmod +x run_dmft
+chmod +x cal_spectrum
 
 #========Gw_AC.py=======
 sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/maxent/maxent\""" Gw_AC.py
