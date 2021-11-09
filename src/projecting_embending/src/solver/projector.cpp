@@ -9,15 +9,15 @@
 #include <omp.h> 
 #include <memory>
 
-  #define MKL_Complex16 std::complex<double>
-  #include <mkl.h>
+#define MKL_Complex16 std::complex<double>
+#include <mkl.h>
 
 //test
-#include <fstream>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include <cmath>
+// #include <fstream>
+// #include <iomanip>
+// #include <sstream>
+// #include <string>
+// #include <cmath>
 
 namespace DFT_plus_DMFT
 {
@@ -394,69 +394,69 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void projector::evalute_projector_k(
-        DFT_output::overlap_matrix& ovlp,
-        DFT_output::KS_eigenvectors& wfc,
-        DFT_output::atoms_info& atom,
-        const int ik,
-        const int ik_count)
-  {
-    debug::codestamp("DFT_plus_DMFT::evalute_projector_k");
+//   void projector::evalute_projector_k(
+//         DFT_output::overlap_matrix& ovlp,
+//         DFT_output::KS_eigenvectors& wfc,
+//         DFT_output::atoms_info& atom,
+//         const int ik,
+//         const int ik_count)
+//   {
+//     debug::codestamp("DFT_plus_DMFT::evalute_projector_k");
 
-    const std::vector<std::vector<std::complex<double>>>& 
-          eigenvec=wfc.wave_c();
+//     const std::vector<std::vector<std::complex<double>>>& 
+//           eigenvec=wfc.wave_c();
 
-const int nbands=wfc.nband();
-const int NBANDS_square=nbands*nbands;
-const int nspin_tmp=wfc.nspin();
-const int nbasis = wfc.basis_n();
-const auto& ovlp_mat_all=ovlp.ovlp_aims.ovlp_mat_work();
-const std::complex<double> zero(0.0,0.0);
-std::vector<std::vector<std::complex<double>>> norm_tmp;
-norm_tmp.resize(nspin_tmp);
-for(int is=0; is<nspin_tmp; is++)
-{
-  const std::complex<double> alpha(1.0,0.0);
-  const std::complex<double> beta(0.0,0.0);
-  norm_tmp[is].resize(NBANDS_square);
+// const int nbands=wfc.nband();
+// const int NBANDS_square=nbands*nbands;
+// const int nspin_tmp=wfc.nspin();
+// const int nbasis = wfc.basis_n();
+// const auto& ovlp_mat_all=ovlp.ovlp_aims.ovlp_mat_work();
+// const std::complex<double> zero(0.0,0.0);
+// std::vector<std::vector<std::complex<double>>> norm_tmp;
+// norm_tmp.resize(nspin_tmp);
+// for(int is=0; is<nspin_tmp; is++)
+// {
+//   const std::complex<double> alpha(1.0,0.0);
+//   const std::complex<double> beta(0.0,0.0);
+//   norm_tmp[is].resize(NBANDS_square);
 
-  std::unique_ptr<std::complex<double>[]> product_mat(new std::complex<double> [nbands*nbasis]);
+//   std::unique_ptr<std::complex<double>[]> product_mat(new std::complex<double> [nbands*nbasis]);
 
-  cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-            nbands, nbasis, nbasis,
-            &alpha,
-            &eigenvec[is][0], nbands,
-            &ovlp_mat_all[0], nbasis,
-            &beta,
-            &product_mat[0], nbasis);
+//   cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
+//             nbands, nbasis, nbasis,
+//             &alpha,
+//             &eigenvec[is][0], nbands,
+//             &ovlp_mat_all[0], nbasis,
+//             &beta,
+//             &product_mat[0], nbasis);
   
-  cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            nbands, nbands, nbasis,
-            &alpha,
-            &product_mat[0], nbasis,
-            &eigenvec[is][0], nbands,
-            &beta,
-            &norm_tmp[is][0], nbands);
+//   cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+//             nbands, nbands, nbasis,
+//             &alpha,
+//             &product_mat[0], nbasis,
+//             &eigenvec[is][0], nbands,
+//             &beta,
+//             &norm_tmp[is][0], nbands);
   
-}
-  std::stringstream ss;
-  ss << "wavefuction_orthomormality/norm_ik" << ik << ".dat";
-  std::ofstream ofs(ss.str().c_str(), std::ios::out);
-  for(int is=0; is<nspin_tmp; is++)
-  {
-    for(int band_index=0; band_index<NBANDS_square; band_index++)
-    {
-      const int iband1=band_index/nbands;
-      const int iband2=band_index%nbands;
-      ofs << std::setw(3) << is << std::setw(5) << iband1 << std::setw(5) << iband2
-      << std::setw(12) << std::fixed << std::setprecision(6) << norm_tmp[is][band_index].real() 
-      << std::setw(12) << std::fixed << std::setprecision(6) << norm_tmp[is][band_index].imag() << '\n';
-    }
-  }
-  ofs.close();
+// }
+//   std::stringstream ss;
+//   ss << "wavefuction_orthomormality/norm_ik" << ik << ".dat";
+//   std::ofstream ofs(ss.str().c_str(), std::ios::out);
+//   for(int is=0; is<nspin_tmp; is++)
+//   {
+//     for(int band_index=0; band_index<NBANDS_square; band_index++)
+//     {
+//       const int iband1=band_index/nbands;
+//       const int iband2=band_index%nbands;
+//       ofs << std::setw(3) << is << std::setw(5) << iband1 << std::setw(5) << iband2
+//       << std::setw(12) << std::fixed << std::setprecision(6) << norm_tmp[is][band_index].real() 
+//       << std::setw(12) << std::fixed << std::setprecision(6) << norm_tmp[is][band_index].imag() << '\n';
+//     }
+//   }
+//   ofs.close();
 
-    return;
-  }
+//     return;
+//   }
 
 
 }

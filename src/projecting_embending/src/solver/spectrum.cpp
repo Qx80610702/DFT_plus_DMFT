@@ -119,7 +119,7 @@ void spectrum::eva_spectrum(
           for(int ineq=0; ineq<ineq_num; ineq++)
           {
             const int iatom = atom.ineq_iatom(ineq);
-            const int m_tot=norb_sub[iatom];
+            const int m_tot = norb_sub[iatom];
 
             const std::vector<std::complex<double>>& projector = proj.proj_access(ik)[iatom][is];
 
@@ -161,7 +161,7 @@ void spectrum::eva_spectrum(
   for(int is=0; is<nspin; is++)
     for(int iomega=0; iomega<nomega; iomega++)
       for(int ik=0; ik<nks; ik++)
-        this->DOS[is][iomega] = this->Awk[is][iomega][ik]*fk[ik];
+        this->DOS[is][iomega] += this->Awk[is][iomega][ik]*fk[ik];
 
   for(int ineq=0; ineq<ineq_num; ineq++)
   {
@@ -183,7 +183,7 @@ void spectrum::eva_spectrum(
                       local_symmetry, corr_L, m_tot, 
                       &this->Aw_loc[ineq][is][iomega][0] );
       }
-    }     
+    }
   }
 
   return;

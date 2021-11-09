@@ -14,8 +14,6 @@
 #include <fstream>
 #include <string>
 
-//test
-#include <fstream>
 namespace DFT_plus_DMFT
 {
   void chemical_potential::update_chemical_potential(

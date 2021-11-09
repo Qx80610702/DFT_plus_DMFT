@@ -11,11 +11,11 @@
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
+#include <iomanip>
 
 //test
-#include <fstream>
-#include <iomanip>
-#include <sstream>
+// #include <fstream>
+// #include <sstream>
 namespace DMFT
 {
   void impurity::evaluate_impurity_level(
@@ -634,8 +634,9 @@ namespace DMFT
               this->impurity_level, this->Green_fun_omega, this->Weiss_omega);
         break;
       case 3:
-        this->LG_hyb.output(istep, mu, in, atom, band, this->impurity_level,
-               this->Green_fun_omega, this->Weiss_omega, this->hyb_omega);
+        this->pacs_hyb.output(istep, mu, in, atom, band, 
+               this->sigma.sigma_imag.Matsubara_freq(), this->impurity_level,
+               this->Green_fun_omega, this->Weiss_omega, this->hyb_omega );
         break;
       case 4:
         this->Rutgers.output(istep, mu, in, atom, band, 
@@ -731,8 +732,11 @@ namespace DMFT
         //                     this->Green_fun_omega, this->Green_fun_omega_save);
         break;
       case 3:
-        // this->ALPS_hyb_segment.read_last_step(istep, band, in, atom, this->hyb_omega,
-        //                     this->Green_fun_omega, this->Green_fun_omega_save);
+        this->pacs_hyb.read_last_step(
+                istep, band, in, atom,
+                this->Green_fun_omega, 
+                this->Green_fun_omega_save, 
+                sigma_new );
         break;
       case 4:
         this->Rutgers.read_last_step(
@@ -1098,7 +1102,7 @@ namespace DMFT
         return this->ALPS_hyb_segment.hybridization_func_tau();
         break;
       case 3:
-        return this->LG_hyb.hybridization_func_tau();
+        return this->pacs_hyb.hybridization_func_tau();
         break;
       case 4:
         break;

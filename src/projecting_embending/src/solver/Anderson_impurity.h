@@ -7,7 +7,7 @@
 #include "../para/input.h"
 #include "alps_cthyb.h"
 #include "alps_cthyb_segment.h"
-#include "LG_cthyb.h"
+#include "PACS_cthyb.h"
 #include "rutgers_cthyb.h"
 #include "Hilbert_space.h"
 #include "coulomb_tensor.h"
@@ -24,7 +24,7 @@ namespace DMFT
     ~impurity(){};
 
     self_energy sigma;
-    LG_CTHYB LG_hyb;
+    PACS_CTHYB pacs_hyb;
     Rutgers_CTHYB Rutgers;
     ALPS_CTHYB ALPS_hyb;
     ALPS_CTHYB_SEGMENT ALPS_hyb_segment;

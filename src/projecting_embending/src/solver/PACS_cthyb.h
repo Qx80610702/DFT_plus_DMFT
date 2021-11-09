@@ -14,11 +14,11 @@
 
 namespace DMFT
 {
-  class LG_CTHYB
+  class PACS_CTHYB
   {
     public:
-    LG_CTHYB(){};
-    ~LG_CTHYB(){};
+    PACS_CTHYB(){};
+    ~PACS_CTHYB(){};
                         
     void read_last_step(const int istep, 
           DFT_output::KS_bands& band,
@@ -26,16 +26,16 @@ namespace DMFT
           DFT_output::atoms_info& atom,
           std::vector<std::vector<std::
           vector<std::vector<
-          std::complex<double>>>>>& Gf_qmc,
+          std::complex<double>>>>>& Gw_qmc,
           std::vector<std::vector<std::
           vector<std::vector<
-          std::complex<double>>>>>& Weiss,
+          std::complex<double>>>>>& Gw_save,
           std::vector<std::vector<std::
           vector<std::vector<
-          std::complex<double>>>>>& Gf_save);
+          std::complex<double>>>>>& Sw );
 
     void output(const int istep, const double mu, DMFT::input_info& in, 
-          DFT_output::atoms_info& atom, DFT_output::KS_bands& band,
+          DFT_output::atoms_info& atom, DFT_output::KS_bands& band, const std::vector<double>& freq,
           std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss,
