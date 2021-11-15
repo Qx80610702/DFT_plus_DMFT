@@ -57,7 +57,9 @@ namespace DMFT
     this->beta = Hartree_to_eV/(this->temperature*K_BOLTZMAN_EV);
     // this->n_tau = 25/(this->temperature*K_BOLTZMAN_EV) > 500 ? 25/(this->temperature*K_BOLTZMAN_EV) : 500;
     this->n_tau = 25/(this->temperature*K_BOLTZMAN_EV);
-    this->n_omega = this->n_tau > 500 ? 500 : this->n_tau;
+    // this->n_omega = this->n_tau > 500 ? 500 : this->n_tau;
+    //the energy maximum is 100eV, which may be a safe value to guarantee the Asymptotic behavior of hybridization function
+    this->n_omega = 50/(PI*this->temperature*K_BOLTZMAN_EV); 
     // this->n_omega = 500; // ? 500 : this->n_tau;
     if(this->n_tau%2==1) this->n_tau++;   //n_tau+1 must be odd for Simpson integral
     if(this->n_omega%2==1) this->n_omega++;
@@ -91,10 +93,24 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("impurity_solver", str_val);
 
-      if(std::strcmp("alps_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 1;
-      else if(std::strcmp("alps_cthyb_segment",str_val[0].c_str())==0) this->flag_impurity_solver = 2;
-      else if(std::strcmp("pacs_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 3;
+      if(std::strcmp("alps_cthyb",str_val[0].c_str())==0) 
+      {
+        this->flag_impurity_solver = 1;
+        std::cout << "ALPS-CTHYB is unsupported now" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+      else if(std::strcmp("alps_cthyb_segment",str_val[0].c_str())==0)
+      {
+        this->flag_impurity_solver = 2;
+        std::cout << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+      else if(std::strcmp("pacs",str_val[0].c_str())==0) this->flag_impurity_solver = 3;
       else if(std::strcmp("rutgers_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 4;
+      else if(std::strcmp("iqist",str_val[0].c_str())==0)
+      {
+        this->flag_impurity_solver = 5;
+      }
       else
       {
         std::cout << "unsupported value of impurity_solver" << std::endl;

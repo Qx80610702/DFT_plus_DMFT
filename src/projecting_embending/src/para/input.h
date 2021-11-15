@@ -32,7 +32,9 @@ namespace DMFT
     int flag_magnetism=-1;       //AFM:1, FM:2, paramagenetism:3, none:4
     int n_tau;                   //number of segments on the interval [0,beta] when using CTQMC impuroty solver;default:500
     int n_omega;                 //number of Matsubara frequency points
-    int flag_impurity_solver;    //ALPS-CTHYB:1;  LPS-CTHYB-SEGMENT:2; LG-CTHYB:3;  default:1
+    //ALPS-CTHYB:1;  LPS-CTHYB-SEGMENT:2; (not supported now)
+    //PACS:3;  Rutgers-CTHYB:4; iQIST:5; default:3
+    int flag_impurity_solver;    
     int flag_double_counting;    //nominal:1;   default:1
     int DMFT_step;               //number of the maximum DMFT interation step
     long long MC_step;           //numuber of MC sampling steps; default:1000

@@ -43,9 +43,10 @@ namespace DFT_plus_DMFT
     if(impurity_solver==1 || 
        impurity_solver==2 || 
        impurity_solver==3 ||
-       impurity_solver==4 )
-       flag_axis = 0;       //imaginary axis
-    else flag_axis = 1;     //real axis
+       impurity_solver==4 ||
+       impurity_solver==5 )
+       this->flag_axis = 0;       //imaginary axis
+    else this->flag_axis = 1;     //real axis
 
     this->flag_convergency = this->scf_update();
     if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
@@ -213,7 +214,7 @@ namespace DFT_plus_DMFT
 
     if(this->DMFT_iteration_step>1)
     {
-      this->imp.read_last_step(this->DMFT_iteration_step,
+      this->imp.read_last_step( this->DMFT_iteration_step,
             *(int*)pars.in.parameter("impurity_solver"),
             this->pars.bands, this->pars.in, this->pars.atom );
 

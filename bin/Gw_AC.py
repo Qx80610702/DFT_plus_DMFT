@@ -88,6 +88,8 @@ if __name__ == '__main__':
         Gtf="GtRaw.dat"
     elif impurity_solver == "rutgers_cthyb":
         Gtf="Gt.dat"
+    elif impurity_solver == "iqist":
+        Gtf="Gt.dat"
 
     # Read maxent_params.dat
     if not os.path.exists("maxent_params.dat"):

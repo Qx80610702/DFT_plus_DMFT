@@ -108,6 +108,52 @@ else
   cd $root_dir
 fi
 
+#========  iQIST ========
+if [ ! -f $root_dir/build/impurity_solver/iQIST/cthyb.narcissus ]
+then
+  test -d $root_dir/build/impurity_solver/iQIST || mkdir $root_dir/build/impurity_solver/iQIST
+  cd $root_dir/src/impurity_solver
+  test -d iQIST && rm -rf iQIST
+
+  tar -zxvf iQIST.tar.gz
+  cd iQIST
+
+  #compile Flink
+  cd dependencies/Flink/build
+  sed -i "/^F90    =/cF90    = $MPI_FC" make.inc
+  make
+  if [ $? -ne 0 ]; then
+    echo "Errors in compiling Flink"
+    exit
+  fi
+  cd ../../../
+
+  #compile iQIST
+  cd build
+  sed -i "/^F90    =/cF90    = $MPI_FC" make.inc
+  sed -i "/^FLINK  =/cFLINK  = $root_dir/src/impurity_solver/iQIST/dependencies/Flink/src" make.inc
+  make all
+  if [ $? -eq 0 ]; then
+    cd ../src/ct_hyb1
+    cp cthyb.narcissus $root_dir/build/impurity_solver/iQIST/
+  else
+    echo "Errors in building iQIST"
+    exit
+  fi
+  cd $root_dir
+else
+  cd $root_dir/src/impurity_solver/iQIST
+  # make clean
+  # make
+  # if [ $? -eq 0 ]; then
+  #   cp CTHYB $root_dir/build/impurity_solver/CTHYB-LG/
+  # else
+  #   echo "Errors in building LG-CTHYB"
+  #   exit
+  # fi
+  cd $root_dir
+fi
+
 #=========  Rutgers_CTHYB  ========= 
 if [ ! -f $root_dir/build/impurity_solver/Rutgers/ctqmc -o  ! -f $root_dir/build/impurity_solver/Rutgers/ctqmcf ];then
   test -d $root_dir/build/impurity_solver/Rutgers || mkdir $root_dir/build/impurity_solver/Rutgers
@@ -220,6 +266,7 @@ PACS_cthyb.o \\
 alps_cthyb.o \\
 alps_cthyb_segment.o \\
 rutgers_cthyb.o \\
+iQIST_narcissus.o \\
 math_zone.o \\
 spectrum.o 
 
@@ -231,7 +278,7 @@ all:\${OBJ}
 
 .PHONY:clean
 clean:
-	rm *.o $root_dir/build/projection_embeding
+	rm *.o ../bin/projection_embeding
 
 #==========================
 #       rules
@@ -252,7 +299,7 @@ EOF
   cd $root_dir
 else
   cd $root_dir/src/projecting_embending/build/
-  make clean
+  # make clean
   make -j
   if [ $? -ne 0 ]
   then
@@ -289,7 +336,7 @@ EXE_ALPS_CTHYB=$root_dir/build/impurity_solver/ALPS-CTHYB/bin/hybmat
 EXE_ALPS_CTHYB_SEGMENT=$root_dir/build/impurity_solver/ALPS-CTHYB-SEGMENT/bin/alps_cthyb
 EXE_PACS_CTHYB=$root_dir/build/impurity_solver/PACS/pacs.cthyb
 EXE_RUTGERS_CTHYB=$root_dir/build/impurity_solver/Rutgers/ctqmc
-
+EXE_iQIST_CTHYB1=$root_dir/build/impurity_solver/iQIST/cthyb.narcissus
 #===========================================
 #            PART 1
 #Determine the number of process and threads
@@ -341,7 +388,10 @@ case \$impurity_solver_lower_case in
   "rutgers_cthyb")
     impurity_solver_type=4
   ;;
-  "")
+  "iqist")
+    impurity_solver_type=5
+  ;;
+  "") #default value
     impurity_solver_type=3
   ;;
   *)
@@ -489,6 +539,14 @@ do
         echo "Errors occured in running impurity solver solving \$dir_imp !!!"
         exit
       fi
+    elif [ \$impurity_solver_type -eq 5 ]; then
+      mpirun \$EXE_iQIST_CTHYB1 1>iQIST_cthyb.log 2>iQIST_cthyb.error
+
+      if [ \$? -ne 0 ];then
+        echo "Errors occured in running impurity solver solving \$dir_imp !!!"
+        exit
+      fi
+
     fi
     cd ..
     echo "      "\`date  "+%Y.%m.%d--%H:%M:%S"\` >> ../../DMFT_running.log

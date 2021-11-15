@@ -9,6 +9,7 @@
 #include "alps_cthyb_segment.h"
 #include "PACS_cthyb.h"
 #include "rutgers_cthyb.h"
+#include "iQIST_narcissus.h"
 #include "Hilbert_space.h"
 #include "coulomb_tensor.h"
 
@@ -24,10 +25,11 @@ namespace DMFT
     ~impurity(){};
 
     self_energy sigma;
-    PACS_CTHYB pacs_hyb;
+    PACS_CTHYB pacs;
     Rutgers_CTHYB Rutgers;
     ALPS_CTHYB ALPS_hyb;
     ALPS_CTHYB_SEGMENT ALPS_hyb_segment;
+    IQIST_NARCISSUS  iQIST_narcissus;
 
     void evaluate_impurity_level(
           DFT_plus_DMFT::Hilbert_space& space,
