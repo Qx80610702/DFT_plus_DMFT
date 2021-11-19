@@ -18,7 +18,26 @@ def read_latt_vector(DFT_solver):
                     exit()
                 latvec += [ np.array(list(map(float,words[1:4]))) ]
     elif DFT_solver.lower() == "abacus":
-        print("abacus")
+        latt=1.0
+        STRU=open("../DFT/STRU",'r')
+        lines=STRU.readlines()
+        i=0
+        while i < len(lines):
+            words = lines[i].strip().split()
+            if len(words) == 0:
+                i += 1
+                continue
+            if words[0].lower() == "lattice_constant":
+                latt=float(lines[i+1])
+                i += 2
+                continue
+            elif words[0].lower() == "lattice_vectors":
+                latvec += [ latt*np.array(list(map(float,lines[i+1].strip().split()))) ]
+                latvec += [ latt*np.array(list(map(float,lines[i+2].strip().split()))) ]
+                latvec += [ latt*np.array(list(map(float,lines[i+3].strip().split()))) ]
+                break
+            else:
+                i += 1
     else:
         print("Unsuported DFT solver!!!")
         exit()
@@ -105,6 +124,17 @@ def out_kpoints_to_dft_solver(DFT_solver,kponits):
         ofs = open("../DFT/k_list.in", 'w')
         print("1 1 1", file=ofs)
         print(len(kpoints), file=ofs)
+        for ik in range(len(kpoints)):
+            print("{:20.15f}".format(kpoints[ik][0]), file=ofs, end='')
+            print("{:20.15f}".format(kpoints[ik][1]), file=ofs, end='')
+            print("{:20.15f}".format(kpoints[ik][2]), file=ofs, end='')
+            print("{:20.15f}".format(kweight), file=ofs)
+        ofs.close()
+    elif DFT_solver == "abacus":
+        ofs = open("../DFT/KPT", 'w')
+        print("K_POINTS   //keyword for start", file=ofs)
+        print("%d   //total number of k-point"%len(kpoints), file=ofs)
+        print("Direct  //‘Direct’ or ‘Cartesian’ coordinate", file=ofs)
         for ik in range(len(kpoints)):
             print("{:20.15f}".format(kpoints[ik][0]), file=ofs, end='')
             print("{:20.15f}".format(kpoints[ik][1]), file=ofs, end='')
