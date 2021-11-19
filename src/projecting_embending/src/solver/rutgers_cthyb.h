@@ -67,9 +67,15 @@ namespace DMFT
     std::vector<std::vector<std::vector<std::complex<double>>>>&
           hopping_term(){return hopping_matrix;}
 
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+        hybridization_func_tau(){return hyb_tau;}
+
     private:
     //hopping_term[ineq][is][m_index]
     std::vector<std::vector<std::vector<std::complex<double>>>> hopping_matrix;
+
+    //hyb_tau[ineq][is][i_tau][m_index];
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> hyb_tau;
 
   };
 }

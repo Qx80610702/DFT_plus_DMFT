@@ -105,7 +105,7 @@ namespace DMFT
         std::cout << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      else if(std::strcmp("pacs",str_val[0].c_str())==0) this->flag_impurity_solver = 3;
+      else if(std::strcmp("pacs", str_val[0].c_str())==0) this->flag_impurity_solver = 3;
       else if(std::strcmp("rutgers_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 4;
       else if(std::strcmp("iqist",str_val[0].c_str())==0)
       {
@@ -113,7 +113,7 @@ namespace DMFT
       }
       else
       {
-        std::cout << "unsupported value of impurity_solver" << std::endl;
+        std::cout << "unsupported value of impurity_solver " << str_val[0] << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
@@ -122,7 +122,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: impurity_solver is not given and set default value pacs_cthyb" << std::endl;
+      if(mpi_rank()==0) std::cout << "Warning: impurity_solver is not given and set default value pacs" << std::endl;
         this->flag_impurity_solver = 3;
     }
 

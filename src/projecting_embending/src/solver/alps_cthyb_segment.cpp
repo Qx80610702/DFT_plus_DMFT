@@ -113,24 +113,18 @@ namespace DMFT
       for(int itau=0; itau<ntau+1; itau++)
       {
         ofs_delta << std::setw(5) << itau;
-
-        for(int m=0; m<m_tot; m++)
+        for(int is=0; is<2; is++)
         {
-          if(nspin==2)
+          for(int m=0; m<m_tot; m++)
           {
-            ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) << 
-            std::pow(Hartree_to_eV,2)*hyb_taua[0][itau][m*m_tot+m].real()
-            << std::setw(22) << std::fixed << std::setprecision(15)
-            << std::pow(Hartree_to_eV,2)*hyb_taua[1][itau][m*m_tot+m].real();
-          }
-          else
-          {
-            ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) << 
-            std::pow(Hartree_to_eV,2)*hyb_taua[0][itau][m*m_tot+m].real()
-            << std::setw(22) << std::fixed << std::setprecision(15)
-            << std::pow(Hartree_to_eV,2)*hyb_taua[0][itau][m*m_tot+m].real();
-          }
-        }//m_index
+            if(nspin==2)
+              ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) << 
+              std::pow(Hartree_to_eV,2)*hyb_taua[is][itau][m*m_tot+m].real();
+            else
+              ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) << 
+              std::pow(Hartree_to_eV,2)*hyb_taua[0][itau][m*m_tot+m].real();
+          }//m_index
+        }
 
         ofs_delta << '\n';
       }//itau
@@ -142,50 +136,49 @@ namespace DMFT
       std::string hopping_file = current_dir+"/mu_vector.dat";
       std::ofstream ofs_hopping(hopping_file.c_str(), std::ios::out);
 
-      for(int m=0; m<m_tot; m++)
+      for(int is=0; is<2; is++)
       {
-        if(nspin==2)
-          ofs_hopping << std::left << std::fixed << std::setprecision(15) 
-          << Hartree_to_eV*(mu-hoppinga[0][m*m_tot+m].real()) << ' '
-          << std::fixed << std::setprecision(15) 
-          << Hartree_to_eV*(mu-hoppinga[1][m*m_tot+m].real()) << ' ';
-        else
-          ofs_hopping << std::left << std::fixed << std::setprecision(15) 
-          << Hartree_to_eV*(mu-hoppinga[0][m*m_tot+m].real()) << ' '
-          << std::fixed << std::setprecision(15) 
-          << Hartree_to_eV*(mu-hoppinga[0][m*m_tot+m].real()) << ' ';
+        for(int m=0; m<m_tot; m++)
+        {
+          if(nspin==2)
+            ofs_hopping << std::left << std::fixed << std::setprecision(15) 
+            << Hartree_to_eV*(mu-hoppinga[is][m*m_tot+m].real()) << ' ';
+          else
+            ofs_hopping << std::left << std::fixed << std::setprecision(15) 
+            << Hartree_to_eV*(mu-hoppinga[0][m*m_tot+m].real()) << ' ';
+        }
       }
       ofs_hopping << '\n';
       ofs_hopping.close();
 
-      //===========================================
-      //           write  Weiss.dat
-      //===========================================
-      std::string G0_file = current_dir+"/Weiss.dat";
-      std::ofstream ofs_G0(G0_file.c_str(), std::ios::out);
+      // //===========================================
+      // //           write  Weiss.dat
+      // //===========================================
+      // std::string G0_file = current_dir+"/Weiss.dat";
+      // std::ofstream ofs_G0(G0_file.c_str(), std::ios::out);
 
-      for(int iomega=0; iomega<nomega; iomega++)
-      {
-        for(int is=0; is<2; is++)
-        {
-          for(int m=0; m<m_tot; m++)
-          {
-            if(nspin==1)
-              ofs_G0 << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
-                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Weissa[0][iomega][m*m_tot+m].real()/Hartree_to_eV << " "
-                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Weissa[0][iomega][m*m_tot+m].imag()/Hartree_to_eV << '\n' ;
-            else
-              ofs_G0 << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
-                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Weissa[is][iomega][m*m_tot+m].real()/Hartree_to_eV << " "
-                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Weissa[is][iomega][m*m_tot+m].imag()/Hartree_to_eV << '\n' ;   
-          }//m
-        }//is
-      }//iomega
-      ofs_G0.close();
+      // for(int iomega=0; iomega<nomega; iomega++)
+      // {
+      //   for(int is=0; is<2; is++)
+      //   {
+      //     for(int m=0; m<m_tot; m++)
+      //     {
+      //       if(nspin==1)
+      //         ofs_G0 << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
+      //                << std::setw(22) << std::fixed << std::setprecision(15) 
+      //                << Weissa[0][iomega][m*m_tot+m].real()/Hartree_to_eV << " "
+      //                << std::setw(22) << std::fixed << std::setprecision(15) 
+      //                << Weissa[0][iomega][m*m_tot+m].imag()/Hartree_to_eV << '\n' ;
+      //       else
+      //         ofs_G0 << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
+      //                << std::setw(22) << std::fixed << std::setprecision(15) 
+      //                << Weissa[is][iomega][m*m_tot+m].real()/Hartree_to_eV << " "
+      //                << std::setw(22) << std::fixed << std::setprecision(15) 
+      //                << Weissa[is][iomega][m*m_tot+m].imag()/Hartree_to_eV << '\n' ;   
+      //     }//m
+      //   }//is
+      // }//iomega
+      // ofs_G0.close();
 
       //==================================================
       //   write  Gf.in; the input Green function 
@@ -195,26 +188,27 @@ namespace DMFT
       //==================================================
       std::string Gf_file = current_dir+"/Gf.in";
       std::ofstream ofs_gf(Gf_file.c_str(), std::ios::out);
+
       for(int iomega=0; iomega<nomega; iomega++)
       {
+        ofs_gf << std::setw(5) << iomega;
         for(int is=0; is<2; is++)
         {
           for(int m=0; m<m_tot; m++)
           {
             if(nspin==1)
-              ofs_gf << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
-                     << std::setw(22) << std::fixed << std::setprecision(15) 
+              ofs_gf << std::setw(22) << std::fixed << std::setprecision(15) 
                      << Gf_ina[0][iomega][m*m_tot+m].real()/Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[0][iomega][m*m_tot+m].imag()/Hartree_to_eV << '\n';
+                     << Gf_ina[0][iomega][m*m_tot+m].imag()/Hartree_to_eV;
             else
-              ofs_gf << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
-                     << std::setw(22) << std::fixed << std::setprecision(15) 
+              ofs_gf << std::setw(22) << std::fixed << std::setprecision(15) 
                      << Gf_ina[is][iomega][m*m_tot+m].real()/Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[is][iomega][m*m_tot+m].imag()/Hartree_to_eV << '\n';
-          }//m_index
+                     << Gf_ina[is][iomega][m*m_tot+m].imag()/Hartree_to_eV ;      
+          }//m
         }//is
+        ofs_gf << std::endl;
       }//iomega
       ofs_gf.close();
 

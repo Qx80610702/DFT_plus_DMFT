@@ -246,9 +246,13 @@ namespace DFT_plus_DMFT
     if(atom.local_sym()==1 || atom.local_sym()==2 || atom.local_sym()==3) return;
     auto projector_mat_tmp = this->projector_mat;
 
-    for(int iatom=0; iatom<natom; iatom++)
+    for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
     {
+      const int iatom = atom.ineq_iatom(ineq);
       const int m_tot = norb_sub[iatom];
+    // for(int iatom=0; iatom<natom; iatom++)
+    // {
+    //   const int m_tot = norb_sub[iatom];
 
       mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
       #pragma omp parallel num_threads(threads_num)
@@ -276,6 +280,16 @@ namespace DFT_plus_DMFT
                         &zero,
                         &this->projector_mat[ik][iatom][is][0], m_tot );
 
+            for(int iatom1=0; iatom1<natom; iatom1++)
+              if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
+                cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                        wbands[is], m_tot, m_tot,
+                        &one,
+                        &projector_mat_tmp[ik][iatom1][is][0], m_tot,
+                        &unitary_trans_isk[0], m_tot,
+                        &zero,
+                        &this->projector_mat[ik][iatom1][is][0], m_tot );
+              
           }//is
         }//ik
       }

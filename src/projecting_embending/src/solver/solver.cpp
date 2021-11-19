@@ -271,13 +271,14 @@ namespace DFT_plus_DMFT
             *(int*)this->pars.in.parameter("n_omega"),
             *(int*)this->pars.in.parameter("magnetism"));
 
-      // if(*(int*)this->pars.in.parameter("impurity_solver")!=4) 
-      this->imp.evaluate_delta_Weiss_tau(
-            *(int*)this->pars.in.parameter("impurity_solver"),
-            this->pars.atom, this->pars.bands.nspins(),
-            *(double*)this->pars.in.parameter("beta"),
-            *(int*)this->pars.in.parameter("n_tau"),
-            *(int*)this->pars.in.parameter("n_omega"));
+      if( *(int*)this->pars.in.parameter("impurity_solver")==1 ||
+          *(int*)this->pars.in.parameter("impurity_solver")==2 ) 
+        this->imp.evaluate_delta_Weiss_tau(
+              *(int*)this->pars.in.parameter("impurity_solver"),
+              this->pars.atom, this->pars.bands.nspins(),
+              *(double*)this->pars.in.parameter("beta"),
+              *(int*)this->pars.in.parameter("n_tau"),
+              *(int*)this->pars.in.parameter("n_omega"));
     }
 
 // timer::get_time(time,seconds);

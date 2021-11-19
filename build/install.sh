@@ -382,7 +382,7 @@ case \$impurity_solver_lower_case in
   "alps_cthyb_segment")
     impurity_solver_type=2
   ;;
-  "pacs_cthyb")
+  "pacs")
     impurity_solver_type=3
   ;;
   "rutgers_cthyb")
@@ -395,7 +395,7 @@ case \$impurity_solver_lower_case in
     impurity_solver_type=3
   ;;
   *)
-    echo "ERROR: unsupported impurity solver"
+    echo "ERROR: unsupported impurity solver \$impurity_solver" 
     exit
 esac
 #echo "impurity_solver_type: \$impurity_solver_type"
@@ -461,7 +461,7 @@ do
   #==================================================
   echo "Impurity solver starts working......" >> DMFT_running.log
   echo "  Impurities       starting time              ending time     " >> DMFT_running.log
-# echo "impurity0    2021.03.30--15:44:28      2021.03.30--15:44:28"
+ #echo "impurity0    2021.03.30--15:44:28      2021.03.30--15:44:28"
 
   cd impurity_solving/step\$i
   for dir_imp in \`ls\`

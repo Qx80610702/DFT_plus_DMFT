@@ -451,10 +451,10 @@ namespace DMFT
     const std::complex<double> zero(0.0,0.0);
     const std::complex<double> im(0.0,1.0);
 
-    // std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-    //     hyb = this->hybdization_tau(impurity_solver);
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+        hyb = this->hybdization_tau(impurity_solver);
     
-    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> hyb;
+    // std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> hyb;
 
     //Allocation and set zero
     if(hyb.empty())
@@ -490,7 +490,7 @@ namespace DMFT
             auto& hybc = hybb[itau];
             for(int m_index=0; m_index<m_tot*m_tot; m_index++)
               hybc[m_index] = zero;
-          }//itqu
+          }//itau
         }//is
       }//ineq
     }
@@ -1117,8 +1117,10 @@ namespace DMFT
         return this->pacs.hybridization_func_tau();
         break;
       case 4: //Rutgers
+        return this->Rutgers.hybridization_func_tau();
         break;
       case 5:  //iQIST
+        return this->iQIST_narcissus.hybridization_func_tau();
         break;
       default:
         std::cout << "Not supported impurity solver" << std::endl;
