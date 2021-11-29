@@ -93,20 +93,20 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("impurity_solver", str_val);
 
-      if(std::strcmp("alps_cthyb",str_val[0].c_str())==0) 
+      if(std::strcmp("alps-cthyb",str_val[0].c_str())==0) 
       {
         this->flag_impurity_solver = 1;
         std::cout << "ALPS-CTHYB is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      else if(std::strcmp("alps_cthyb_segment",str_val[0].c_str())==0)
+      else if(std::strcmp("alps-cthyb-segment",str_val[0].c_str())==0)
       {
         this->flag_impurity_solver = 2;
         std::cout << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
       else if(std::strcmp("pacs", str_val[0].c_str())==0) this->flag_impurity_solver = 3;
-      else if(std::strcmp("rutgers_cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 4;
+      else if(std::strcmp("rutgers-cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 4;
       else if(std::strcmp("iqist",str_val[0].c_str())==0)
       {
         this->flag_impurity_solver = 5;

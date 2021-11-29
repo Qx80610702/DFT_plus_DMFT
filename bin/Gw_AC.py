@@ -64,12 +64,13 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
 
     #Parsing command line
+    DMFT_step=1
     if len(sys.argv)<2:
-        DMFT_step=1
         for step_dir in os.listdir("impurity_solving/"):
-            N=int(step_dir[-1])
-            if N > DMFT_step:
-                DMFT_step=N
+            if step_dir.find("step") != -1:
+                N=int(step_dir.split("p")[-1])
+                if N > DMFT_step:
+                    DMFT_step=N
     else: 
         DMFT_step = int(sys.argv[1])
     
@@ -77,16 +78,16 @@ if __name__ == '__main__':
     sym = open("../DFT/outputs_to_DMFT/symmetry.dat",'r')
     ineq_num=int(sym.readlines()[1])
 
-    impurity_solver="pacs_cthyb"
+    impurity_solver="pacs"
     for line in open("./DMFT.in"):
         strings = line.strip().split()
         if strings[0].lower() == "impurity_solver":
             impurity_solver=strings[1].lower()
 
     Gtf="GtRaw.dat"
-    if impurity_solver == "pacs_cthyb":
+    if impurity_solver == "pacs":
         Gtf="GtRaw.dat"
-    elif impurity_solver == "rutgers_cthyb":
+    elif impurity_solver == "rutgers-cthyb":
         Gtf="Gt.dat"
     elif impurity_solver == "iqist":
         Gtf="Gt.dat"
