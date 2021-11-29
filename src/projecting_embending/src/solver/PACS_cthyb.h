@@ -41,12 +41,6 @@ namespace DMFT
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& hyb_omega);
 
-    void out_sigma_last_step(
-          const int istep, DFT_output::KS_bands& band,
-          DMFT::input_info& in, DFT_output::atoms_info& atom,
-          const  std::vector<std::vector<std::vector<
-          std::vector<std::complex<double>>>>>& sigma);
-
     //Interfaces
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
         hybridization_func_tau(){return hyb_tau;}

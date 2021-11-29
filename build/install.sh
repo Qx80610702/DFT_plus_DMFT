@@ -376,16 +376,16 @@ nprocess=\`echo "\$nodes * \$num_threads" | bc\`
 impurity_solver=\`grep -i "impurity_solver" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
 impurity_solver_lower_case=\`echo \$impurity_solver | tr A-Z a-z\`
 case \$impurity_solver_lower_case in
-  "alps_cthyb")
+  "alps-cthyb")
     impurity_solver_type=1
   ;;
-  "alps_cthyb_segment")
+  "alps-cthyb-segment")
     impurity_solver_type=2
   ;;
   "pacs")
     impurity_solver_type=3
   ;;
-  "rutgers_cthyb")
+  "rutgers-cthyb")
     impurity_solver_type=4
   ;;
   "iqist")
@@ -415,10 +415,13 @@ then
   current_step=1
   for step_dir in \`ls\`
   do
-    step_tmp=\`echo \$step_dir | awk -F 'p' '{print \$2}'\`
-    if [ \$step_tmp -gt \$current_step ]
-    then
-      current_step=\$step_tmp
+    match=\`echo \$step_dir | grep "step"\`
+    if [ -n \$match ];then
+      step_tmp=\`echo \$step_dir | awk -F 'step' '{print \$2}'\`
+      if [ \$step_tmp -gt \$current_step ]
+      then
+        current_step=\$step_tmp
+      fi
     fi
   done
   cd ..
