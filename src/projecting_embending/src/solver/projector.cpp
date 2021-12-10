@@ -243,7 +243,7 @@ namespace DFT_plus_DMFT
     //   function and etc.
     //   Tight binding Hamiltonian.
     //=============================================
-    if(atom.local_sym()==1 || atom.local_sym()==2 || atom.local_sym()==3) return;
+    if(atom.local_sym()==0 || atom.local_sym()==1 || atom.local_sym()==2 || atom.local_sym()==3) return;
     auto projector_mat_tmp = this->projector_mat;
 
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)

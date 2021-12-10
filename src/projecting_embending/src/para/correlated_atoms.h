@@ -68,7 +68,13 @@ namespace DFT_output
     std::vector<double> Hund_J;             //Parameter Hund J; unit:Hartree
     std::vector<int> mag_moment;            //the direction of magnetic moment
 
-    int local_symmetry;                     //local orbital symmetry;
+    // local orbital symmetry; 
+    // 0:no symmetry and no rotation
+    // 1:cubic symmetry
+    // 2:t2g only
+    // 3:eg only
+    // ...
+    int local_symmetry;                     
 
     //=======sub-shell=========
     std::vector<int> sub_norb;             //number of orbitals in the sub-shell; sub_norb[iatom]
