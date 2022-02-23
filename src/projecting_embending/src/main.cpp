@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   std::cout.rdbuf(fileBuf);
 
   // Parsing commond line
-  argument_lists args_val ={1,false,false};
+  argument_lists args_val = {1, false, false, false};
   if(argc>1)
   {
     std::vector<std::string> all_args(argv+1,argv+argc);
@@ -67,6 +67,8 @@ bool parsing_commond_line(std::vector<std::string>& all_args, argument_lists& ar
       args.sigma_only = (bool)atoi(value.c_str());
     else if(std::strcmp("eva.spectrum", param.substr(pos_begin).c_str())==0)
       args.cal_spectrum = (bool)atoi(value.c_str());
+    else if(std::strcmp("eva.density", param.substr(pos_begin).c_str())==0)
+      args.update_density = (bool)atoi(value.c_str());
     else
     {
       std::cout << "Illegal arguments : " << param << '\n';

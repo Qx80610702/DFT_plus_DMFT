@@ -18,6 +18,7 @@ struct argument_lists
   int global_step;
   bool sigma_only;
   bool cal_spectrum;
+  bool update_density;
 };
 
 namespace DFT_plus_DMFT
@@ -42,6 +43,8 @@ namespace DFT_plus_DMFT
 
     void cal_spectrum_func();
 
+    void update_density();
+
     bool scf_update();
     
     void update_Anderson_impurities();
@@ -62,6 +65,7 @@ namespace DFT_plus_DMFT
     bool flag_convergency;             //Whether DMFT iteration convergrncy is achieved
     bool flag_eva_sigma_only;          //
     bool flag_eva_spectrum;            //calculate spectrum
+    bool flag_update_density;          //update charge density
 
   };
 }
