@@ -264,10 +264,18 @@ if [ ! -f $root_dir/build/projection_embeding ]
 then
   cd $root_dir/src/projecting_embending/build/
   rm ./*
+
+  if [ -z $ABACUS_install_dir ];then
+    MACRO_ABACUS=
+  else
+    MACRO_ABACUS=-D__ABACUS
+  fi
+
   if [ -z $FHIaims_install_dir ];then    
 cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
 OPTIONS = -g -qopenmp -O3 -std=c++14
+MACRO = $MACRO_ABACUS
 INCLUDES = -I\${MKLROOT}/include
 LIBRARY = -L\${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
@@ -308,8 +316,8 @@ rutgers_cthyb.o \\
 iQIST_narcissus.o \\
 math_zone.o \\
 spectrum.o \\
-charge_update.o \\
-charge_update_aims.o
+charge_scf.o \\
+charge_scf_aims.o
 
 #====================
 #   Target
@@ -325,13 +333,13 @@ clean:
 #       rules
 #==========================
 .cpp.o:
-	\${CPLUSPLUS_MPI} \${OPTIONS} \${INCLUDES} -c \$< -o \$@
+	\${CPLUSPLUS_MPI} \${OPTIONS} \${INCLUDES} -c \${MACRO} \$< -o \$@
 EOF
   else   #FHI-aims has been built
   cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
 OPTIONS = -g -qopenmp -O3 -std=c++14
-MACRO = -D__FHIaims
+MACRO = -D__FHIaims $MACRO_ABACUS
 INCLUDES = -I\${MKLROOT}/include -I${FHIaims_install_dir}/include
 LIBRARY = -L$FHIaims_install_dir/lib -lelsi -lelpa  -lOMM -lMatrixSwitch -lNTPoly -lfortjson \\
 -L\${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 \\
@@ -374,8 +382,8 @@ rutgers_cthyb.o \\
 iQIST_narcissus.o \\
 math_zone.o \\
 spectrum.o \\
-charge_update.o \\
-charge_update_aims.o
+charge_scf.o \\
+charge_scf_aims.o
 
 #====================
 #   Target

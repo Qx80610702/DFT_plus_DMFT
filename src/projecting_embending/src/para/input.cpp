@@ -22,10 +22,22 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("dft_solver", str_val);
 
-      if(std::strcmp("abacus", str_val[0].c_str())==0) this->flag_DFT_solver = 2;
-      #ifdef __FHIaims
-      else if(std::strcmp("aims",str_val[0].c_str())==0) this->flag_DFT_solver = 1;
-      #endif
+      if(std::strcmp("aims",str_val[0].c_str())==0){
+        this->flag_DFT_solver = 1;
+        #ifndef __FHIaims
+          std::cout << "FHI-aims has not been installed!!!  ";
+          std::cout << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+          std::exit(EXIT_FAILURE);
+        #endif
+      }
+      else if(std::strcmp("abacus", str_val[0].c_str())==0){
+        this->flag_DFT_solver = 2;
+        #ifndef __ABACUS
+          std::cout << "ABACUS has not been installed!!!   ";
+          std::cout << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+          std::exit(EXIT_FAILURE);
+        #endif
+      }
       else
       {
         std::cout << "unsupported value of DFT_solver" << std::endl;
@@ -38,7 +50,12 @@ namespace DMFT
     }
     catch(const bool not_given){
       if(mpi_rank()==0) std::cout << "Warning: dft_solver is not given and set default value aims" << std::endl;
-      this->flag_DFT_solver = 2;   //ABACUS
+      this->flag_DFT_solver = 1;   //FHI-aims
+      #ifndef __FHIaims
+        std::cout << "FHI-aims has not been installed!!!  ";
+        std::cout << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+      #endif
     }
 
     //temperature

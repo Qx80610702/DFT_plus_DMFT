@@ -14,7 +14,8 @@
 namespace DFT_plus_DMFT
 {
   solver::solver(argument_lists& args):
-  DMFT_iteration_step(args.global_step),
+  charge_scf_step(args.charge_step),
+  DMFT_iteration_step(args.DMFT_step),
   flag_eva_sigma_only(args.sigma_only),
   flag_eva_spectrum(args.cal_spectrum),
   flag_update_density(args.update_density)
@@ -35,15 +36,29 @@ namespace DFT_plus_DMFT
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl; 
       }
       else if(this->flag_update_density){
+        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+        std::cout << "<><><><><><>  Current charge self-consitent step:" 
+                  << std::setw(4) << this->charge_scf_step << "  <><><><><><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
         std::cout << "<><><><><><><><><> Update charge density <><><><><><><><><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
       }
       else{
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-        std::cout << "<><><><><><>  Current DMFT iteration step:" 
-                  << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;  
+        if(this->DMFT_iteration_step == 1 && this->charge_scf_step == 1){
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+          std::cout << "<><><><><><>  Current charge self-consitent step: 1  <><><><><><>\n";
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n" << std::endl;
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+          std::cout << "<><><><><><>  Current DMFT iteration step:" 
+                    << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+        } 
+        else{
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+          std::cout << "<><><><><><>  Current DMFT iteration step:" 
+                    << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+        }
       }
     }
 
@@ -74,7 +89,7 @@ namespace DFT_plus_DMFT
           this->pars.atom, this->pars.in);
 
     if(this->flag_eva_spectrum) this->cal_spectrum_func();
-    else if(this->flag_update_density) this->update_density();
+    else if(this->flag_update_density) this->charge_solve();
     else this->DMFT_solve();
 
     timer::get_time(time, seconds);
@@ -198,9 +213,9 @@ namespace DFT_plus_DMFT
     return;
   }
   
-  void solver::update_density()
+  void solver::charge_solve()
   {
-    debug::codestamp("solver::update_density");
+    debug::codestamp("solver::charge_solve");
 
     const int impurity_solver = *(int*)pars.in.parameter("impurity_solver");
     if(impurity_solver==1 || 
@@ -234,7 +249,7 @@ namespace DFT_plus_DMFT
              this->pars.atom, this->proj, 
              this->imp.sigma, this->pars.in, this->space );
 
-    this->Charge.update_char_dens();
+    this->Char_scf.update_char_dens();
     
     return;
   }

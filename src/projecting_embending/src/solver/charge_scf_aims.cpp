@@ -1,16 +1,16 @@
 #ifdef __FHIaims
 
-#include "charge_update_aims.h"
+#include "charge_scf_aims.h"
 #include "../debug.h"
 
 #include <elsi.h>
 
 namespace DFT_plus_DMFT
 {
-  void Charge_update_aims::output_charge_density(
+  void Charge_SCF_aims::output_charge_density(
     std::string file, std::vector<std::complex<double>>& dens_cmplx)
   {
-    debug::codestamp("Charge_update_aims::output_charge_density");
+    debug::codestamp("Charge_SCF_aims::output_charge_density");
 
     elsi_rw_handle rwh;
 

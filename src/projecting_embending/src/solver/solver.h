@@ -7,7 +7,7 @@
 #include "Anderson_impurity.h"
 #include "coulomb_tensor.h"
 #include "spectrum.h"
-#include "charge_update.h"
+#include "charge_scf.h"
 
 //================Arguments lists(command line)==================
 // -dmft.step : current dmft step, default value : 1;
@@ -16,7 +16,8 @@
 // ==============================================================
 struct argument_lists
 {
-  int global_step;
+  int charge_step;
+  int DMFT_step;
   bool sigma_only;
   bool cal_spectrum;
   bool update_density;
@@ -37,7 +38,7 @@ namespace DFT_plus_DMFT
     DMFT::impurity imp;
     DMFT::coulomb_tensor Umat;
     spectrum Aw;
-    Charge_update Charge;
+    Charge_SCF Char_scf;
     
     void solve();
 
@@ -45,7 +46,7 @@ namespace DFT_plus_DMFT
 
     void cal_spectrum_func();
 
-    void update_density();
+    void charge_solve();
 
     bool scf_update();
     
@@ -58,12 +59,14 @@ namespace DFT_plus_DMFT
     //==================================
     //     interfaces
     //==================================
-    int& istep(){return DMFT_iteration_step;}
+    int& DMFT_step(){return DMFT_iteration_step;}
+    int& charge_step(){return charge_scf_step;}
     bool convergency(){return this->flag_convergency;}
 
     private:
     int flag_axis;                     //Do calculations on imaginary (0) or real (1) axis
     int DMFT_iteration_step;           //The step number of current DMFT iteration
+    int charge_scf_step;               //The step number of current charge scf iteration
     bool flag_convergency;             //Whether DMFT iteration convergrncy is achieved
     bool flag_eva_sigma_only;          //
     bool flag_eva_spectrum;            //calculate spectrum
