@@ -1,12 +1,51 @@
 #!/bin/bash
 
+#============Parsing install.var=======
 #============Compilers===============
-CXX=icpc         #C++ compiler
-CC=icc           #C complier
-FC=ifort         #Fortran compiler
-MPI_FC=mpiifort  #MPI version fortran compiler
-MPI_CXX=mpiicpc  #MPI version C++ compiler
-MPI_CC=mpiicc    #MPI version C compiler
+CXX=`grep "CXX" install.vars | grep -v "MPI_CXX" | awk '{sub(/^[ \t]+/,"");print $3}'`        #C++ compiler
+if [ -z CXX ];then
+  echo "ERROR: CXX compiler is not specified" 
+  exit
+fi
+
+CC=`grep "CC" install.vars | grep -v "MPI_CC" | awk '{sub(/^[ \t]+/,"");print $3}'`           #C complier
+if [ -z CC ];then
+  echo "ERROR: CC compiler is not specified" 
+  exit
+fi
+
+FC=`grep "FC" install.vars | grep -v "MPI_FC" | awk '{sub(/^[ \t]+/,"");print $3}'`           #Fortran compiler
+if [ -z FC ];then
+  echo "ERROR: FC compiler is not specified" 
+  exit
+fi
+
+MPI_FC=`grep "MPI_FC" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`                      #MPI version fortran compiler
+if [ -z MPI_FC ];then
+  echo "ERROR: MPI_FC compiler is not specified" 
+  exit
+fi
+
+MPI_CXX=`grep "MPI_CXX" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`                    #MPI version C++ compiler
+if [ -z MPI_CXX ];then
+  echo "ERROR: MPI_CXX compiler is not specified" 
+  exit
+fi
+
+MPI_CC=`grep "MPI_CC" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`                      #MPI version C compiler
+if [ -z MPI_CC ];then
+  echo "ERROR: MPI_CC compiler is not specified" 
+  exit
+fi
+
+#============DFT softwares path=========
+#The installing path of FHI-aims if FHI-aims has been built  
+FHIaims_install_dir=`grep "FHIaims_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+FHIaims_exe=`grep "FHIaims_exe" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+
+#The installing path of ABACUS if ABACUS has been built  
+ABACUS_install_dir=`grep "ABACUS_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+ABACUS_exe=`grep "ABACUS_exe" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 
 #========Starting compilation========
 cd ../
@@ -225,7 +264,7 @@ if [ ! -f $root_dir/build/projection_embeding ]
 then
   cd $root_dir/src/projecting_embending/build/
   rm ./*
-
+  if [ -z $FHIaims_install_dir ];then    
 cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
 OPTIONS = -g -qopenmp -O3 -std=c++14
@@ -239,7 +278,7 @@ VPATH=../src \\
 #============================
 #     Objects
 #============================
-OBJ=main.o \\
+OBJS=main.o \\
 parameters.o \\
 mpi_environment.o \\
 correlated_atoms.o \\
@@ -268,13 +307,15 @@ alps_cthyb_segment.o \\
 rutgers_cthyb.o \\
 iQIST_narcissus.o \\
 math_zone.o \\
-spectrum.o 
+spectrum.o \\
+charge_update.o \\
+charge_update_aims.o
 
 #====================
 #   Target
 #====================
-all:\${OBJ}
-	\${CPLUSPLUS_MPI} \${OPTIONS} \${LIBRARY} \${OBJ} -o ../bin/projection_embeding
+all:\${OBJS}
+	\${CPLUSPLUS_MPI} \${OPTIONS} \${OBJS} \${LIBRARY} -o ../bin/projection_embeding
 
 .PHONY:clean
 clean:
@@ -286,6 +327,73 @@ clean:
 .cpp.o:
 	\${CPLUSPLUS_MPI} \${OPTIONS} \${INCLUDES} -c \$< -o \$@
 EOF
+  else   #FHI-aims has been built
+  cat > Makefile <<EOF
+CPLUSPLUS_MPI = $MPI_CXX
+OPTIONS = -g -qopenmp -O3 -std=c++14
+MACRO = -D__FHIaims
+INCLUDES = -I\${MKLROOT}/include -I${FHIaims_install_dir}/include
+LIBRARY = -L$FHIaims_install_dir/lib -lelsi -lelpa  -lOMM -lMatrixSwitch -lNTPoly -lfortjson \\
+-L\${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 \\
+-lmkl_scalapack_lp64 -lifport -lifcoremt
+
+VPATH=../src \\
+:../src/para \\
+:../src/solver
+
+#============================
+#     Objects
+#============================
+OBJS=main.o \\
+parameters.o \\
+mpi_environment.o \\
+correlated_atoms.o \\
+KS_bands.o \\
+tetrahedron.o \\
+KS_eigenvectors.o \\
+overlap_matrix.o \\
+overlap_matrix_aims.o \\
+overlap_matrix_abacus.o \\
+input.o \\
+timer.o \\
+solver.o \\
+projector.o \\
+chemical_potential.o \\
+Hilbert_space.o \\
+self_energy.o \\
+self_energy_imaginary_aixs.o \\
+self_energy_real_aixs.o \\
+double_counting.o \\
+coulomb_tensor.o \\
+Kanamori_parameterization.o \\
+Anderson_impurity.o \\
+PACS_cthyb.o \\
+alps_cthyb.o \\
+alps_cthyb_segment.o \\
+rutgers_cthyb.o \\
+iQIST_narcissus.o \\
+math_zone.o \\
+spectrum.o \\
+charge_update.o \\
+charge_update_aims.o
+
+#====================
+#   Target
+#====================
+all:\${OBJS}
+	\${CPLUSPLUS_MPI} \${OPTIONS} \${OBJS} \${LIBRARY} -o ../bin/projection_embeding
+
+.PHONY:clean
+clean:
+	rm *.o ../bin/projection_embeding
+
+#==========================
+#       rules
+#==========================
+.cpp.o:
+	\${CPLUSPLUS_MPI} \${OPTIONS} \${INCLUDES} -c \${MACRO} \$< -o \$@
+EOF
+  fi
 
   make -j
 

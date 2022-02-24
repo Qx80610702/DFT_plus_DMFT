@@ -202,6 +202,40 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::update_density");
 
+    const int impurity_solver = *(int*)pars.in.parameter("impurity_solver");
+    if(impurity_solver==1 || 
+       impurity_solver==2 || 
+       impurity_solver==3 ||
+       impurity_solver==4 ||
+       impurity_solver==5 )
+       this->flag_axis = 0;       //imaginary axis
+    else this->flag_axis = 1;     //real axis
+
+    const double beta = *(double*)pars.in.parameter("beta");
+    const int nomega = *(int*)pars.in.parameter("n_omega");
+
+    if(this->flag_axis==0){       //imaginary axis
+      this->imp.sigma.sigma_imag.nomega() = nomega;
+      this->imp.sigma.sigma_imag.inverse_T() = beta;
+      this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
+      auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
+      for(int iomega=0; iomega<nomega; iomega++)
+          freq[iomega] = (2*iomega+1)*PI/beta;
+    }
+
+    this->imp.read_last_step( this->DMFT_iteration_step,
+            *(int*)pars.in.parameter("impurity_solver"),
+            this->pars.bands, this->pars.in, this->pars.atom );
+
+    this->imp.sigma.subtract_double_counting(this->flag_axis);
+
+    this->Mu.update_chemical_potential(
+             this->flag_axis, this->pars.bands, 
+             this->pars.atom, this->proj, 
+             this->imp.sigma, this->pars.in, this->space );
+
+    this->Charge.update_char_dens();
+    
     return;
   }
 

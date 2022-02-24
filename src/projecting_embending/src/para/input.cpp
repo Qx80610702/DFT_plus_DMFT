@@ -22,8 +22,10 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("dft_solver", str_val);
 
-      if(std::strcmp("aims",str_val[0].c_str())==0) this->flag_DFT_solver = 1;
-      else if(std::strcmp("abacus", str_val[0].c_str())==0) this->flag_DFT_solver = 2;
+      if(std::strcmp("abacus", str_val[0].c_str())==0) this->flag_DFT_solver = 2;
+      #ifdef __FHIaims
+      else if(std::strcmp("aims",str_val[0].c_str())==0) this->flag_DFT_solver = 1;
+      #endif
       else
       {
         std::cout << "unsupported value of DFT_solver" << std::endl;
@@ -36,7 +38,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       if(mpi_rank()==0) std::cout << "Warning: dft_solver is not given and set default value aims" << std::endl;
-      this->flag_DFT_solver = 1;   //aims
+      this->flag_DFT_solver = 2;   //ABACUS
     }
 
     //temperature

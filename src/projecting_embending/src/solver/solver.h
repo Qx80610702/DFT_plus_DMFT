@@ -7,6 +7,7 @@
 #include "Anderson_impurity.h"
 #include "coulomb_tensor.h"
 #include "spectrum.h"
+#include "charge_update.h"
 
 //================Arguments lists(command line)==================
 // -dmft.step : current dmft step, default value : 1;
@@ -36,6 +37,7 @@ namespace DFT_plus_DMFT
     DMFT::impurity imp;
     DMFT::coulomb_tensor Umat;
     spectrum Aw;
+    Charge_update Charge;
     
     void solve();
 
