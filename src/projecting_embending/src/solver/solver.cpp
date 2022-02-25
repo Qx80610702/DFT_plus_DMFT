@@ -63,7 +63,8 @@ namespace DFT_plus_DMFT
     }
 
     this->reading_inputs();
-        this->space.KS_bands_window(
+    
+    this->space.KS_bands_window(
           this->pars.bands, 
           this->pars.atom,
           this->pars.in );
@@ -250,9 +251,10 @@ namespace DFT_plus_DMFT
              this->imp.sigma, this->pars.in, this->space );
 
     this->Char_scf.update_char_dens(
-             this->flag_axis, this->pars.bands, 
-             this->pars.atom, this->proj, 
-             this->imp.sigma, this->pars.in, this->space );
+             this->flag_axis, Mu.mu_corrected(),
+             this->pars.bands, this->pars.atom, 
+             this->proj, this->imp.sigma, 
+             this->pars.in, this->space );
     
     return;
   }

@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <complex>
+#include <string>
 
 namespace DFT_plus_DMFT
 {
@@ -29,6 +30,7 @@ namespace DFT_plus_DMFT
     public:
     void update_char_dens(
         const int axis_flag,
+        const double mu,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
@@ -36,8 +38,8 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
-    void eva_fik_DMFT(
-        const int axis_flag,
+    void eva_fik_DMFT_imag_axis(
+        const double mu,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
@@ -45,7 +47,21 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
-    void eva_char_dens();
+    void eva_fik_DMFT_real_axis(
+        const double mu,
+        DFT_output::KS_bands& band, 
+        DFT_output::atoms_info& atom, 
+        DFT_plus_DMFT::projector& proj,
+        DMFT::self_energy& sigma,
+        DMFT::input_info& in,
+        DFT_plus_DMFT::Hilbert_space& space );
+
+    void eva_char_dens(DMFT::input_info& in);
+
+    void output_char_dense(
+        const int dft_solver,
+        std::string file, 
+        std::vector<std::complex<double>>& dens_cmplx );
 
     private:
     std::vector<std::vector<double>> dens_mat;                    //dens_mat[ispin][nbasis*nbasis]
