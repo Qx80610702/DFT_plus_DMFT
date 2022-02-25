@@ -249,7 +249,10 @@ namespace DFT_plus_DMFT
              this->pars.atom, this->proj, 
              this->imp.sigma, this->pars.in, this->space );
 
-    this->Char_scf.update_char_dens();
+    this->Char_scf.update_char_dens(
+             this->flag_axis, this->pars.bands, 
+             this->pars.atom, this->proj, 
+             this->imp.sigma, this->pars.in, this->space );
     
     return;
   }

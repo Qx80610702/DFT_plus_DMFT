@@ -23,7 +23,7 @@ namespace DFT_plus_DMFT
         DFT_plus_DMFT::projector& proj,
         DMFT::self_energy& sigma,
         DMFT::input_info& in,
-        DFT_plus_DMFT::Hilbert_space& space)
+        DFT_plus_DMFT::Hilbert_space& space )
   {
     debug::codestamp("chemical_potential::update_chemical_potential");
 
