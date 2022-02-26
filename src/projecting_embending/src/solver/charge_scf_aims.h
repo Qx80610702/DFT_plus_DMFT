@@ -1,8 +1,6 @@
 #ifdef __FHIaims
 
-#include <string>
 #include <complex>
-
 #include <vector>
 
 namespace DFT_plus_DMFT
@@ -14,7 +12,10 @@ namespace DFT_plus_DMFT
     ~Charge_SCF_aims(){;}
 
     public:
-    void output_charge_density(std::string file, std::vector<std::complex<double>>& dens_cmplx);
+    void output_charge_density(
+          const int nks, 
+          std::vector<std::vector<std::vector<
+        std::complex<double>>>>& dens_mat_cmplx);
 
   };
 }

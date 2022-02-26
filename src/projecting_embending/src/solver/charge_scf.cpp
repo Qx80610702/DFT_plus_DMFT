@@ -10,13 +10,6 @@
 
 #include <mkl.h>
 
-//test
-// #include <fstream>
-// #include <iomanip>
-// #include <sstream>
-// #include <string>
-// #include <cmath>
-
 namespace DFT_plus_DMFT
 {
   void Charge_SCF::update_char_dens(
@@ -45,6 +38,10 @@ namespace DFT_plus_DMFT
     }
 
     //Allocation
+    this->dens_mat.resize(task_nks);
+    for(int ik=0; ik<task_nks; ik++)
+        this->dens_mat[ik].resize(nspin);
+
     this->fik_DMFT.resize(nspin);
     for(int is=0; is<nspin; is++){
       this->fik_DMFT[is].resize(task_nks);
@@ -70,26 +67,18 @@ namespace DFT_plus_DMFT
     #pragma omp parallel num_threads(threads_num)
     {
       std::vector<std::vector<std::complex<double>>> eigenvector;
-      std::vector<std::vector<std::complex<double>>> dens_cmplx;
+      // std::vector<std::vector<std::complex<double>>> dens_cmplx;
 
       #pragma omp for
       for(int ik=0; ik<task_nks; ik++)
-      {
         this->eva_k_densmat( 
           dft_solver, nspin, 
           ik, k_map[ik], space, 
-          eigenvector, dens_cmplx );
-
-
-        // std::string file;
-        // this->output_char_dense(
-        //       dft_solver, file, 
-        //       dens_cmplx );
-      }
+          eigenvector, this->dens_mat[ik] );
     }
     mkl_set_num_threads(mkl_threads);
 
-    
+    this->output_char_dense(dft_solver, nks);
 
     return;
   }
@@ -249,35 +238,38 @@ namespace DFT_plus_DMFT
         "../DFT/outputs_to_DMFT/KS_eigenvector/", 
         i_k_point, space, eigenvector );       //read KS-eigenvector
 
-    //dense_cmplx[ispin][nbasis*nbasis];
-    if(dense_cmplx.empty()){
-      dense_cmplx.resize(nspin);
-      for(int ispin=0; ispin<nspin; ispin++)
-        dense_cmplx[ispin].resize( wfc.basis_n()*wfc.basis_n() );
-    }
+    const int nbasis = wfc.basis_n();
 
     for(int ispin=0; ispin<nspin; ispin++)
       for(int iband=0; iband<this->fik_DMFT[ispin][ik].size(); iband++)
-        for(int ibasis=0; ibasis<wfc.basis_n(); ibasis++)
+        for(int ibasis=0; ibasis<nbasis; ibasis++)
           eigenvector[ispin][ibasis*this->fik_DMFT[ispin][ik].size()+iband] *= std::sqrt(this->fik_DMFT[ispin][ik][iband]);
      
-
     // void cblas_zherk (const CBLAS_LAYOUT Layout, const CBLAS_UPLO uplo, const
     //    CBLAS_TRANSPOSE trans, const MKL_INT n, const MKL_INT k, const double alpha, const void
     //    *a, const MKL_INT lda, const double beta, void *c, const MKL_INT ldc);
-    for(int ispin=0; ispin<nspin; ispin++)
+
+    for(int ispin=0; ispin<nspin; ispin++){
+      if(dense_cmplx[ispin].empty())
+        dense_cmplx[ispin].resize(nbasis*nbasis);
+
       cblas_zherk(CblasRowMajor, CblasUpper, CblasNoTrans, 
-                  wfc.basis_n(), this->fik_DMFT[ispin][ik].size(), 
-                  1.0, &eigenvector[ispin][0], wfc.basis_n(), 
-                  0.0, &dense_cmplx[ispin][0], wfc.basis_n() );
+                  nbasis, this->fik_DMFT[ispin][ik].size(), 
+                  1.0, &eigenvector[ispin][0], nbasis, 
+                  0.0, &dense_cmplx[ispin][0], nbasis );
+      
+      for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
+        for(int ibasis2=0; ibasis2<ibasis1; ibasis2++)
+          dense_cmplx[ispin][ibasis1*nbasis + ibasis2] = std::conj(dense_cmplx[ispin][ibasis2*nbasis + ibasis1]);
+      
+    }
 
     return;
   }
 
   void Charge_SCF::output_char_dense(
       const int dft_solver,
-      std::string file, 
-      std::vector<std::complex<double>>& dens_cmplx)
+      const int nks )
   {
     debug::codestamp("Charge_SCF::output_char_dense");
 
@@ -285,7 +277,7 @@ namespace DFT_plus_DMFT
     {
       case 1: //aims
         #ifdef __FHIaims
-        this->char_scf_aims.output_charge_density(file, dens_cmplx);
+        this->char_scf_aims.output_charge_density(nks, this->dens_mat);
         #else
         std::cout << "FHI-aims has not been installed!!!  ";
         std::cout << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;

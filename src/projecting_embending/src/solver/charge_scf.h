@@ -69,11 +69,10 @@ namespace DFT_plus_DMFT
 
     void output_char_dense(
         const int dft_solver,
-        std::string file, 
-        std::vector<std::complex<double>>& dens_cmplx );
+        const int nks );
 
     private:
-    std::vector<std::vector<double>> dens_mat;                    //dens_mat[ispin][nbasis*nbasis]
+    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;       //dens_mat[ik][ispin][nbasis*nbasis]
     std::vector<std::vector<std::vector<double>>> fik_DMFT;       //fik_DMFT[is][ik][iband]
 
   };
