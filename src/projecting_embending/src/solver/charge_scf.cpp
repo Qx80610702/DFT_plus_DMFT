@@ -2,6 +2,7 @@
 #include "../debug.h"
 #include "../mpi_environment.h"
 #include "math_zone.h"
+#include "../para/KS_eigenvectors.h"
 
 #include <omp.h>
 #include <mpi.h>
@@ -33,12 +34,14 @@ namespace DFT_plus_DMFT
     const int nks=band.nk();
     const int nspin=band.nspins();
     const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();
+    const int dft_solver = *(int*)in.parameter("dft_solver");
 
+    std::vector<int> k_map;
     int task_nks=0;
-    for(int ik=0; ik<band.nk(); ik++) 
-    {
-      if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
+    for(int ik=0; ik<nks; ik++){
+      if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to the process id
       task_nks +=1;
+      k_map.push_back(ik);
     }
 
     //Allocation
@@ -58,9 +61,35 @@ namespace DFT_plus_DMFT
       this->eva_fik_DMFT_real_axis(
             mu, band, atom, proj, 
             sigma, in, space );
+    
+    int max_threads=omp_get_max_threads();
+    int threads_num = (max_threads>k_map.size()? k_map.size() : max_threads);
+    const int mkl_threads = mkl_get_max_threads();
+    mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
 
-    this->eva_char_dens(in);
+    #pragma omp parallel num_threads(threads_num)
+    {
+      std::vector<std::vector<std::complex<double>>> eigenvector;
+      std::vector<std::vector<std::complex<double>>> dens_cmplx;
 
+      #pragma omp for
+      for(int ik=0; ik<task_nks; ik++)
+      {
+        this->eva_k_densmat( 
+          dft_solver, nspin, 
+          ik, k_map[ik], space, 
+          eigenvector, dens_cmplx );
+
+
+        // std::string file;
+        // this->output_char_dense(
+        //       dft_solver, file, 
+        //       dens_cmplx );
+      }
+    }
+    mkl_set_num_threads(mkl_threads);
+
+    
 
     return;
   }
@@ -106,8 +135,6 @@ namespace DFT_plus_DMFT
     //Correlated bands
     for(int ik=0; ik<task_nks; ik++)
     {
-      if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
-
       sigma.evalute_lattice_sigma(
           0, magnetism, 
           nspin, wbands, atom, 
@@ -203,17 +230,46 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::eva_char_dens(
-        DMFT::input_info& in )
+  void Charge_SCF::eva_k_densmat(
+        const int dft_solver,
+        const int nspin,
+        const int ik,
+        const int i_k_point,
+        DFT_plus_DMFT::Hilbert_space& space,
+        std::vector<std::vector<
+        std::complex<double>>>& eigenvector,
+        std::vector<std::vector<
+        std::complex<double>>>& dense_cmplx  )
   {
-    debug::codestamp("Charge_SCF::eva_char_dens");
+    debug::codestamp("Charge_SCF::eva_k_densmat");
 
-    std::string file;
-    std::vector<std::complex<double>> dens_cmplx;
+    wave_function wfc;
 
-    this->output_char_dense(
-      *(int*)in.parameter("dft_solver"),
-      file, dens_cmplx);
+    wfc.read_DMFT_occ_subset(
+        "../DFT/outputs_to_DMFT/KS_eigenvector/", 
+        i_k_point, space, eigenvector );       //read KS-eigenvector
+
+    //dense_cmplx[ispin][nbasis*nbasis];
+    if(dense_cmplx.empty()){
+      dense_cmplx.resize(nspin);
+      for(int ispin=0; ispin<nspin; ispin++)
+        dense_cmplx[ispin].resize( wfc.basis_n()*wfc.basis_n() );
+    }
+
+    for(int ispin=0; ispin<nspin; ispin++)
+      for(int iband=0; iband<this->fik_DMFT[ispin][ik].size(); iband++)
+        for(int ibasis=0; ibasis<wfc.basis_n(); ibasis++)
+          eigenvector[ispin][ibasis*this->fik_DMFT[ispin][ik].size()+iband] *= std::sqrt(this->fik_DMFT[ispin][ik][iband]);
+     
+
+    // void cblas_zherk (const CBLAS_LAYOUT Layout, const CBLAS_UPLO uplo, const
+    //    CBLAS_TRANSPOSE trans, const MKL_INT n, const MKL_INT k, const double alpha, const void
+    //    *a, const MKL_INT lda, const double beta, void *c, const MKL_INT ldc);
+    for(int ispin=0; ispin<nspin; ispin++)
+      cblas_zherk(CblasRowMajor, CblasUpper, CblasNoTrans, 
+                  wfc.basis_n(), this->fik_DMFT[ispin][ik].size(), 
+                  1.0, &eigenvector[ispin][0], wfc.basis_n(), 
+                  0.0, &dense_cmplx[ispin][0], wfc.basis_n() );
 
     return;
   }

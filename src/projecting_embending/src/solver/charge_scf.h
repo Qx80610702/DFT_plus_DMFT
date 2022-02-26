@@ -56,7 +56,16 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
-    void eva_char_dens(DMFT::input_info& in);
+    void eva_k_densmat(
+        const int dft_solver,
+        const int nspin,
+        const int ik,
+        const int i_k_point,
+        DFT_plus_DMFT::Hilbert_space& space,
+        std::vector<std::vector<
+        std::complex<double>>>& eigenvector,
+        std::vector<std::vector<
+        std::complex<double>>>& dense_cmplx );
 
     void output_char_dense(
         const int dft_solver,

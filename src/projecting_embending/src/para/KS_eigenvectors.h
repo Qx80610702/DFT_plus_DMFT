@@ -13,13 +13,18 @@ namespace DFT_output
     KS_eigenvectors(){};
     ~KS_eigenvectors(){};
 
-    // void initialize();
-    bool read(const std::string dir, const int ik,
-              DFT_plus_DMFT::Hilbert_space& space);
+    bool read_corr_subset(const std::string dir, const int ik,
+              DFT_plus_DMFT::Hilbert_space& space,
+              std::vector<std::vector<std::complex<double>>>& eigenvector );
+
+    bool read_DMFT_occ_subset(const std::string dir, const int ik,
+              DFT_plus_DMFT::Hilbert_space& space,
+              std::vector<std::vector<std::complex<double>>>& eigenvector );
 
     void evalute_k_wave_c_mat(
       std::complex<double>* wave_c_mat, const int is,
-      const int iband1, const int iband2);
+      const int iband1, const int iband2,
+      std::vector<std::vector<std::complex<double>>>& eigenvector);
 
     //=================
     //  interfaces
@@ -27,10 +32,10 @@ namespace DFT_output
     bool soc(){return flag_SOC;}
     int nspin(){return nspins;}
     int nband(){return nbands;}
-    inline int basis_n(){return nbasis;}
+    int basis_n(){return nbasis;}
 
-    std::vector<std::vector<std::complex<double>>>&
-    wave_c(){return eigenvector;}
+    // std::vector<std::vector<std::complex<double>>>&
+    // wave_c(){return eigenvector;}
     
 
     private:
@@ -46,7 +51,7 @@ namespace DFT_output
 
 
     //eigen_values[ispin][nbasis*nbands];
-    std::vector<std::vector<std::complex<double>>> eigenvector; 
+    // std::vector<std::vector<std::complex<double>>> eigenvector; 
 
   };
   
