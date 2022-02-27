@@ -255,6 +255,9 @@ namespace DFT_plus_DMFT
              this->pars.bands, this->pars.atom, 
              this->proj, this->imp.sigma, 
              this->pars.in, this->space );
+
+    this->Char_scf.prepare_nscf_dft(
+            *(int*)pars.in.parameter("dft_solver") );
     
     return;
   }

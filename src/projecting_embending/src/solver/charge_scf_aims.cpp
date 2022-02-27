@@ -3,12 +3,15 @@
 #include "charge_scf_aims.h"
 #include "../debug.h"
 #include "../mpi_environment.h"
+#include "../para/input.h"
 
 #include <cmath>
 #include <sstream>
 #include <string>
 #include <iomanip>
 #include <string>
+#include <cstring>
+#include <fstream>
 
 #include <elsi.h>
 
@@ -52,6 +55,84 @@ namespace DFT_plus_DMFT
 
     return;
   }
+
+  void Charge_SCF_aims::prepare_nscf_dft()
+  {
+    debug::codestamp("Charge_SCF_aims::prepare_nscf_dft");
+
+    if(mpi_rank() != 0) return; 
+
+    //==================================
+    //      Renew control.in
+    //==================================
+    std::vector<std::string> lines;
+    char word[200];
+
+    //=========Read control.in==========
+    std::ifstream ifs("../DFT/control.in", std::ios::in);
+    if(!ifs){
+      std::cout << "Fail to oepn file control.in" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    ifs.seekg(0);   //set the position at the beginning of the file
+
+    while(ifs.good())
+    {
+      ifs.getline(word, 200);   
+      if(ifs.eof()) break;
+
+      std::string line(word);
+      lines.push_back(line);
+
+      if(ifs.eof()) break;
+    }
+    ifs.close();
+
+
+    //============Write control.in==================
+    std::ofstream ofs("../DFT/control.in", std::ios::out);
+    char word_low[200];
+
+    for(int i=0; i<lines.size(); i++){
+      std::string line_str = lines[i];
+
+      if( line_str.empty() ) ofs << std::endl;
+      else{
+        DMFT::input_info::strtolower(&line_str[0], word_low);
+        std::string line(word_low);
+
+        line.erase(0, line.find_first_not_of(" "));
+        line.erase(line.find_last_not_of(" ") + 1);
+
+        if(!line.empty() && line[0]!='#'){
+          std::string param = line.substr( 0, line.find_first_of(' ') );
+          
+          if(std::strcmp(param.c_str(), "dft_plus_dmft")==0){
+            ofs << line_str << std::endl;
+            ofs << "  charge_mix_param    1.0" << std::endl;
+            ofs << "  sc_iter_limit    1" << std::endl;
+            ofs << "  elsi_restart read 1" << std::endl;
+          }
+          else{
+            if(std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
+              std::strcmp(param.c_str(), "elsi_restart") !=0 &&
+              std::strcmp(param.c_str(), "sc_iter_limit") !=0 )
+              ofs << line_str << std::endl;
+          }
+          
+        }
+        else{
+          ofs << line_str << std::endl;
+        }
+
+      }
+    }
+    ofs.close();
+
+    return;
+  }
+
 }
 
 #endif

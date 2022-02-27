@@ -302,5 +302,40 @@ namespace DFT_plus_DMFT
 
     return;
   }
+
+  void Charge_SCF::prepare_nscf_dft(
+      const int dft_solver )
+  {
+    debug::codestamp("Charge_SCF::prepare_nscf_dft");
+
+    switch(dft_solver)
+    {
+      case 1: //aims
+        #ifdef __FHIaims
+        this->char_scf_aims.prepare_nscf_dft();
+        #else
+        std::cout << "FHI-aims has not been installed!!!  ";
+        std::cout << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+        #endif   
+        break;
+      case 2: //ABACUS
+        #ifdef __ABACUS
+        // this->char_scf_aims.output_charge_density(file, dens_cmplx);
+        std::cout << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
+        std::exit(EXIT_FAILURE);
+        #else
+        std::cout << "ABACUS has not been installed!!!  ";
+        std::cout << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+        #endif
+        break;
+      default:
+        std::cout << "Not supported DFT_solver" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    return;
+  }
   
 }

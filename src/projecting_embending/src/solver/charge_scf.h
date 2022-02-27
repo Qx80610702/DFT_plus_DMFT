@@ -71,6 +71,8 @@ namespace DFT_plus_DMFT
         const int dft_solver,
         const int nks );
 
+    void prepare_nscf_dft(const int dft_solver);
+
     private:
     std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;       //dens_mat[ik][ispin][nbasis*nbasis]
     std::vector<std::vector<std::vector<double>>> fik_DMFT;       //fik_DMFT[is][ik][iband]

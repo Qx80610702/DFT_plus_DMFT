@@ -17,6 +17,8 @@ namespace DFT_plus_DMFT
           std::vector<std::vector<std::vector<
         std::complex<double>>>>& dens_mat_cmplx);
 
+    void prepare_nscf_dft();
+
   };
 }
 
