@@ -10,6 +10,10 @@
 
 #include <mkl.h>
 
+//===test===
+#include <fstream>
+#include <iomanip>
+
 namespace DFT_plus_DMFT
 {
   void Charge_SCF::update_char_dens(
@@ -122,8 +126,7 @@ namespace DFT_plus_DMFT
           if(!corb_flag[is][iband]) this->fik_DMFT[is][ik][iband] = 1.0;
 
     //Correlated bands
-    for(int ik=0; ik<task_nks; ik++)
-    {
+    for(int ik=0; ik<task_nks; ik++){
       sigma.evalute_lattice_sigma(
           0, magnetism, 
           nspin, wbands, atom, 
@@ -184,15 +187,6 @@ namespace DFT_plus_DMFT
       }//is
     }//ik
 
-    //TEST
-    // std::ofstream ofs("fik.dat", std::ios::out);
-    // for(int is=0; is<nspin; is++)
-    //   for(int ik=0; ik<task_nks; ik++){
-    //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
-    //       ofs << std::setw(6) << std::fixed << std::setprecision(3) << this->fik_DMFT[is][ik][iband];
-    //     ofs << std::endl;
-    //   }
-
     if(nspin==1 && !band.soc()) 
       for(int ik=0; ik<k_weight.size(); ik++)
         k_weight[ik] *= 2.0;
@@ -201,6 +195,56 @@ namespace DFT_plus_DMFT
       for(int ik=0; ik<task_nks; ik++)
         for(int iband=0; iband<=wb2ib[is].back(); iband++)
           this->fik_DMFT[is][ik][iband] *= k_weight[ik];
+
+    //TEST
+    // std::ofstream ofs("fik.dat", std::ios::out);
+    // for(int is=0; is<nspin; is++)
+    //   for(int ik=0; ik<task_nks; ik++){
+    //     ofs << std::setw(4) << ik+1;
+    //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
+    //       ofs << std::setw(10) << std::fixed << std::setprecision(6) << this->fik_DMFT[is][ik][iband];
+    //     ofs << std::endl;
+    //   }
+
+    // this->fik_test.resize(nspin);
+    // for(int is=0; is<nspin; is++){
+    //   this->fik_test[is].resize(nks);
+    //   for(int ik=0; ik<nks; ik++)
+    //     this->fik_test[is][ik].resize(wb2ib[is].back()+1, 0.0);
+    // }
+
+    // int i_k_point, i_state;
+
+    // std::ifstream ifs("../DFT/occu.dat", std::ios::in);
+
+    // if (!ifs){
+	  // 	std::cout << "Fail to oepn ../DFT/occu.dat" << std::endl;
+    //   std::exit(EXIT_FAILURE);
+    // }
+    // ifs.seekg(0);      //set the position at the beginning of the file
+
+    // while(ifs.good()){
+    //   ifs >> i_k_point;
+    //   if(ifs.eof()) break;
+
+    //   for(int i_state=0; i_state<wb2ib[0].back()+1; i_state++)
+    //     ifs >> this->fik_test[0][i_k_point][i_state];
+
+    //   ifs.ignore(150, '\n'); 
+
+    //   if(ifs.eof()) break;  //Check whether end of file is reached 
+    // }
+    // ifs.close();
+
+    // //TEST
+    // std::ofstream ofs("fik.dat", std::ios::out);
+    // for(int is=0; is<nspin; is++)
+    //   for(int ik=0; ik<nks; ik++){
+    //     ofs << std::setw(4) << ik;
+    //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
+    //       ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_test[is][ik][iband];
+    //     ofs << std::endl;
+    //   }
 
     return;
   }
@@ -255,13 +299,12 @@ namespace DFT_plus_DMFT
 
       cblas_zherk(CblasRowMajor, CblasUpper, CblasNoTrans, 
                   nbasis, this->fik_DMFT[ispin][ik].size(), 
-                  1.0, &eigenvector[ispin][0], nbasis, 
+                  1.0, &eigenvector[ispin][0], this->fik_DMFT[ispin][ik].size(), 
                   0.0, &dense_cmplx[ispin][0], nbasis );
-      
+
       for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
         for(int ibasis2=0; ibasis2<ibasis1; ibasis2++)
-          dense_cmplx[ispin][ibasis1*nbasis + ibasis2] = std::conj(dense_cmplx[ispin][ibasis2*nbasis + ibasis1]);
-      
+          dense_cmplx[ispin][ibasis1*nbasis + ibasis2] = std::conj(dense_cmplx[ispin][ibasis2*nbasis + ibasis1]); 
     }
 
     return;

@@ -77,5 +77,8 @@ namespace DFT_plus_DMFT
     std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;       //dens_mat[ik][ispin][nbasis*nbasis]
     std::vector<std::vector<std::vector<double>>> fik_DMFT;       //fik_DMFT[is][ik][iband]
 
+
+    // std::vector<std::vector<std::vector<double>>> fik_test;       //fik_test[is][ik][iband]
+
   };
 }

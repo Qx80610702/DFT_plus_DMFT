@@ -36,6 +36,8 @@ namespace DFT_plus_DMFT
     elsi_rw_handle rwh;
     c_elsi_init_rw(&rwh,1,0,nbasis,0.0);
 
+    std::vector<std::complex<double>> dense_mat_tmp(nbasis*nbasis);
+
     for(int ik=0; ik<task_nks; ik++){
       for(int ispin=0; ispin<dens_mat_cmplx[0].size(); ispin++){
         std::stringstream ss;
@@ -47,7 +49,13 @@ namespace DFT_plus_DMFT
 
         std::string file = ss.str();
 
-        c_elsi_write_mat_complex(rwh, &file[0], reinterpret_cast<double _Complex*>(dens_mat_cmplx[ik][ispin].data()));
+        //Fortran order : column major
+        for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
+          for(int ibasis2=0; ibasis2<nbasis; ibasis2++)
+            if(ibasis1 != ibasis2) dense_mat_tmp[ibasis1*nbasis + ibasis2] = 
+              std::conj(dens_mat_cmplx[ik][ispin][ibasis1*nbasis + ibasis2]);
+
+        c_elsi_write_mat_complex(rwh, &file[0], reinterpret_cast<double _Complex*>(dense_mat_tmp.data()));
       }
     }
 
