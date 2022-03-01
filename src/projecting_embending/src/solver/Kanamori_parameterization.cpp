@@ -77,7 +77,8 @@ namespace DMFT
   }
 
   void Kanamori_parameterization::out_ALPS_CTHYB(
-                      const int istep, 
+                      const int char_step,
+                      const int DMFT_step, 
                       DFT_output::atoms_info& atom,
                       DFT_output::KS_bands& band)
   {
@@ -87,10 +88,14 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nspin = band.nspins();
 
-    std::string dir_impurity_solving = "impurity_solving";
+    std::string dir_impurity_solving = "dmft_solving";
+
+    std::stringstream char_dir_ss;
+    char_dir_ss << "/charge_step" << char_step;
+    std::string char_step_dir= char_dir_ss.str();
 
     std::stringstream step_dir_ss;
-    step_dir_ss << "/step" << istep;
+    step_dir_ss << "/dmft_step" << DMFT_step;
     std::string step_dir= step_dir_ss.str();
 
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -103,7 +108,7 @@ namespace DMFT
       std::string site_dir= site_dir_ss.str();
 
       std::stringstream current_dir_ss;
-      current_dir_ss << dir_impurity_solving << step_dir << site_dir;
+      current_dir_ss << dir_impurity_solving << char_step_dir << step_dir << site_dir;
       std::string current_dir = current_dir_ss.str();
 
       std::string Uijkl = current_dir+"/Uijkl.txt";
@@ -169,9 +174,10 @@ namespace DMFT
   }
 
   void Kanamori_parameterization::out_ALPS_CTHYB_SEGMENT(
-                      const int istep, 
-                      DFT_output::atoms_info& atom,
-                      DFT_output::KS_bands& band)
+            const int char_step,
+            const int DMFT_step, 
+            DFT_output::atoms_info& atom,
+            DFT_output::KS_bands& band )
   {
     debug::codestamp("Kanamori_parameterization::out_ALPS_CTHYB_SEGMENT");
 
@@ -179,10 +185,14 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nspin = band.nspins();
 
-    std::string dir_impurity_solving = "impurity_solving";
+    std::string dir_impurity_solving = "dmft_solving";
+
+    std::stringstream char_dir_ss;
+    char_dir_ss << "/charge_step" << char_step;
+    std::string char_step_dir= char_dir_ss.str();
 
     std::stringstream step_dir_ss;
-    step_dir_ss << "/step" << istep;
+    step_dir_ss << "/dmft_step" << DMFT_step;
     std::string step_dir= step_dir_ss.str();
 
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -195,7 +205,7 @@ namespace DMFT
       std::string site_dir= site_dir_ss.str();
 
       std::stringstream current_dir_ss;
-      current_dir_ss << dir_impurity_solving << step_dir << site_dir;
+      current_dir_ss << dir_impurity_solving << char_step_dir << step_dir << site_dir;
       std::string current_dir = current_dir_ss.str();
 
       std::string Uij = current_dir+"/Uij.dat";

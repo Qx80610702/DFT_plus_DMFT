@@ -382,9 +382,11 @@ namespace DFT_plus_DMFT
                   this->Mu.mu_corrected(), this->pars.bands, 
                   this->pars.in, this->pars.atom, this->Umat);
 
-    this->Umat.out_coulomb_tensor(1, this->DMFT_iteration_step,
+    this->Umat.out_coulomb_tensor(
+                  1, this->charge_scf_step, 
+                  this->DMFT_iteration_step,
                   *(int*)this->pars.in.parameter("impurity_solver"),
-                  this->pars.atom, this->pars.bands);
+                  this->pars.atom, this->pars.bands );
   }
 
 }

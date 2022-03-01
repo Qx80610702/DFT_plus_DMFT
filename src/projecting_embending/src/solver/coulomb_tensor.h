@@ -18,10 +18,13 @@ namespace DMFT
 
     void update_coulomb_tensor(const int type, DFT_output::atoms_info& atom);
 
-    void out_coulomb_tensor(const int type, const int istep, 
-                            const int impurity_solver, 
-                            DFT_output::atoms_info& atom,
-                            DFT_output::KS_bands& band);
+    void out_coulomb_tensor(
+              const int type,
+              const int char_step,
+              const int DMFT_step,
+              const int impurity_solver, 
+              DFT_output::atoms_info& atom,
+              DFT_output::KS_bands& band );
 
     std::vector<std::vector<std::vector<std::vector<
     std::vector<double>>>>>& Coulomb_matrix(){return U_matrix;}

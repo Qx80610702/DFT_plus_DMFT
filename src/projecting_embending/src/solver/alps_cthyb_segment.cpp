@@ -37,7 +37,7 @@ namespace DMFT
     const int ntau = *(int*)in.parameter("n_tau");
     const int nomega = *(int*)in.parameter("n_omega");
 
-    //Create directory impurity 
+        //Create directory impurity 
     std::string dir_impurity_solving = "dmft_solving";
     std::stringstream make_dir1;
     make_dir1 << "test -d " << dir_impurity_solving << " || mkdir " << dir_impurity_solving;
@@ -47,13 +47,19 @@ namespace DMFT
     char_dir_ss << "/charge_step" << char_step;
     std::string char_step_dir= char_dir_ss.str();
 
+    std::stringstream make_char_dir;
+    make_char_dir << "test -d " << dir_impurity_solving << char_step_dir
+            << " || mkdir " << dir_impurity_solving << char_step_dir;
+    system(make_char_dir.str().c_str());
+
     std::stringstream step_dir_ss;
     step_dir_ss << "/dmft_step" << DMFT_step;
     std::string step_dir= step_dir_ss.str();
-    std::stringstream make_dir2;
-    make_dir2 << "test -d " << dir_impurity_solving << char_step_dir << step_dir
+
+    std::stringstream make_dmft_dir;
+    make_dmft_dir << "test -d " << dir_impurity_solving << char_step_dir << step_dir
             << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir;
-    system(make_dir2.str().c_str());
+    system(make_dmft_dir.str().c_str());
 
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
@@ -75,10 +81,11 @@ namespace DMFT
       std::stringstream site_dir_ss;
       site_dir_ss << "/impurity" << ineq;
       std::string site_dir= site_dir_ss.str();
-      std::stringstream make_dir3;
-      make_dir3 << "test -d " << dir_impurity_solving << char_step_dir << step_dir << site_dir
+      
+      std::stringstream make_imp_dir;
+      make_imp_dir << "test -d " << dir_impurity_solving << char_step_dir << step_dir << site_dir
               << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir << site_dir;
-      system(make_dir3.str().c_str());
+      system(make_imp_dir.str().c_str());
 
       std::stringstream current_dir_ss;
       current_dir_ss << dir_impurity_solving << char_step_dir << step_dir << site_dir;

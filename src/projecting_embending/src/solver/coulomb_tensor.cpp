@@ -18,7 +18,9 @@ namespace DMFT
   }
 
   void coulomb_tensor::out_coulomb_tensor(
-            const int type, const int istep, 
+            const int type,
+            const int char_step,
+            const int DMFT_step,
             const int impurity_solver, 
             DFT_output::atoms_info& atom,
             DFT_output::KS_bands& band)
@@ -27,9 +29,9 @@ namespace DMFT
     {
       case 1:
         if(impurity_solver==1)
-          this->Kana_coulomb.out_ALPS_CTHYB(istep, atom, band);
+          this->Kana_coulomb.out_ALPS_CTHYB(char_step, DMFT_step, atom, band);
         else if(impurity_solver==2)
-          this->Kana_coulomb.out_ALPS_CTHYB_SEGMENT(istep, atom, band);
+          this->Kana_coulomb.out_ALPS_CTHYB_SEGMENT(char_step, DMFT_step, atom, band);
         break;
       default:
         break;
