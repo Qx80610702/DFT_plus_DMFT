@@ -167,12 +167,28 @@ namespace DMFT
       this->flag_double_counting = 1;
     }
 
+    //max_charge_step
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("max_charge_step", str_val);
+
+      this->charge_step_max = atoi(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      std::cout << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      if(mpi_rank()==0) std::cout << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
+      this->charge_step_max = 10;
+    }
+
     //max_dmft_step
     try {
       std::vector<std::string> str_val;
       this->read_parameter("max_dmft_step", str_val);
 
-      this->DMFT_step = atoi(str_val[0].c_str());
+      this->DMFT_step_max = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
       std::cout << messg << std::endl;
@@ -180,7 +196,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 10" << std::endl;
-      this->DMFT_step = 10;
+      this->DMFT_step_max = 10;
     }
 
     //mc_step
@@ -282,6 +298,7 @@ namespace DMFT
           std::strcmp("magnetism", key_val[0].c_str())==0 ||
           std::strcmp("impurity_solver", key_val[0].c_str())==0 ||
           std::strcmp("double_counting", key_val[0].c_str())==0 ||
+          std::strcmp("max_charge_step", key_val[0].c_str())==0 ||
           std::strcmp("max_dmft_step", key_val[0].c_str())==0 ||
           std::strcmp("mc_step", key_val[0].c_str())==0 || 
           std::strcmp("energy_window", key_val[0].c_str())==0 ||
@@ -328,7 +345,8 @@ namespace DMFT
     else if(std::strcmp("n_omega", word)==0) return &n_omega;
     else if(std::strcmp("impurity_solver", word)==0) return &flag_impurity_solver;
     else if(std::strcmp("double_counting", word)==0) return &flag_double_counting;
-    else if(std::strcmp("max_dmft_step", word)==0) return &DMFT_step;
+    else if(std::strcmp("max_charge_step", word)==0) return &charge_step_max;
+    else if(std::strcmp("max_dmft_step", word)==0) return &DMFT_step_max;
     else if(std::strcmp("mc_step", word)==0) return &MC_step;
     else
     {

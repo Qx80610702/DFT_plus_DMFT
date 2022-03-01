@@ -18,7 +18,8 @@
 
 namespace DMFT
 {
-  void IQIST_NARCISSUS::output(const int istep, 
+  void IQIST_NARCISSUS::output(
+        const int char_step, const int DMFT_step, 
         const double mu, DMFT::input_info& in, DFT_output::atoms_info& atom, 
         DFT_output::KS_bands& band, const std::vector<double>& freq,
         std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
@@ -42,18 +43,21 @@ namespace DMFT
     double zero=0.0;
 
     //Create directory impurity 
-    std::string dir_impurity_solving = "impurity_solving";
+    std::string dir_impurity_solving = "dmft_solving";
     std::stringstream make_dir1;
     make_dir1 << "test -d " << dir_impurity_solving << " || mkdir " << dir_impurity_solving;
     system(make_dir1.str().c_str());
 
-    //Create directory step+num
+    std::stringstream char_dir_ss;
+    char_dir_ss << "/charge_step" << char_step;
+    std::string char_step_dir= char_dir_ss.str();
+
     std::stringstream step_dir_ss;
-    step_dir_ss << "/step" << istep;
+    step_dir_ss << "/dmft_step" << DMFT_step;
     std::string step_dir= step_dir_ss.str();
     std::stringstream make_dir2;
-    make_dir2 << "test -d " << dir_impurity_solving << step_dir
-            << " || mkdir " << dir_impurity_solving << step_dir;
+    make_dir2 << "test -d " << dir_impurity_solving << char_step_dir << step_dir
+            << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir;
     system(make_dir2.str().c_str());
 
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -84,12 +88,12 @@ namespace DMFT
       site_dir_ss << "/impurity" << ineq;
       std::string site_dir= site_dir_ss.str();
       std::stringstream make_dir3;
-      make_dir3 << "test -d " << dir_impurity_solving << step_dir << site_dir
-              << " || mkdir " << dir_impurity_solving << step_dir << site_dir;
+      make_dir3 << "test -d " << dir_impurity_solving << char_step_dir << step_dir << site_dir
+              << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir << site_dir;
       system(make_dir3.str().c_str());
 
       std::stringstream current_dir_ss;
-      current_dir_ss << dir_impurity_solving << step_dir << site_dir;
+      current_dir_ss << dir_impurity_solving << char_step_dir << step_dir << site_dir;
       std::string current_dir = current_dir_ss.str();
 
       //===========================================
@@ -326,7 +330,8 @@ namespace DMFT
   }
 
   void IQIST_NARCISSUS::read_last_step(
-        const int istep, 
+        const int char_step,
+        const int DMFT_step,
         DFT_output::KS_bands& band,
         DMFT::input_info& in, 
         DFT_output::atoms_info& atom,
@@ -351,13 +356,15 @@ namespace DMFT
     double omega, real, imag;
     std::string str_tmp;
 
-    //directory impurity 
-    std::string dir_impurity_solving = "impurity_solving";
+    std::string dir_dmft_solving = "dmft_solving";
 
-    //directory step+num
-    std::stringstream step_dir_ss;
-    step_dir_ss << "/step" << istep-1;
-    std::string step_dir= step_dir_ss.str();
+    std::stringstream char_dir_ss;
+    char_dir_ss << "/charge_step" << char_step;
+    std::string char_step_dir= char_dir_ss.str();
+
+    std::stringstream dmft_dir_ss;
+    dmft_dir_ss << "/dmft_step" << DMFT_step-1;
+    std::string dmft_step_dir= dmft_dir_ss.str();
 
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
@@ -379,7 +386,7 @@ namespace DMFT
             Swa = Sw[ineq];
 
       std::stringstream current_dir_ss;
-      current_dir_ss << dir_impurity_solving << step_dir << site_dir;
+      current_dir_ss << dir_dmft_solving << char_step_dir << dmft_step_dir << site_dir;
       std::string current_dir = current_dir_ss.str();
 
       //=================================================

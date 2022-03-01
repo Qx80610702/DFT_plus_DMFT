@@ -302,9 +302,8 @@ namespace DFT_plus_DMFT
     char word[100], word_low[100];
 
     std::ifstream ifs("DMFT_running.log", std::ios::in);
-    if (!ifs)  
-	  {
-	  	std::cout << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
+    if (!ifs)  {
+      std::cout << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);   //set the position at the beginning of the file

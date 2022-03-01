@@ -16,9 +16,16 @@ namespace DFT_plus_DMFT
     ~Hilbert_space(){};
 
     //dectect which KS bands need self energy correction
-    void KS_bands_window(DFT_output::KS_bands& band, 
-                        DFT_output::atoms_info& atom, 
-                        DMFT::input_info& in);
+    void KS_bands_window(
+          const int charge_step,
+          DFT_output::KS_bands& band, 
+          DFT_output::atoms_info& atom, 
+          DMFT::input_info& in );
+
+    void down_folding_first_charge_step(
+          DFT_output::KS_bands& band );
+
+    void read_corr_bands_windows();
     
     // interfaces
     std::vector<int>& Wbands(){return n_wbands;}
@@ -34,6 +41,7 @@ namespace DFT_plus_DMFT
     int nspin;   
     double n_valence;               //Number of valence electrons  
     int n_KS_bands;
+    int n_k_points;
 
     //The energy window of KS bands
     std::vector<double> energy_up_down;       // energy_up_down[0 or 1]

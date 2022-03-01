@@ -17,7 +17,8 @@
 
 namespace DMFT
 {
-  void ALPS_CTHYB_SEGMENT::output(const int istep, 
+  void ALPS_CTHYB_SEGMENT::output(
+        const int char_step, const int DMFT_step, 
         const double mu, DMFT::input_info& in, 
         DFT_output::atoms_info& atom, DFT_output::KS_bands& band,
         std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
@@ -37,18 +38,21 @@ namespace DMFT
     const int nomega = *(int*)in.parameter("n_omega");
 
     //Create directory impurity 
-    std::string dir_impurity_solving = "impurity_solving";
+    std::string dir_impurity_solving = "dmft_solving";
     std::stringstream make_dir1;
     make_dir1 << "test -d " << dir_impurity_solving << " || mkdir " << dir_impurity_solving;
     system(make_dir1.str().c_str());
 
-    //Create directory step+num
+    std::stringstream char_dir_ss;
+    char_dir_ss << "/charge_step" << char_step;
+    std::string char_step_dir= char_dir_ss.str();
+
     std::stringstream step_dir_ss;
-    step_dir_ss << "/step" << istep;
+    step_dir_ss << "/dmft_step" << DMFT_step;
     std::string step_dir= step_dir_ss.str();
     std::stringstream make_dir2;
-    make_dir2 << "test -d " << dir_impurity_solving << step_dir
-            << " || mkdir " << dir_impurity_solving << step_dir;
+    make_dir2 << "test -d " << dir_impurity_solving << char_step_dir << step_dir
+            << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir;
     system(make_dir2.str().c_str());
 
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -72,12 +76,12 @@ namespace DMFT
       site_dir_ss << "/impurity" << ineq;
       std::string site_dir= site_dir_ss.str();
       std::stringstream make_dir3;
-      make_dir3 << "test -d " << dir_impurity_solving << step_dir << site_dir
-              << " || mkdir " << dir_impurity_solving << step_dir << site_dir;
+      make_dir3 << "test -d " << dir_impurity_solving << char_step_dir << step_dir << site_dir
+              << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir << site_dir;
       system(make_dir3.str().c_str());
 
       std::stringstream current_dir_ss;
-      current_dir_ss << dir_impurity_solving << step_dir << site_dir;
+      current_dir_ss << dir_impurity_solving << char_step_dir << step_dir << site_dir;
       std::string current_dir = current_dir_ss.str();
 
       //===========================================

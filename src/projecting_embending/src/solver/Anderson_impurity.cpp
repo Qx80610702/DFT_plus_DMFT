@@ -615,38 +615,44 @@ namespace DMFT
     return;
   }
 
-  void impurity::out(const int istep,
+  void impurity::out(const int char_step,
+                    const int DMFT_step,
                     const int impurity_solver,
                     const double mu, 
                     DFT_output::KS_bands& band,
                     DMFT::input_info& in, 
                     DFT_output::atoms_info& atom,
-                    DMFT::coulomb_tensor& Umat)
+                    DMFT::coulomb_tensor& Umat )
   {
     switch(impurity_solver)
     {
       case 1:
-        this->ALPS_hyb.output(istep, mu, in, atom, band, this->impurity_level, 
+        this->ALPS_hyb.output(char_step, DMFT_step, 
+               mu, in, atom, band, this->impurity_level, 
                this->Green_fun_omega, this->Weiss_omega, this->hyb_omega);
         break;
       case 2:
-        this->ALPS_hyb_segment.output(istep, mu, in, atom, band, 
-              this->impurity_level, this->Green_fun_omega, this->Weiss_omega);
+        this->ALPS_hyb_segment.output(char_step, DMFT_step,
+               mu, in, atom, band, this->impurity_level, 
+               this->Green_fun_omega, this->Weiss_omega);
         break;
       case 3:
-        this->pacs.output(istep, mu, in, atom, band, 
-               this->sigma.sigma_imag.Matsubara_freq(), this->impurity_level,
-               this->Green_fun_omega, this->Weiss_omega, this->hyb_omega );
+        this->pacs.output(char_step, DMFT_step, 
+               mu, in, atom, band, this->sigma.sigma_imag.Matsubara_freq(), 
+               this->impurity_level, this->Green_fun_omega, 
+               this->Weiss_omega, this->hyb_omega );
         break;
       case 4:
-        this->Rutgers.output(istep, mu, in, atom, band, 
-              this->sigma.sigma_imag.Matsubara_freq(), this->impurity_level,
-              this->Green_fun_omega, this->Weiss_omega, this->hyb_omega, Umat );
+        this->Rutgers.output(char_step, DMFT_step, 
+              mu, in, atom, band, this->sigma.sigma_imag.Matsubara_freq(), 
+              this->impurity_level, this->Green_fun_omega, 
+              this->Weiss_omega, this->hyb_omega, Umat );
         break;
       case 5: 
-        this->iQIST_narcissus.output(istep, mu, in, atom, band, 
-              this->sigma.sigma_imag.Matsubara_freq(), this->impurity_level,
-              this->Green_fun_omega, this->Weiss_omega, this->hyb_omega, Umat );
+        this->iQIST_narcissus.output(char_step, DMFT_step, 
+              mu, in, atom, band, this->sigma.sigma_imag.Matsubara_freq(), 
+              this->impurity_level, this->Green_fun_omega, 
+              this->Weiss_omega, this->hyb_omega, Umat );
         break;
       default:
         std::cout << "Not supported impurity solver" << std::endl;
@@ -655,11 +661,13 @@ namespace DMFT
     return;
   }
 
-  void impurity::read_last_step(const int istep,
-                        const int impurity_solver, 
-                        DFT_output::KS_bands& band,
-                        DMFT::input_info& in, 
-                        DFT_output::atoms_info& atom)
+  void impurity::read_last_step(
+        const int char_step,
+        const int DMFT_step,
+        const int impurity_solver, 
+        DFT_output::KS_bands& band,
+        DMFT::input_info& in, 
+        DFT_output::atoms_info& atom)
   {
     debug::codestamp("impurity::read_last_step");
 
@@ -727,10 +735,11 @@ namespace DMFT
     {
       case 1:
         this->ALPS_hyb.read_last_step(
-                istep, band, in, atom, 
+                char_step, DMFT_step, 
+                band, in, atom,
                 this->Green_fun_omega, 
                 this->Weiss_omega, 
-                this->Green_fun_omega_save);
+                this->Green_fun_omega_save );
         break;
       case 2:
         // this->ALPS_hyb_segment.read_last_step(istep, band, in, atom, this->hyb_omega,
@@ -738,21 +747,24 @@ namespace DMFT
         break;
       case 3:
         this->pacs.read_last_step(
-                istep, band, in, atom,
+                char_step, DMFT_step,
+                band, in, atom,
                 this->Green_fun_omega, 
                 this->Green_fun_omega_save, 
                 sigma_new );
         break;
       case 4:
         this->Rutgers.read_last_step(
-                istep, band, in, atom,
+                char_step, DMFT_step,
+                band, in, atom,
                 this->Green_fun_omega, 
                 this->Green_fun_omega_save, 
                 sigma_new );
         break;
       case 5:
         this->iQIST_narcissus.read_last_step(
-                istep, band, in, atom,
+                char_step, DMFT_step,
+                band, in, atom,
                 this->Green_fun_omega, 
                 this->Green_fun_omega_save, 
                 sigma_new );

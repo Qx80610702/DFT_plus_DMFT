@@ -36,7 +36,8 @@ namespace DMFT
     //PACS:3;  Rutgers-CTHYB:4; iQIST:5; default:3
     int flag_impurity_solver;    
     int flag_double_counting;    //nominal:1;   default:1
-    int DMFT_step;               //number of the maximum DMFT interation step
+    int charge_step_max;             //number of the maximum charge self-consistent interation step
+    int DMFT_step_max;               //number of the maximum DMFT interation step under each charge step
     long long MC_step;           //numuber of MC sampling steps; default:1000
     std::vector<double> E_window;  //Energy window for hybridization function; default E_window[0]=-2.0, E_window[1]=2.0;
 

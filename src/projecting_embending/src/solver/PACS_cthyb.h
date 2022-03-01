@@ -20,7 +20,9 @@ namespace DMFT
     PACS_CTHYB(){};
     ~PACS_CTHYB(){};
                         
-    void read_last_step(const int istep, 
+    void read_last_step(
+          const int char_step,
+          const int DMFT_step,
           DFT_output::KS_bands& band,
           DMFT::input_info& in, 
           DFT_output::atoms_info& atom,
@@ -34,7 +36,8 @@ namespace DMFT
           vector<std::vector<
           std::complex<double>>>>>& Sw );
 
-    void output(const int istep, const double mu, DMFT::input_info& in, 
+    void output(const int char_step, const int DMFT_step,
+          const double mu, DMFT::input_info& in, 
           DFT_output::atoms_info& atom, DFT_output::KS_bands& band, const std::vector<double>& freq,
           std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,

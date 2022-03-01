@@ -34,7 +34,8 @@ namespace DMFT
           vector<std::vector<
           std::complex<double>>>>>& Gf_save);
 
-    void output(const int istep, const double mu, DMFT::input_info& in, 
+    void output(const int char_step, const int DMFT_step, 
+          const double mu, DMFT::input_info& in, 
           DFT_output::atoms_info& atom, DFT_output::KS_bands& band,
           std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,

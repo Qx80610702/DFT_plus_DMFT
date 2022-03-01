@@ -109,8 +109,8 @@ namespace DFT_output
     std::ifstream ifs(ss.str().c_str(), std::ios::in);
 
     if (!ifs)
-	  {
-	  	std::cout << "Fail to oepn " << ss.str().c_str() << std::endl;
+    {
+      std::cout << "Fail to oepn " << ss.str().c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

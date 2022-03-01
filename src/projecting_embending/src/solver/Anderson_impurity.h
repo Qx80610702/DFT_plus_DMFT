@@ -65,11 +65,13 @@ namespace DMFT
           const int nomega,
           const int mag);
 
-    void read_last_step(const int istep,
-                        const int impurity_solver, 
-                        DFT_output::KS_bands& band,
-                        DMFT::input_info& in, 
-                        DFT_output::atoms_info& atom);
+    void read_last_step(
+          const int char_step,
+          const int DMFT_step,
+          const int impurity_solver, 
+          DFT_output::KS_bands& band,
+          DMFT::input_info& in, 
+          DFT_output::atoms_info& atom );
     
     bool scf_condition(const int impurity_solver, 
                       DFT_output::KS_bands& band,
@@ -80,7 +82,9 @@ namespace DMFT
                       DFT_output::atoms_info& atom,
                       DMFT::input_info& in);
 
-    void out(const int istep, const int impurity_solver, 
+    void out(const int char_step,
+            const int DMFT_step,
+            const int impurity_solver, 
             const double mu, DFT_output::KS_bands& band,
             DMFT::input_info& in, DFT_output::atoms_info& atom,
             DMFT::coulomb_tensor& Umat);

@@ -65,6 +65,7 @@ namespace DFT_plus_DMFT
     this->reading_inputs();
     
     this->space.KS_bands_window(
+          this->charge_scf_step,
           this->pars.bands, 
           this->pars.atom,
           this->pars.in );
@@ -239,7 +240,9 @@ namespace DFT_plus_DMFT
           freq[iomega] = (2*iomega+1)*PI/beta;
     }
 
-    this->imp.read_last_step( this->DMFT_iteration_step,
+    this->imp.read_last_step( 
+            this->charge_scf_step,
+            this->DMFT_iteration_step,
             *(int*)pars.in.parameter("impurity_solver"),
             this->pars.bands, this->pars.in, this->pars.atom );
 
@@ -296,7 +299,9 @@ namespace DFT_plus_DMFT
 
     if(this->DMFT_iteration_step>1)
     {
-      this->imp.read_last_step( this->DMFT_iteration_step,
+      this->imp.read_last_step(
+            this->charge_scf_step,
+            this->DMFT_iteration_step,
             *(int*)pars.in.parameter("impurity_solver"),
             this->pars.bands, this->pars.in, this->pars.atom );
 
@@ -371,7 +376,8 @@ namespace DFT_plus_DMFT
 
   void solver::output_to_impurity_solver()
   {
-    this->imp.out(this->DMFT_iteration_step,
+    this->imp.out(this->charge_scf_step,
+                  this->DMFT_iteration_step,
                   *(int*)this->pars.in.parameter("impurity_solver"),
                   this->Mu.mu_corrected(), this->pars.bands, 
                   this->pars.in, this->pars.atom, this->Umat);
