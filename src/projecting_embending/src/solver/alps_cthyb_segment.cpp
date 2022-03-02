@@ -38,7 +38,7 @@ namespace DMFT
     const int nomega = *(int*)in.parameter("n_omega");
 
         //Create directory impurity 
-    std::string dir_impurity_solving = "dmft_solving";
+    std::string dir_impurity_solving = "dmft";
     std::stringstream make_dir1;
     make_dir1 << "test -d " << dir_impurity_solving << " || mkdir " << dir_impurity_solving;
     system(make_dir1.str().c_str());

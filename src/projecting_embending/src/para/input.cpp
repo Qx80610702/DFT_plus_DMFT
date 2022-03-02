@@ -302,7 +302,8 @@ namespace DMFT
           std::strcmp("max_dmft_step", key_val[0].c_str())==0 ||
           std::strcmp("mc_step", key_val[0].c_str())==0 || 
           std::strcmp("energy_window", key_val[0].c_str())==0 ||
-          std::strcmp("local_symmetry", key_val[0].c_str())==0 )
+          std::strcmp("local_symmetry", key_val[0].c_str())==0 ||
+          std::strcmp("restart", key_val[0].c_str())==0 )
         {;}
         else
         {

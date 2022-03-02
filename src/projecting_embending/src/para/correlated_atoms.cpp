@@ -113,11 +113,11 @@ namespace DFT_output
 
     int i_atom_tmp1, i_atom_tmp2; 
     
-    std::ifstream if_symmetry("../DFT/outputs_to_DMFT/symmetry.dat", std::ios::in);
+    std::ifstream if_symmetry("dft/outputs_to_DMFT/symmetry.dat", std::ios::in);
 
     if (!if_symmetry) 
 	  {
-	  	std::cout << "Fail to oepn file ../DFT/outputs_to_DMFT/symmetry.dat" << std::endl;
+	  	std::cout << "Fail to oepn file dft/outputs_to_DMFT/symmetry.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -185,10 +185,10 @@ namespace DFT_output
 
     if(mpi_rank()==0) std::cout << "Reading correlated_atoms.info ......" << std::endl;
 
-    std::ifstream ifs("../DFT/outputs_to_DMFT/correlated_atoms.info", std::ios::in);
+    std::ifstream ifs("dft/outputs_to_DMFT/correlated_atoms.info", std::ios::in);
     if (!ifs) 
 	  {
-	  	std::cout << "Fail to oepn file ../DFT/outputs_to_DMFT/correlated_atoms.info" << std::endl;
+	  	std::cout << "Fail to oepn file dft/outputs_to_DMFT/correlated_atoms.info" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

@@ -88,7 +88,7 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nspin = band.nspins();
 
-    std::string dir_impurity_solving = "dmft_solving";
+    std::string dir_impurity_solving = "dmft";
 
     std::stringstream char_dir_ss;
     char_dir_ss << "/charge_step" << char_step;
@@ -185,7 +185,7 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nspin = band.nspins();
 
-    std::string dir_impurity_solving = "dmft_solving";
+    std::string dir_impurity_solving = "dmft";
 
     std::stringstream char_dir_ss;
     char_dir_ss << "/charge_step" << char_step;

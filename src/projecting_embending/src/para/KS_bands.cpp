@@ -17,11 +17,11 @@ namespace DFT_output
     int val;
     int spin_index,bands_index,k_index;
 
-    std::ifstream if_bands("../DFT/outputs_to_DMFT/bands.dat", std::ios::in);
+    std::ifstream if_bands("dft/outputs_to_DMFT/bands.dat", std::ios::in);
 
     if (!if_bands)  
 	  {
-	  	std::cout << "Fail to oepn ../DFT/outputs_to_DMFT/bands.dat" << std::endl;
+	  	std::cout << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -68,11 +68,11 @@ namespace DFT_output
 
     }
 
-    std::ifstream ifs("../DFT/outputs_to_DMFT/k_weight.dat", std::ios::in);
+    std::ifstream ifs("dft/outputs_to_DMFT/k_weight.dat", std::ios::in);
 
     if (!ifs)  
 	  {
-	  	std::cout << "Fail to oepn ../DFT/outputs_to_DMFT/k_weight.dat" << std::endl;
+	  	std::cout << "Fail to oepn dft/outputs_to_DMFT/k_weight.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

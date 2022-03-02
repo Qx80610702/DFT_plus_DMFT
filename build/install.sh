@@ -447,12 +447,16 @@ test -f run_dmft && rm run_dmft
 cat > run_dmft <<EOF1
 #!/bin/bash
 
+#===========Execution path====================
 EXE_DMFT=$root_dir/build/projection_embeding
 EXE_ALPS_CTHYB=$root_dir/build/impurity_solver/ALPS-CTHYB/bin/hybmat
 EXE_ALPS_CTHYB_SEGMENT=$root_dir/build/impurity_solver/ALPS-CTHYB-SEGMENT/bin/alps_cthyb
 EXE_PACS_CTHYB=$root_dir/build/impurity_solver/PACS/pacs.cthyb
 EXE_RUTGERS_CTHYB=$root_dir/build/impurity_solver/Rutgers/ctqmc
 EXE_iQIST_CTHYB1=$root_dir/build/impurity_solver/iQIST/cthyb.narcissus
+EXE_FHIaims=$FHIaims_exe
+EXE_ABACUS=$ABACUS_exe
+
 #===========================================
 #            PART 1
 #Determine the number of process and threads
@@ -487,6 +491,21 @@ nprocess=\`echo "\$nodes * \$num_threads" | bc\`
 #===================================================
 #      PART 2: parsing file DMFT.in
 #===================================================
+#==============DFT solver type=================
+dft_solver=\`grep -i "dft_solver" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
+dft_solver_lower_case=\`echo \$dft_solver | tr A-Z a-z\`
+case \$dft_solver_lower_case in
+  "aims")
+    dft_solver_type=1
+  ;;
+  "abacus")
+    dft_solver_type=2
+  ;;
+  *)
+    echo "ERROR: unsupported DFT solver \$dft_solver" 
+    exit
+esac
+#echo "dft_solver_type: \$dft_solver_type"
 
 #==============impurity solver type=================
 impurity_solver=\`grep -i "impurity_solver" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
@@ -519,162 +538,208 @@ esac
 #===============magnetism===================
 magnetism=\`grep -i "magnetism" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}' | tr A-Z a-z\`
 
-#=============DMFT iteration step=================
-DMFT_step=\`grep -i "max_DMFT_step" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
-if [ -z \$DMFT_step ];then
-  DMFT_step=10
+#=============Maximum charge step=================
+max_charge_step=\`grep -i "max_charge_step" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
+if [ -z \$max_charge_step ];then
+  max_charge_step=10
 fi
 
-if [ -d impurity_solving ]
-then
-  cd impurity_solving
-  current_step=1
-  for step_dir in \`ls\`
+#=============Maximum DMFT step=================
+max_DMFT_step=\`grep -i "max_DMFT_step" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
+if [ -z \$max_DMFT_step ];then
+  max_DMFT_step=10
+fi
+
+#========Current charge and DMFT step
+start_charge_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2, \$3}' | grep -v "#" | awk '{print \$2}'\`
+if [ -z \$start_charge_step ];then
+  start_charge_step=1
+fi
+
+start_dmft_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2, \$3}' | grep -v "#" | awk '{print \$3}'\`
+if [ -z \$start_dmft_step ];then
+  start_dmft_step=1
+fi
+
+# if [ -d dmft_solving ]
+# then
+#   cd impurity_solving
+#   current_step=1
+#   for step_dir in \`ls\`
+#   do
+#     match=\`echo \$step_dir | grep "step"\`
+#     if [ -n \$match ];then
+#       step_tmp=\`echo \$step_dir | awk -F 'step' '{print \$2}'\`
+#       if [ \$step_tmp -gt \$current_step ]
+#       then
+#         current_step=\$step_tmp
+#       fi
+#     fi
+#   done
+#   cd ..
+# else
+#   current_step=1
+# fi
+
+#================================================
+#           PART 3: DFT+DMFT iteration
+#================================================
+for((char_step=\$start_charge_step;char_step<=\$max_charge_step;char_step=char_step+1))
+do
+  for((dmft_step=\$start_dmft_step;dmft_step<=\$max_DMFT_step;dmft_step=dmft_step+1))
   do
-    match=\`echo \$step_dir | grep "step"\`
-    if [ -n \$match ];then
-      step_tmp=\`echo \$step_dir | awk -F 'step' '{print \$2}'\`
-      if [ \$step_tmp -gt \$current_step ]
-      then
-        current_step=\$step_tmp
+    #==================================================
+    #     Run projecting and embeding
+    #==================================================
+    mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 0
+
+    if [ \$? -ne 0 ]; then
+      echo "Errors occured in running projecting_embeding"
+      exit
+    fi
+
+    #=========judge whether convergency is reached==============
+    flag_conver=0
+    if [ \$dmft_step -gt 1 ]; then
+      convergency=\`grep "DMFT self-consistency in DMFT loop" DMFT_running.log | awk 'END{print \$0}' | awk -F ": "   '{print \$2}'\`
+      if [ "\$convergency" = "true" ]; then
+        flag_conver=1
+      else
+        flag_conver=0
       fi
     fi
-  done
-  cd ..
-else
-  current_step=1
-fi
+    if [ \$flag_conver -eq 1 ]; then
+      echo "DMFT loop self-consistency has been reached. DMFT loop stopped" >> DMFT_running.log 
+      break
+    fi
 
-#================================================
-#           PART 3: DMFT iteration
-#================================================
-for((i=\$current_step;i<=\$DMFT_step;i=i+1))
-do
-  #==================================================
-  #     Run projecting and embeding
-  #==================================================
-  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -dmft.step \$i
+    #==================================================
+    #       impurity solving
+    #==================================================
+    echo "Impurity solver starts working......" >> DMFT_running.log
+    echo "  Impurities       starting time              ending time     " >> DMFT_running.log
+   #echo "impurity0    2021.03.30--15:44:28      2021.03.30--15:44:28"
 
-  if [ \$? -ne 0 ]; then
-    echo "Errors occured in running projecting_embeding"
+    cd dmft/charge_step\$char_step/dmft_step\$dmft_step
+    for dir_imp in \`ls\`
+    do
+      echo -e "  \$dir_imp    "\`date  "+%Y.%m.%d--%H:%M:%S"\`"\c" >> ../../../DMFT_running.log
+      cd \$dir_imp
+
+      if [ \$impurity_solver_type -eq 1 ]; then
+        #================================================
+        #             ALPS-CTHYB
+        #================================================
+        #seen_num=\`echo "\$nprocess + 10" | bc\`
+        #sed -i "1a seed=\$seen_num" input.ini
+        #==============================
+        #    run impurity solver
+        #==============================
+        mpirun \$EXE_ALPS_CTHYB input.ini >> ./ALPS_CTHYB.log
+
+        if [ \$? -ne 0 ]
+        then
+          echo "Errors occured in running impurity solver solving \$dir_imp !!!"
+          exit
+        fi
+
+        python $root_dir/utilities/read_data.py >> ./ALPS_CTHYB.log
+
+      elif [ \$impurity_solver_type -eq 2 ]; then
+        #================================================
+        #             ALPS-CTHYB-SEGMENT
+        #================================================
+        #========== parsing hyb.param ================
+        FLAVORS=\`grep "FLAVORS=" hyb.param | awk -F '=' '{print \$2}'\`
+        N_TAU=\`grep "N_TAU=" hyb.param | awk -F '=' '{print \$2}'\`
+        BETA=\`grep "BETA=" hyb.param | awk -F '=' '{print \$2}'\`
+        THERMALIZATION=\`grep "THERMALIZATION=" hyb.param | awk -F '=' '{print \$2}'\`
+        N_MEAS=\`grep "N_MEAS=" hyb.param | awk -F '=' '{print \$2}'\`
+        SWEEPS=\`grep "SWEEPS=" hyb.param | awk -F '=' '{print \$2}'\`
+        DELTA=\`grep "DELTA=" hyb.param | awk -F '=' '{print \$2}'\`
+        MU_VECTOR=\`grep "MU_VECTOR=" hyb.param | awk -F '=' '{print \$2}'\`
+        U_MATRIX=\`grep "U_MATRIX=" hyb.param | awk -F '=' '{print \$2}'\`
+        N_LEGENDRE=\`grep "N_LEGENDRE=" hyb.param | awk -F '=' '{print \$2}'\`
+        N_HISTOGRAM_ORDERS=\`grep "N_HISTOGRAM_ORDERS=" hyb.param | awk -F '=' '{print \$2}'\`
+        NMATSUBARA=\`grep "NMATSUBARA=" hyb.param | awk -F '=' '{print \$2}'\`
+
+        #========== run alps_cthyb ================
+        mpirun \$EXE_ALPS_CTHYB_SEGMENT \\
+        -FLAVORS=\$FLAVORS -SEED=1000 -BETA=\$BETA \\
+        -cthyb.DELTA=\$DELTA  -NMATSUBARA=\$NMATSUBARA -cthyb.MEASURE_sector_statistics=1 \\
+        -MU_VECTOR=\$MU_VECTOR -U_MATRIX=\$U_MATRIX \\
+        -cthyb.N_HISTOGRAM_ORDERS=\$N_HISTOGRAM_ORDERS -N=\$N_TAU \\
+        -cthyb.N_MEAS=\$N_MEAS -cthyb.SWEEPS=\$SWEEPS -cthyb.THERMALIZATION=\$THERMALIZATION \\
+        -cthyb.TEXT_OUTPUT=1 -MAX_TIME=2592000 \\
+        -cthyb.N_LEGENDRE=\$N_LEGENDRE -VERBOSE=1 1>alps_cthyb.log 2>alps_cthyb.error
+
+        if [ \$? -ne 0 ];then
+          echo "Errors occured in running impurity solver solving \$dir_imp !!!"
+          exit
+        else
+          if [ "\$magnetism"="para" -o "\$magnetism"="none" ]; then
+            python $root_dir/utilities/alps_cthyb_segment_average.py
+          fi
+        fi
+      elif [ \$impurity_solver_type -eq 3 ]; then
+        mpirun \$EXE_PACS_CTHYB 1>PACS_cthyb.log 2>PACS_cthyb.error
+
+        if [ \$? -ne 0 ];then
+          echo "Errors occured in running impurity solver solving \$dir_imp !!!"
+          exit
+        fi
+
+      elif [ \$impurity_solver_type -eq 4 ]; then
+        mpirun \$EXE_RUTGERS_CTHYB 1>Rutgers_cthyb.log 2>Rutgers_cthyb.error
+
+        if [ \$? -ne 0 ];then
+          echo "Errors occured in running impurity solver solving \$dir_imp !!!"
+          exit
+        fi
+      elif [ \$impurity_solver_type -eq 5 ]; then
+        mpirun \$EXE_iQIST_CTHYB1 1>iQIST_cthyb.log 2>iQIST_cthyb.error
+
+        if [ \$? -ne 0 ];then
+          echo "Errors occured in running impurity solver solving \$dir_imp !!!"
+          exit
+        fi
+
+      fi
+      cd ..
+      echo "      "\`date  "+%Y.%m.%d--%H:%M:%S"\` >> ../../../DMFT_running.log
+    done #dir_imp
+
+    cd ../../../
+    #if [ \$i -eq 1 ]; then break; fi
+
+  done #DMFT self-consistency loop
+
+  start_dmft_step=1
+
+  #============Charge update===============
+  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads $EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 1
+  if [ \$? -ne 0 ];then
+    echo "Errors occured in updating charge density!!!"
     exit
   fi
 
-  #=========judge whether convergency is reached==============
-  flag_conver=0
-  if [ \$i -gt 1 ]; then
-    convergency=\`grep "DMFT self-consistency in DMFT loop" DMFT_running.log | awk 'END{print \$0}' | awk -F ": "   '{print \$2}'\`
-    if [ "\$convergency" = "true" ]; then
-      flag_conver=1
-    else
-      flag_conver=0
-    fi
-  fi
-  if [ \$flag_conver -eq 1 ]; then
-    echo "DMFT loop self-consistency has been reached. DMFT loop stopped" >> DMFT_running.log 
-    break
+  cd dft
+
+  if [ \$dft_solver_type -eq 1 ];then
+    mpirun \$EXE_FHIaims 1>./job.log 2>./job.error
+  elif [ \$dft_solver_type -eq 2 ];then
+    mpirun \$EXE_ABACUS 1>./job.log 2>./job.error
+  else
+    echo "Errors: unspported DFT solver!!!"
+    exit
   fi
 
-  #==================================================
-  #       impurity solving
-  #==================================================
-  echo "Impurity solver starts working......" >> DMFT_running.log
-  echo "  Impurities       starting time              ending time     " >> DMFT_running.log
- #echo "impurity0    2021.03.30--15:44:28      2021.03.30--15:44:28"
-
-  cd impurity_solving/step\$i
-  for dir_imp in \`ls\`
-  do
-    echo -e "  \$dir_imp    "\`date  "+%Y.%m.%d--%H:%M:%S"\`"\c" >> ../../DMFT_running.log
-    cd \$dir_imp
-
-    if [ \$impurity_solver_type -eq 1 ]; then
-      #================================================
-      #             ALPS-CTHYB
-      #================================================
-      #seen_num=\`echo "\$nprocess + 10" | bc\`
-      #sed -i "1a seed=\$seen_num" input.ini
-      #==============================
-      #    run impurity solver
-      #==============================
-      mpirun \$EXE_ALPS_CTHYB input.ini >> ./ALPS_CTHYB.log
-
-      if [ \$? -ne 0 ]
-      then
-        echo "Errors occured in running impurity solver solving \$dir_imp !!!"
-        exit
-      fi
-
-      python $root_dir/utilities/read_data.py >> ./ALPS_CTHYB.log
-
-    elif [ \$impurity_solver_type -eq 2 ]; then
-      #================================================
-      #             ALPS-CTHYB-SEGMENT
-      #================================================
-      #========== parsing hyb.param ================
-      FLAVORS=\`grep "FLAVORS=" hyb.param | awk -F '=' '{print \$2}'\`
-      N_TAU=\`grep "N_TAU=" hyb.param | awk -F '=' '{print \$2}'\`
-      BETA=\`grep "BETA=" hyb.param | awk -F '=' '{print \$2}'\`
-      THERMALIZATION=\`grep "THERMALIZATION=" hyb.param | awk -F '=' '{print \$2}'\`
-      N_MEAS=\`grep "N_MEAS=" hyb.param | awk -F '=' '{print \$2}'\`
-      SWEEPS=\`grep "SWEEPS=" hyb.param | awk -F '=' '{print \$2}'\`
-      DELTA=\`grep "DELTA=" hyb.param | awk -F '=' '{print \$2}'\`
-      MU_VECTOR=\`grep "MU_VECTOR=" hyb.param | awk -F '=' '{print \$2}'\`
-      U_MATRIX=\`grep "U_MATRIX=" hyb.param | awk -F '=' '{print \$2}'\`
-      N_LEGENDRE=\`grep "N_LEGENDRE=" hyb.param | awk -F '=' '{print \$2}'\`
-      N_HISTOGRAM_ORDERS=\`grep "N_HISTOGRAM_ORDERS=" hyb.param | awk -F '=' '{print \$2}'\`
-      NMATSUBARA=\`grep "NMATSUBARA=" hyb.param | awk -F '=' '{print \$2}'\`
-
-      #========== run alps_cthyb ================
-      mpirun \$EXE_ALPS_CTHYB_SEGMENT \\
-      -FLAVORS=\$FLAVORS -SEED=1000 -BETA=\$BETA \\
-      -cthyb.DELTA=\$DELTA  -NMATSUBARA=\$NMATSUBARA -cthyb.MEASURE_sector_statistics=1 \\
-      -MU_VECTOR=\$MU_VECTOR -U_MATRIX=\$U_MATRIX \\
-      -cthyb.N_HISTOGRAM_ORDERS=\$N_HISTOGRAM_ORDERS -N=\$N_TAU \\
-      -cthyb.N_MEAS=\$N_MEAS -cthyb.SWEEPS=\$SWEEPS -cthyb.THERMALIZATION=\$THERMALIZATION \\
-      -cthyb.TEXT_OUTPUT=1 -MAX_TIME=2592000 \\
-      -cthyb.N_LEGENDRE=\$N_LEGENDRE -VERBOSE=1 1>alps_cthyb.log 2>alps_cthyb.error
-
-      if [ \$? -ne 0 ];then
-        echo "Errors occured in running impurity solver solving \$dir_imp !!!"
-        exit
-      else
-        if [ "\$magnetism"="para" -o "\$magnetism"="none" ]; then
-          python $root_dir/utilities/alps_cthyb_segment_average.py
-        fi
-      fi
-    elif [ \$impurity_solver_type -eq 3 ]; then
-      mpirun \$EXE_PACS_CTHYB 1>PACS_cthyb.log 2>PACS_cthyb.error
-
-      if [ \$? -ne 0 ];then
-        echo "Errors occured in running impurity solver solving \$dir_imp !!!"
-        exit
-      fi
-
-    elif [ \$impurity_solver_type -eq 4 ]; then
-      mpirun \$EXE_RUTGERS_CTHYB 1>Rutgers_cthyb.log 2>Rutgers_cthyb.error
-
-      if [ \$? -ne 0 ];then
-        echo "Errors occured in running impurity solver solving \$dir_imp !!!"
-        exit
-      fi
-    elif [ \$impurity_solver_type -eq 5 ]; then
-      mpirun \$EXE_iQIST_CTHYB1 1>iQIST_cthyb.log 2>iQIST_cthyb.error
-
-      if [ \$? -ne 0 ];then
-        echo "Errors occured in running impurity solver solving \$dir_imp !!!"
-        exit
-      fi
-
-    fi
-    cd ..
-    echo "      "\`date  "+%Y.%m.%d--%H:%M:%S"\` >> ../../DMFT_running.log
-  done #dir_imp
-
-  cd ../../
-  #if [ \$i -eq 1 ]; then break; fi
-
-done #DMFT self-consistency loop
+  if [ \$? -ne 0 ];then
+    echo "Errors occured in running dft solver!!!"
+    exit
+  fi
+  cd ..
+done #DFT+DMFT charge self-consistent loop 
 EOF1
 
 test -f cal_spectrum && rm cal_spectrum

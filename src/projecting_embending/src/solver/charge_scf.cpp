@@ -279,7 +279,7 @@ namespace DFT_plus_DMFT
     wave_function wfc;
 
     wfc.read_DMFT_occ_subset(
-        "../DFT/outputs_to_DMFT/KS_eigenvector/", 
+        "dft/outputs_to_DMFT/KS_eigenvector/", 
         i_k_point, space, eigenvector );       //read KS-eigenvector
 
     const int nbasis = wfc.basis_n();

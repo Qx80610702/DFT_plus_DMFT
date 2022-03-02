@@ -78,7 +78,7 @@ namespace DFT_plus_DMFT
     mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
     #pragma omp parallel num_threads(threads_num)
     {
-      DFT_output::overlap_matrix ovlp(DFT_solver, "../DFT/outputs_to_DMFT/overlap_matrix");
+      DFT_output::overlap_matrix ovlp(DFT_solver, "dft/outputs_to_DMFT/overlap_matrix");
       wave_function wfc;
 
       std::vector<std::complex<double>> Lowdin(norb*norb);
@@ -99,7 +99,7 @@ namespace DFT_plus_DMFT
 
         ovlp.evaluate_ovlp_k(i_k_point, atom);        //caculate overlap matrix in k-space
 
-        wfc.read_corr_subset("../DFT/outputs_to_DMFT/KS_eigenvector/", i_k_point, space, eigenvec);       //read KS-eigenvector
+        wfc.read_corr_subset("dft/outputs_to_DMFT/KS_eigenvector/", i_k_point, space, eigenvec);       //read KS-eigenvector
 
         const int nbasis=wfc.basis_n();
         
