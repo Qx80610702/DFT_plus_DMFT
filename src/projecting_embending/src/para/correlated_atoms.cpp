@@ -99,7 +99,7 @@ namespace DFT_output
 
   void atoms_info::read(DMFT::input_info& in)
   {
-    if(mpi_rank()==0) std::cout << "Reading correlated atoms information ......" << std::endl;
+    // if(mpi_rank()==0) std::cout << "Reading correlated atoms information ......" << std::endl;
 
     this->read_structure_symmetry();
     this->read_local_symmetry(in);
@@ -183,7 +183,7 @@ namespace DFT_output
 
     tmp = std::make_unique<std::unique_ptr<int[]>[]>(this->n_DMFT_atoms);
 
-    if(mpi_rank()==0) std::cout << "Reading correlated_atoms.info ......" << std::endl;
+    // if(mpi_rank()==0) std::cout << "Reading correlated_atoms.info ......" << std::endl;
 
     std::ifstream ifs("dft/outputs_to_DMFT/correlated_atoms.info", std::ios::in);
     if (!ifs) 

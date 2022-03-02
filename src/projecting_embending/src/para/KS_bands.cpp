@@ -12,7 +12,7 @@ namespace DFT_output
   bool KS_bands::read()
   {
     debug::codestamp("KS_bands::read");
-    if(mpi_rank()==0) std::cout << "Reading bands information ......" << std::endl;
+    // if(mpi_rank()==0) std::cout << "Reading bands information ......" << std::endl;
 
     int val;
     int spin_index,bands_index,k_index;

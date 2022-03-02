@@ -717,13 +717,14 @@ do
   start_dmft_step=1
 
   #============Charge update===============
-  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads $EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 1
+  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 1
   if [ \$? -ne 0 ];then
     echo "Errors occured in updating charge density!!!"
     exit
   fi
 
   cd dft
+  rm -r outputs_to_DMFT
 
   if [ \$dft_solver_type -eq 1 ];then
     mpirun \$EXE_FHIaims 1>./job.log 2>./job.error

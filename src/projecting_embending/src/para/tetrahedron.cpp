@@ -16,11 +16,11 @@ namespace DFT_output
 
     int i_x, i_y, i_z;
 
-    std::ifstream ifs("../DFT/outputs/tetrahedron.dat", std::ios::in);
+    std::ifstream ifs("dft/outputs/tetrahedron.dat", std::ios::in);
 
     if (!ifs)  
 	  {
-	  	std::cout << "Fail to oepn ../DFT/outputs/tetrahedron.dat" << std::endl;
+	  	std::cout << "Fail to oepn dft/outputs/tetrahedron.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

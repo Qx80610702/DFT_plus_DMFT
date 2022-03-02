@@ -41,7 +41,7 @@ namespace DFT_plus_DMFT
     for(int ik=0; ik<task_nks; ik++){
       for(int ispin=0; ispin<dens_mat_cmplx[0].size(); ispin++){
         std::stringstream ss;
-        ss << "../DFT/D_spin_" 
+        ss << "dft/D_spin_" 
            << std::setfill('0') << std::setw(2) << ispin+1
            << "_kpt_"
            << std::setfill('0') << std::setw(6) << k_map[ik]+1
@@ -77,7 +77,7 @@ namespace DFT_plus_DMFT
     char word[200];
 
     //=========Read control.in==========
-    std::ifstream ifs("../DFT/control.in", std::ios::in);
+    std::ifstream ifs("dft/control.in", std::ios::in);
     if(!ifs){
       std::cout << "Fail to oepn file control.in" << std::endl;
       std::exit(EXIT_FAILURE);
@@ -99,7 +99,7 @@ namespace DFT_plus_DMFT
 
 
     //============Write control.in==================
-    std::ofstream ofs("../DFT/control.in", std::ios::out);
+    std::ofstream ofs("dft/control.in", std::ios::out);
     char word_low[200];
 
     for(int i=0; i<lines.size(); i++){

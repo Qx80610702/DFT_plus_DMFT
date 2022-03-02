@@ -15,7 +15,7 @@ namespace DMFT
   {
     debug::codestamp("input_info::read");
 
-    if(mpi_rank()==0) std::cout << "Reading DMFT.in ......" << std::endl;
+    // if(mpi_rank()==0) std::cout << "Reading DMFT.in ......" << std::endl;
 
     //dft_solver
     try {
@@ -49,7 +49,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: dft_solver is not given and set default value aims" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: dft_solver is not given and set default value aims" << std::endl;
       this->flag_DFT_solver = 1;   //FHI-aims
       #ifndef __FHIaims
         std::cout << "FHI-aims has not been installed!!!  ";
@@ -70,7 +70,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: temperature is not given and set default value 300 Kelven" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: temperature is not given and set default value 300 Kelven" << std::endl;
       this->temperature = 300.0;
     }
     this->beta = Hartree_to_eV/(this->temperature*K_BOLTZMAN_EV);
@@ -141,8 +141,8 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: impurity_solver is not given and set default value pacs" << std::endl;
-        this->flag_impurity_solver = 3;
+      // if(mpi_rank()==0) std::cout << "Warning: impurity_solver is not given and set default value pacs" << std::endl;
+      this->flag_impurity_solver = 3;
     }
 
     //double_counting
@@ -163,7 +163,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: double_counting is not given and set default value nominal" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: double_counting is not given and set default value nominal" << std::endl;
       this->flag_double_counting = 1;
     }
 
@@ -179,7 +179,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
       this->charge_step_max = 10;
     }
 
@@ -195,7 +195,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 10" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 10" << std::endl;
       this->DMFT_step_max = 10;
     }
 
@@ -211,7 +211,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: mc_step is not given and set default value 5000000" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: mc_step is not given and set default value 5000000" << std::endl;
       this->MC_step = 5000000;
     }
 
@@ -228,7 +228,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
       this->E_window[0] = -5.0;
       this->E_window[1] = 5.0;
     }

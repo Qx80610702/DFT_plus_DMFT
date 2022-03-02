@@ -28,15 +28,23 @@ namespace DFT_plus_DMFT
     double time;
     double seconds;
     timer::timestamp(time);
+    
+    this->reading_inputs();
+    
+    //Check whwther dmft iteration convergency achieveed in last dmft step
+    if(!this->flag_eva_spectrum && !this->flag_update_density){
+      this->flag_convergency = this->scf_update();
+      if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
+    }
 
     if(mpi_rank()==0){
       if(this->flag_eva_spectrum){
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+        std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
         std::cout << "<><><><><><><><><> Calculating spectrum <><><><><><><><><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl; 
       }
       else if(this->flag_update_density){
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+        std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
         std::cout << "<><><><><><>  Current charge self-consitent step:" 
                   << std::setw(4) << this->charge_scf_step << "  <><><><><><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
@@ -44,25 +52,24 @@ namespace DFT_plus_DMFT
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
       }
       else{
-        if(this->DMFT_iteration_step == 1 && this->charge_scf_step == 1){
-          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-          std::cout << "<><><><><><>  Current charge self-consitent step: 1  <><><><><><>\n";
-          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n" << std::endl;
+        if(this->DMFT_iteration_step == 1){
+          std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+          std::cout << "<><><><><><>  Current charge self-consitent step:" 
+                    << std::setw(4) << this->charge_scf_step << "  <><><>\n";
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
           std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
           std::cout << "<><><><><><>  Current DMFT iteration step:" 
                     << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
           std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
         } 
         else{
-          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+          std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
           std::cout << "<><><><><><>  Current DMFT iteration step:" 
                     << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
           std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
         }
       }
     }
-
-    this->reading_inputs();
     
     this->space.KS_bands_window(
           this->charge_scf_step,
@@ -97,11 +104,11 @@ namespace DFT_plus_DMFT
     timer::get_time(time, seconds);
     if(mpi_rank()==0){
       if(this->flag_eva_spectrum)
-        std::cout << "\nSpectrum evaluation time consuming (seconds): " << seconds << "\n" << std::endl;
+        std::cout << "\nSpectrum evaluation time consuming (seconds): " << seconds  << std::endl;
       else if(this->flag_update_density)
-        std::cout << "\nUpdating charge density time consuming (seconds): " << seconds << "\n" << std::endl;
+        std::cout << "\nUpdating charge density time consuming (seconds): " << seconds  << std::endl;
       else
-        std::cout << "\nProjecting and embending time consuming (seconds): " << seconds << "\n" << std::endl;
+        std::cout << "\nProjecting and embending time consuming (seconds): " << seconds  << std::endl;
     }
     
     return;
@@ -120,12 +127,12 @@ namespace DFT_plus_DMFT
        this->flag_axis = 0;       //imaginary axis
     else this->flag_axis = 1;     //real axis
 
-    this->flag_convergency = this->scf_update();
-    if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
+    // this->flag_convergency = this->scf_update();
+    // if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
 
     if(this->DMFT_iteration_step==1)
       this->imp.sigma.initial_guess( 
-            this->flag_axis, 
+            this->flag_axis,
             this->pars.bands.soc(), 
             this->pars.bands.nspins(), 
             this->pars.atom );
