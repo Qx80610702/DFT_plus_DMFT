@@ -157,7 +157,7 @@ namespace DFT_plus_DMFT
             for(int iband1=0; iband1<wbands[is]; iband1++)
             {
               for(int iband2=0; iband2<wbands[is]; iband2++)
-              {           
+              {
                 if(iband1==iband2)
                   KS_Gw[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
                     -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];

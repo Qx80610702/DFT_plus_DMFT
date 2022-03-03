@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <cstdlib>
 
 namespace DFT_plus_DMFT
 {
@@ -76,8 +77,8 @@ namespace DFT_plus_DMFT
       max_U = max_U > atom.Uval(atom.ineq_iatom(ineq)) ? max_U : atom.Uval(atom.ineq_iatom(ineq));
 
     bool converged=false;
-    double elw = window[0]-2.0*max_U, eup = window[1]+2.0*max_U;
-    for(int istep=0; istep<40; istep++)//40 may be a very safe value
+    double elw = window[0], eup = window[1];
+    for(int istep=0; istep<50; istep++) //50 may be a very safe value
     {
       this->sigma_corrected_mu = (elw + eup) / 2.0;
       
@@ -97,6 +98,11 @@ namespace DFT_plus_DMFT
 // std::cout << "step " << istep << '\n';
 
       if(converged) break;
+    }
+
+    if(!converged){
+      std::cout << "Error in calculating chemical potential!!!!" << std::endl;
+      std::exit(EXIT_FAILURE);
     }
 
     if(mpi_rank()==0)

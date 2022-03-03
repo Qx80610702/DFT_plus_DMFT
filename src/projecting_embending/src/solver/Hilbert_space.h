@@ -23,9 +23,11 @@ namespace DFT_plus_DMFT
           DMFT::input_info& in );
 
     void down_folding_first_charge_step(
+          DMFT::input_info& in,
           DFT_output::KS_bands& band );
 
-    void read_corr_bands_windows();
+    void read_corr_bands_windows(
+          DFT_output::KS_bands& band );
     
     // interfaces
     std::vector<int>& Wbands(){return n_wbands;}
@@ -44,7 +46,7 @@ namespace DFT_plus_DMFT
     int n_k_points;
 
     //The energy window of KS bands
-    std::vector<double> energy_up_down;       // energy_up_down[0 or 1]
+    std::vector<double> energy_up_down;       // energy_up_down[0(dw) or 1(up)]
 
     //whether KS band[is][n_KS_bands] is in the window or not
     std::vector<std::vector<bool>> sigma_correction;

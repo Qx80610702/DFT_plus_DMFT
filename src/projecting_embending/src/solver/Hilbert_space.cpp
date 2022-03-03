@@ -22,12 +22,7 @@ namespace DFT_plus_DMFT
     this->n_KS_bands = band.nband();
     this->n_k_points = band.nk();
     const std::vector<std::vector<std::vector<double>>>& KS_eigenvalues = band.enk();
-    const auto& Ewindow = in.window();
 
-    this->energy_up_down.resize(2);
-    this->energy_up_down[1] = band.Fermi_level()+Ewindow[1]/Hartree_to_eV;
-    this->energy_up_down[0] = band.Fermi_level()+Ewindow[0]/Hartree_to_eV;
-    
     // std::cout << "Up energy   : " << this->energy_up_down[1] << " Hartree\n";
     // std::cout << "Down energy : " << this->energy_up_down[0] << " Hartree\n";
 
@@ -43,8 +38,8 @@ namespace DFT_plus_DMFT
 
     this->eigen_values.resize(this->nspin);
     
-    if(charge_step==1) this->down_folding_first_charge_step(band);
-    else this->read_corr_bands_windows();
+    if(charge_step==1) this->down_folding_first_charge_step(in, band);
+    else this->read_corr_bands_windows(band);
 
     for(int is=0; is<this->nspin; is++){
       this->eigen_values[is].resize(band.nk());
@@ -60,11 +55,19 @@ namespace DFT_plus_DMFT
   }
 
   void Hilbert_space::down_folding_first_charge_step(
+                      DMFT::input_info& in,
                       DFT_output::KS_bands& band )
   {
     debug::codestamp("Hilbert_space::down_folding_first_charge_step");
 
     const std::vector<std::vector<std::vector<double>>>& KS_eigenvalues = band.enk();
+    const auto& Ewindow = in.window();
+
+    this->energy_up_down.resize(2);
+    this->energy_up_down[1] = band.Fermi_level()+Ewindow[1]/Hartree_to_eV;
+    this->energy_up_down[0] = band.Fermi_level()+Ewindow[0]/Hartree_to_eV;
+
+    double max_en, min_en;
 
     for(int is=0; is<this->nspin; is++){
       int upper_band_index;
@@ -115,6 +118,17 @@ namespace DFT_plus_DMFT
         iband--;
       }
 
+      //Find maximum and minimum energy of bands in the window
+      if(is==0){
+        min_en = KS_eigenvalues[0][0][ lower_band_index ];
+        max_en = KS_eigenvalues[0][0][ upper_band_index ];
+      }
+
+      for(int ik=0; ik<this->n_k_points; ik++){
+        if( min_en > KS_eigenvalues[is][ik][ lower_band_index ] ) min_en = KS_eigenvalues[is][ik][ lower_band_index ];
+        if( max_en < KS_eigenvalues[is][ik][ upper_band_index ] ) max_en = KS_eigenvalues[is][ik][ upper_band_index ];
+      }
+
       if(mpi_rank()==0){
         std::cout << "\n==============Downfolding==============\n";
         if(this->nspin==1)
@@ -143,14 +157,19 @@ namespace DFT_plus_DMFT
       if(this->nspin==1) this->n_valence -= 2*lower_band_index;
       else this->n_valence -= lower_band_index;
     }//is
-    
 
+    this->energy_up_down[1] = max_en;
+    this->energy_up_down[0] = min_en;
+    
     return;
   }
 
-  void Hilbert_space::read_corr_bands_windows()
+  void Hilbert_space::read_corr_bands_windows(
+                      DFT_output::KS_bands& band )
   {
     debug::codestamp("Hilbert_space::read_corr_bands_windows");
+
+    const std::vector<std::vector<std::vector<double>>>& KS_eigenvalues = band.enk();
 
     std::vector<int> upper_band_index(this->nspin);
     std::vector<int> lower_band_index(this->nspin);
@@ -216,6 +235,20 @@ namespace DFT_plus_DMFT
       }
     }
     ifs.close();
+
+    //Find maximum and minimum energy of bands in the window
+    double edw = KS_eigenvalues[0][0][ lower_band_index[0] ];
+    double eup = KS_eigenvalues[0][0][ upper_band_index[0] ];
+    for(int is=0; is<this->nspin; is++){
+      for(int ik=0; ik<this->n_k_points; ik++){
+        if( edw > KS_eigenvalues[is][ik][ lower_band_index[0] ] ) edw = KS_eigenvalues[is][ik][ lower_band_index[0] ];
+        if( eup < KS_eigenvalues[is][ik][ upper_band_index[0] ] ) eup = KS_eigenvalues[is][ik][ upper_band_index[0] ];
+      }
+    }
+
+    this->energy_up_down.resize(2);
+    this->energy_up_down[1] = eup;
+    this->energy_up_down[0] = edw;
 
     for(int is=0; is<this->nspin; is++){
       this->n_wbands.at(is) = upper_band_index[is]-lower_band_index[is]+1;
