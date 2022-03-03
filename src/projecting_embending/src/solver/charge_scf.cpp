@@ -215,10 +215,10 @@ namespace DFT_plus_DMFT
 
     // int i_k_point, i_state;
 
-    // std::ifstream ifs("../DFT/occu.dat", std::ios::in);
+    // std::ifstream ifs("dft/occu.dat", std::ios::in);
 
     // if (!ifs){
-	  // 	std::cout << "Fail to oepn ../DFT/occu.dat" << std::endl;
+	  // 	std::cout << "Fail to oepn dft/occu.dat" << std::endl;
     //   std::exit(EXIT_FAILURE);
     // }
     // ifs.seekg(0);      //set the position at the beginning of the file
@@ -304,7 +304,7 @@ namespace DFT_plus_DMFT
 
       for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
         for(int ibasis2=0; ibasis2<ibasis1; ibasis2++)
-          dense_cmplx[ispin][ibasis1*nbasis + ibasis2] = std::conj(dense_cmplx[ispin][ibasis2*nbasis + ibasis1]); 
+          dense_cmplx[ispin][ibasis1*nbasis + ibasis2] = std::conj(dense_cmplx[ispin][ibasis2*nbasis + ibasis1]);
     }
 
     return;

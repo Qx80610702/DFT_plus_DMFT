@@ -52,7 +52,7 @@ namespace DFT_plus_DMFT
         //Fortran order : column major
         for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
           for(int ibasis2=0; ibasis2<nbasis; ibasis2++)
-            if(ibasis1 != ibasis2) dense_mat_tmp[ibasis1*nbasis + ibasis2] = 
+            dense_mat_tmp[ibasis1*nbasis + ibasis2] = 
               std::conj(dens_mat_cmplx[ik][ispin][ibasis1*nbasis + ibasis2]);
 
         c_elsi_write_mat_complex(rwh, &file[0], reinterpret_cast<double _Complex*>(dense_mat_tmp.data()));
