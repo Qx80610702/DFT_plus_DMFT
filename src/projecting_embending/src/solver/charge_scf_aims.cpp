@@ -48,6 +48,10 @@ namespace DFT_plus_DMFT
            << ".csc";
 
         std::string file = ss.str();
+        
+        std::stringstream rmfl;
+        rmfl << "test -f " << file << " && rm " << file;
+        system(rmfl.str().c_str());
 
         //Fortran order : column major
         for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
