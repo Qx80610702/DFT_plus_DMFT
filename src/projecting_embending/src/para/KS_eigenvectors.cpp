@@ -92,9 +92,9 @@ namespace DFT_output
   {
     debug::codestamp("KS_eigenvectors::read_DMFT_occ_subset");
 
-    const std::vector<std::vector<bool>>& correction=space.correction_flag();
+    const std::vector<std::vector<bool>>& correction = space.correction_flag();
     const std::vector<int>& wbands=space.Wbands();
-    const std::vector<std::vector<int>>& index=space.ibands2wbands();
+    const std::vector<std::vector<int>>& index = space.ibands2wbands();
     const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();
 
     std::stringstream ss;
@@ -129,11 +129,11 @@ namespace DFT_output
       ifs >> this->nbasis;
       ifs.ignore(150, '\n');
 
-      //eigenvector[ispin][nbands*nbasis];
+      //eigenvector[ispin][nbasis*nbands];
       if(eigenvector.empty()){
         eigenvector.resize(this->nspins);
         for(ispin=0; ispin<nspins; ispin++)
-          eigenvector[ispin].resize( (wb2ib[ispin].back()+1)*this->nbasis );
+          eigenvector[ispin].resize( this->nbasis*(wb2ib[ispin].back()+1) );
       }
 
       while(ifs.good())

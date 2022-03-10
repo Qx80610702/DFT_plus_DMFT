@@ -44,11 +44,13 @@ namespace DFT_plus_DMFT
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl; 
       }
       else if(this->flag_update_density){
-        std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-        std::cout << "<><><><><><>  Current charge self-consitent step:" 
-                  << std::setw(4) << this->charge_scf_step << "  <><><><><><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
         std::cout << "<><><><><><><><><> Update charge density <><><><><><><><><>\n";
+        std::cout << "<><> Charge step:" 
+                  << std::setw(4) << this->charge_scf_step 
+                  << "; DMFT step:"
+                  << std::setw(4) << this->DMFT_iteration_step - 1
+                  << " <><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
       }
       else{
@@ -261,7 +263,7 @@ namespace DFT_plus_DMFT
              this->imp.sigma, this->pars.in, this->space );
 
     this->Char_scf.update_char_dens(
-             this->flag_axis, Mu.mu_corrected(),
+             this->flag_axis, this->Mu,
              this->pars.bands, this->pars.atom, 
              this->proj, this->imp.sigma, 
              this->pars.in, this->space );

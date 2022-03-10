@@ -11,13 +11,19 @@
 
 inline void general_complex_matrix_inverse(
               std::complex<double>* a, 
-              const int dim,
-              int* ipiv,
-              int& info_trf, int& info_tri)
+              const int dim, int* ipiv )
 {
-  info_trf=LAPACKE_zgetrf(LAPACK_ROW_MAJOR, dim, dim, a, dim, ipiv);
+  lapack_int info=LAPACKE_zgetrf(LAPACK_ROW_MAJOR, dim, dim, a, dim, ipiv);
+  if(info != 0 ){
+    std::cout << "Error in LAPACKE_zgetrf!!!" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
 
-  info_tri=LAPACKE_zgetri(LAPACK_ROW_MAJOR, dim, a, dim, ipiv);
+  info=LAPACKE_zgetri(LAPACK_ROW_MAJOR, dim, a, dim, ipiv);
+  if(info != 0 ){
+    std::cout << "Error in LAPACKE_zgetri!!!" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
 
 }
 

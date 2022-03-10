@@ -216,7 +216,6 @@ namespace DMFT
         {
           std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
           std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-          int info_trf, info_tri;
           
           #pragma omp for
           for(int iomega=0; iomega<nomega; iomega++)
@@ -238,7 +237,7 @@ namespace DMFT
               }//iband2
             }//iband1
 
-            general_complex_matrix_inverse(&Gf_latt[0], wbands[is], &ipiv[0], info_trf, info_tri);
+            general_complex_matrix_inverse(&Gf_latt[0], wbands[is], &ipiv[0]);
 
             for(int ineq=0; ineq<ineq_num; ineq++)
             {
@@ -913,7 +912,6 @@ namespace DMFT
 
       #pragma omp parallel
       {
-        int info_trf, info_tri;
         std::unique_ptr<int[]> ipiv(new int [m_tot]);
 
         #pragma omp for
@@ -921,10 +919,10 @@ namespace DMFT
         {          
           for(int is=0; is<nspin; is++)
           {         
-            general_complex_matrix_inverse(&Gf_omega[is][iomega][0], m_tot, &ipiv[0], info_trf, info_tri);
+            general_complex_matrix_inverse(&Gf_omega[is][iomega][0], m_tot, &ipiv[0]);
 
-            general_complex_matrix_inverse(&Weiss[is][iomega][0], m_tot, &ipiv[0], info_trf, info_tri);
-
+            general_complex_matrix_inverse(&Weiss[is][iomega][0], m_tot, &ipiv[0]);
+            
             for(int m_index=0; m_index<m_tot*m_tot; m_index++)
               sigma_newa[is][iomega][m_index] = Weiss[is][iomega][m_index] - Gf_omega[is][iomega][m_index];
 

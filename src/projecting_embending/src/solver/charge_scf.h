@@ -9,6 +9,7 @@
 #include "../para/input.h"
 #include "projector.h"
 #include "Hilbert_space.h"
+#include "chemical_potential.h"
 
 #include <vector>
 #include <complex>
@@ -30,7 +31,7 @@ namespace DFT_plus_DMFT
     public:
     void update_char_dens(
         const int axis_flag,
-        const double mu,
+        DFT_plus_DMFT::chemical_potential Mu,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,

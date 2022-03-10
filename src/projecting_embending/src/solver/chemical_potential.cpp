@@ -72,6 +72,14 @@ namespace DFT_plus_DMFT
       task_nks +=1;
     }
 
+    this->fik_wind.resize(nspin);
+    for(int is=0; is<nspin; is++){
+      this->fik_wind[is].resize(task_nks);
+      for(int ik=0; ik<task_nks; ik++){
+        this->fik_wind[is][ik].resize(wbands[is], 0.0);
+      }
+    }
+
     double max_U=0.0;
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
       max_U = max_U > atom.Uval(atom.ineq_iatom(ineq)) ? max_U : atom.Uval(atom.ineq_iatom(ineq));
@@ -181,7 +189,6 @@ namespace DFT_plus_DMFT
         #pragma omp parallel
         {
           std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-          int info_trf, info_tri;
 
           #pragma omp for
           for(int iomega=0; iomega<nomega; iomega++)
@@ -197,22 +204,26 @@ namespace DFT_plus_DMFT
                   KS_Gw[iomega][iband1*wbands[is]+iband2] = 
                     -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
               }
-            } 
-            general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0], info_trf, info_tri);
+            }
+            general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
           }//iomega
         }
         mkl_set_num_threads(mkl_threads);
 
         for(int iband=0; iband<wbands[is]; iband++)
         {
+          double fik_tmp = 0.0;
           const double sigma_oo = latt_sigma[is][nomega-1][iband*wbands[is]+iband].real();
 
           for(int iomega=0; iomega<nomega; iomega++)
-            sum_tmp += 2.0/beta*weight[ik]*( KS_Gw[iomega][iband*wbands[is]+iband] -
+            fik_tmp += 2.0/beta*( KS_Gw[iomega][iband*wbands[is]+iband] -
                       one/(im*freq[iomega] + mu - epsilon[iband]-sigma_oo) ).real();
 
-          sum_tmp += weight[ik]/(1.0+std::exp(beta*(epsilon[iband]+sigma_oo-mu)));
-        
+          fik_tmp += 1.0/(1.0+std::exp(beta*(epsilon[iband]+sigma_oo-mu)));
+
+          this->fik_wind[is][ik_count][iband] = fik_tmp;
+
+          sum_tmp += fik_tmp*weight[ik];
         }//iband
       }//is
       ik_count++;

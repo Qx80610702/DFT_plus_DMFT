@@ -23,7 +23,7 @@ namespace DFT_plus_DMFT
         std::complex<double>>>>& dens_mat_cmplx)
   {
     debug::codestamp("Charge_SCF_aims::output_charge_density");
-    const int nbasis = (int) std::sqrt(dens_mat_cmplx[0][0].size());
+    const int nbasis = (int)std::sqrt(dens_mat_cmplx[0][0].size());
 
     std::vector<int> k_map;
     int task_nks=0;
@@ -60,6 +60,7 @@ namespace DFT_plus_DMFT
               std::conj(dens_mat_cmplx[ik][ispin][ibasis1*nbasis + ibasis2]);
 
         c_elsi_write_mat_complex(rwh, &file[0], reinterpret_cast<double _Complex*>(dense_mat_tmp.data()));
+        
       }
     }
 

@@ -18,7 +18,7 @@ namespace DFT_plus_DMFT
 {
   void Charge_SCF::update_char_dens(
         const int axis_flag,
-        const double mu,
+        DFT_plus_DMFT::chemical_potential Mu,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
@@ -30,14 +30,17 @@ namespace DFT_plus_DMFT
 
     const int nks=band.nk();
     const int nspin=band.nspins();
+    std::vector<double> k_weight = band.kweight();
     const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();
+    const std::vector<int>& wbands = space.Wbands();
+    std::vector<std::vector<std::vector<double>>> fik_wind = Mu.fik();
     const int dft_solver = *(int*)in.parameter("dft_solver");
 
     std::vector<int> k_map;
     int task_nks=0;
     for(int ik=0; ik<nks; ik++){
       if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to the process id
-      task_nks +=1;
+      task_nks += 1;
       k_map.push_back(ik);
     }
 
@@ -50,18 +53,60 @@ namespace DFT_plus_DMFT
     for(int is=0; is<nspin; is++){
       this->fik_DMFT[is].resize(task_nks);
       for(int ik=0; ik<task_nks; ik++){
-        this->fik_DMFT[is][ik].resize(wb2ib[is].back()+1, 0.0);
+        this->fik_DMFT[is][ik].resize(wb2ib[is].back()+1, 1.0);
       }
     }
 
-    if(axis_flag == 0) //imaginary axis
-      this->eva_fik_DMFT_imag_axis(
-            mu, band,atom, proj, 
-            sigma, in, space );
-    else  //real axis
-      this->eva_fik_DMFT_real_axis(
-            mu, band, atom, proj, 
-            sigma, in, space );
+    // this->eva_fik_DMFT_imag_axis(
+    //   Mu.mu_corrected(), band,
+    //   atom, proj, sigma, in, space);
+
+    //fik
+    for(int is=0; is<nspin; is++)
+      for(int ik=0; ik<task_nks; ik++)
+        for(int iband=0; iband<wbands[is]; iband++)
+          this->fik_DMFT[is][ik][ wb2ib[is][iband] ] = fik_wind[is][ik][iband];
+    
+    //=======TEST=======
+    // std::ofstream ofs("fik-test.dat", std::ios::out);
+    // for(int is=0; is<nspin; is++)
+    //   for(int ik=0; ik<task_nks; ik++){
+    //     ofs << std::setw(4) << k_map[ik];
+    //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
+    //       ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_DMFT[is][ik][iband];
+    //     ofs << std::endl;
+    //   }
+    // ofs.close();
+
+    //fik*k_weight
+    for(int ik=0; ik<task_nks; ik++){
+      for(int is=0; is<nspin; is++){
+        for(int iband=0; iband<=wb2ib[is].back(); iband++){
+          if(this->fik_DMFT[is][ik][iband] < -1.0e-2){
+            std::cout << "Error in fik : negative occupation number!!!" << std::endl;
+            std::cout << "spin:" << std::setw(2) << is
+                      << "; ik:" << std::setw(4) << k_map[ik]
+                      << "; iband:" << std::setw(4) << iband
+                      << "; fik:" << std::setw(15) << std::fixed << std::setprecision(12) 
+                      << this->fik_DMFT[is][ik][iband] << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+          else if(std::fabs(this->fik_DMFT[is][ik][iband]) < 1.0e-2){
+             this->fik_DMFT[is][ik][iband] = 1.0e-12;
+          }
+        }
+      }
+    }
+
+    if(nspin==1 && !band.soc())
+      for(int ik=0; ik<k_weight.size(); ik++)
+        k_weight[ik] *= 2.0;
+
+    for(int is=0; is<nspin; is++)
+      for(int ik=0; ik<task_nks; ik++)
+        for(int iband=0; iband<=wb2ib[is].back(); iband++)
+          this->fik_DMFT[is][ik][iband] *= k_weight[ k_map[ik] ]; 
+
     
     int max_threads=omp_get_max_threads();
     int threads_num = (max_threads>k_map.size()? k_map.size() : max_threads);
@@ -102,7 +147,6 @@ namespace DFT_plus_DMFT
     const int nomega = *(int*)in.parameter("n_omega");
     const int nks=band.nk();
     const int nspin=band.nspins();
-    std::vector<double> k_weight = band.kweight();
     const int magnetism = *(int*)in.parameter("magnetism");
     const std::vector<int>& wbands=space.Wbands();
     const int n_valence = space.valence();
@@ -149,7 +193,6 @@ namespace DFT_plus_DMFT
         #pragma omp parallel
         {
           std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-          int info_trf, info_tri;
 
           #pragma omp for
           for(int iomega=0; iomega<nomega; iomega++)
@@ -166,7 +209,7 @@ namespace DFT_plus_DMFT
                     -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
               }
             } 
-            general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0], info_trf, info_tri);
+            general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
           }//iomega
         }
         mkl_set_num_threads(mkl_threads);
@@ -187,24 +230,17 @@ namespace DFT_plus_DMFT
       }//is
     }//ik
 
-    if(nspin==1 && !band.soc()) 
-      for(int ik=0; ik<k_weight.size(); ik++)
-        k_weight[ik] *= 2.0;
-
-    for(int is=0; is<nspin; is++)
-      for(int ik=0; ik<task_nks; ik++)
-        for(int iband=0; iband<=wb2ib[is].back(); iband++)
-          this->fik_DMFT[is][ik][iband] *= k_weight[ik];
 
     //TEST
     // std::ofstream ofs("fik.dat", std::ios::out);
     // for(int is=0; is<nspin; is++)
     //   for(int ik=0; ik<task_nks; ik++){
-    //     ofs << std::setw(4) << ik+1;
+    //     ofs << std::setw(4) << k_map[ik];
     //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
-    //       ofs << std::setw(10) << std::fixed << std::setprecision(6) << this->fik_DMFT[is][ik][iband];
+    //       ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_DMFT[is][ik][iband];
     //     ofs << std::endl;
     //   }
+    // ofs.close();
 
     // this->fik_test.resize(nspin);
     // for(int is=0; is<nspin; is++){
@@ -286,9 +322,19 @@ namespace DFT_plus_DMFT
 
     for(int ispin=0; ispin<nspin; ispin++)
       for(int iband=0; iband<this->fik_DMFT[ispin][ik].size(); iband++)
-        for(int ibasis=0; ibasis<nbasis; ibasis++)
-          eigenvector[ispin][ibasis*this->fik_DMFT[ispin][ik].size()+iband] *= std::sqrt(this->fik_DMFT[ispin][ik][iband]);
-     
+        for(int ibasis=0; ibasis<nbasis; ibasis++){
+          if(this->fik_DMFT[ispin][ik][iband] < -1.0e-6){
+            std::cout << "Error in fik : negative occupation number!!!" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+          else if(std::fabs(this->fik_DMFT[ispin][ik][iband]) < 1.0e-6){
+             eigenvector[ispin][ibasis*this->fik_DMFT[ispin][ik].size()+iband] *= 0.0;
+          }
+          else{
+            eigenvector[ispin][ibasis*this->fik_DMFT[ispin][ik].size()+iband] *= std::sqrt(this->fik_DMFT[ispin][ik][iband]);
+          }
+        }
+    
     // void cblas_zherk (const CBLAS_LAYOUT Layout, const CBLAS_UPLO uplo, const
     //    CBLAS_TRANSPOSE trans, const MKL_INT n, const MKL_INT k, const double alpha, const void
     //    *a, const MKL_INT lda, const double beta, void *c, const MKL_INT ldc);

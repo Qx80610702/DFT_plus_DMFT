@@ -60,12 +60,15 @@ namespace DFT_plus_DMFT
     //interfaces
     double mu_corrected(){return sigma_corrected_mu;}
     double mu_DFT(){return DFT_mu;}
+    const std::vector<std::vector<std::vector<double>>>& fik(){return fik_wind;}
 
     private:
 
     double DFT_mu;
     double sigma_corrected_mu;
     double local_ele_num;
+
+    std::vector<std::vector<std::vector<double>>> fik_wind;       //fik_wind[is][ik][iband]
 
   };
 }

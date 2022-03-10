@@ -93,7 +93,6 @@ void spectrum::eva_spectrum(
       #pragma omp parallel
       {
         int* ipiv = new int [wbands[is]];
-        int info_trf, info_tri;
 
         #pragma omp for
         for(int iomega=0; iomega<nomega; iomega++)
@@ -111,7 +110,7 @@ void spectrum::eva_spectrum(
             }
           }
 
-          general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0], info_trf, info_tri);
+          general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
           
           for(int iband=0; iband<wbands[is]; iband++)
             this->Awk[is][iomega][i_k_point] -= KS_Gw[iomega][iband*wbands[is]+iband].imag()/PI;

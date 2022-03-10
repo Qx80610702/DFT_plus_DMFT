@@ -43,7 +43,7 @@ void polynomial_regression(std::complex<double>* fw, double* freq,
 
   const int mkl_threads = mkl_get_max_threads();
   mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-  general_complex_matrix_inverse(&C[0][0], 3, ipiv, info_trf, info_tri);
+  general_complex_matrix_inverse(&C[0][0], 3, ipiv);
   mkl_set_num_threads(mkl_threads);
 
   C1 = (C[0][0]*D1 + C[0][1]*D2 + C[0][2]*D3).real();
