@@ -317,7 +317,7 @@ namespace DFT_output
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      if(mpi_rank()==0) std::cout << "Warning: local_symmetry is not given and set default value 0" << std::endl;
+      // if(mpi_rank()==0) std::cout << "Warning: local_symmetry is not given and set default value 0" << std::endl;
       this->local_symmetry = 0;
     }
 

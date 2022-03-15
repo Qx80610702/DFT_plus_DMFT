@@ -17,7 +17,9 @@ namespace DMFT
     void cal_double_counting(const int type, 
             const bool SOC, const int nspin, 
             DFT_output::atoms_info& atom,
-            DMFT::input_info& in );
+            DMFT::input_info& in,
+            const bool hybrid_func,
+            const double hyb_xc_coeff );
 
     //============================================
     //        interface

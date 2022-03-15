@@ -97,7 +97,9 @@ namespace DFT_plus_DMFT
     this->imp.sigma.dc.cal_double_counting( 
           *(int*)this->pars.in.parameter("double_counting"), 
           this->pars.bands.soc(), this->pars.bands.nspins(), 
-          this->pars.atom, this->pars.in);
+          this->pars.atom, this->pars.in,
+          *(bool*)this->pars.in.parameter("hyb_func"),
+          *(double*)this->pars.in.parameter("hyf_xc_alpha") );
 
     if(this->flag_eva_spectrum) this->cal_spectrum_func();
     else if(this->flag_update_density) this->charge_solve();

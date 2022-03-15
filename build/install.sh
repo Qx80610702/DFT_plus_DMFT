@@ -541,13 +541,13 @@ magnetism=\`grep -i "magnetism" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' |
 #=============Maximum charge step=================
 max_charge_step=\`grep -i "max_charge_step" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
 if [ -z \$max_charge_step ];then
-  max_charge_step=10
+  max_charge_step=1
 fi
 
 #=============Maximum DMFT step=================
 max_DMFT_step=\`grep -i "max_DMFT_step" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2}' | grep -v "#" | awk '{print \$2}'\`
 if [ -z \$max_DMFT_step ];then
-  max_DMFT_step=10
+  max_DMFT_step=5
 fi
 
 #========Current charge and DMFT step

@@ -953,7 +953,7 @@ namespace DMFT
     const std::vector<int>& wbands = space.Wbands();
     const int nprocs = mpi_ntasks();
     const int myid = mpi_rank();
-    const double beta= *(double*)in.parameter("beta"); 
+    const double beta= *(double*)in.parameter("beta");
     const std::vector<int>& sub_norb = atom.iatom_norb();
     const std::vector<std::vector<int>>& orb_index = atom.Im2iorb();
     const int norb = atom.norb();
@@ -988,6 +988,8 @@ namespace DMFT
         for(auto& iter3 : iter2)
           iter3 = 0.0;
 
+    std::vector<std::vector<std::vector<double>>> local_occ_tmp = local_occ;
+
     std::vector<std::vector<double>>& occ_num = atom.occ_num_ref();
     for(auto& iter1 : occ_num)
       for(auto& iter2 : iter1)
@@ -996,6 +998,89 @@ namespace DMFT
     if(mpi_rank()==0) std::cout << "\n===========Local occupation number========" << std::endl;
 
     //evaluation
+    for(int ineq=0; ineq<ineq_num; ineq++)
+    {
+      const int iatom = atom.ineq_iatom(ineq);
+      const int m_tot = sub_norb[iatom];
+
+      int ik_count=0;
+      for(int ik=0; ik<nks; ik++)
+      {
+        if(ik%nprocs != myid) continue;
+
+        for(int is=0; is<nspin; is++)
+        {
+          const std::vector<double>& epsilon = space.eigen_val()[is][ik];     
+          const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
+      
+            for(int m=0; m<m_tot; m++)
+              for(int iband=0; iband<wbands[is]; iband++)
+                local_occ_tmp[iatom][is][m] += 
+                  ( std::conj(projector[iband*m_tot + m])/
+                    (1.0+std::exp(beta*(epsilon[iband]-mu)))*
+                    projector[iband*m_tot + m]*fk[ik] ).real();
+        }//is
+        ik_count++;
+      }//ik
+
+      //reduce operation
+      for(int is=0; is<nspin; is++){
+        MPI_Allreduce( &local_occ_tmp[iatom][is][0], 
+                       &local_occ[iatom][is][0], m_tot, 
+                       MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+      }
+
+      if(nspin==1) local_occ[iatom][1] = local_occ[iatom][0];
+
+      //=============================================
+      //   Local symmetry operation
+      //=============================================
+      const int local_symmetry = atom.local_sym();
+      const int corr_L=atom.L(ineq);
+      for(int is=0; is<2; is++)
+        DFT_output::atoms_info::symmetry_operation_vector<double>(
+          local_symmetry, corr_L, m_tot, &local_occ[iatom][is][0] );
+      //=============================================
+
+      for(int is=0; is<2; is++)
+        for(int m=0; m<m_tot; m++)
+          occ_num[iatom][is] += local_occ[iatom][is][m];
+      
+      for(int iatom1=0; iatom1<atom.total_atoms(); iatom1++)
+      {
+        if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
+        {
+          int symm=0;       //symmetry
+
+          if(mag==1 && atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry;AFM
+
+          for(int ispin=0; ispin<2; ispin++)
+            for(int m=0; m<m_tot; m++)
+              local_occ[iatom1][ispin][m] = local_occ[iatom][(ispin+symm)%2][m];
+
+          for(int is=0; is<2; is++)
+            for(int m=0; m<m_tot; m++)
+              occ_num[iatom1][is] += local_occ[iatom1][is][m];
+        }
+      }
+
+      if(mpi_rank()==0)
+      {
+        for(int is=0; is<nspin; is++)
+        {
+          std::cout << "===========impurity:" << ineq << " spin:" << is << "========\n";
+          for(int m=0; m<m_tot; m++)
+            if(nspin==1)
+              std::cout << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
+            else
+              std::cout << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
+          std::cout << std::endl;
+        }
+      }
+
+    }//ineq
+
+    /*
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -1035,6 +1120,7 @@ namespace DMFT
       }
 
       //evaluate local occupation
+     
       for(int m=0; m<m_tot; m++)
       {
         for(int is=0; is<nspin; is++)
@@ -1108,6 +1194,7 @@ namespace DMFT
       }
 
     }//ineq
+    */
 
     return;
   }

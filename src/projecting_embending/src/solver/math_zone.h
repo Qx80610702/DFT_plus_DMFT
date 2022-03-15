@@ -45,14 +45,13 @@ inline void Hermitian_matrix_sqrt_inver(
   for(int index=0; index<dim*dim; index++) 
     b[index] = std::complex<double>(0.0,0.0);
 
-// for(int i=0; i<dim; i++)
-// {
-//   if(std::fabs(eigen_val[i])<1.0e-9)
-//   {
-//     std::cout << "zero eigenvalues!!!" << std::endl;
-//     std::exit(EXIT_FAILURE);
-//   }
-// }
+  for(int i=0; i<dim; i++){
+    if(std::fabs(eigen_val[i])<1.0e-12){
+      std::cout << "Error in Hermitian_matrix_sqrt_inver : zero eigenvalues!!!" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+  }
+
   for(int i=0; i<dim; i++)
     b[i*dim+i] = std::complex<double>(1.0/std::sqrt(eigen_val[i]),0.0);
 

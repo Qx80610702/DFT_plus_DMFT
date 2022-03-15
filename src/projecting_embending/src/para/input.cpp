@@ -180,7 +180,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       // if(mpi_rank()==0) std::cout << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
-      this->charge_step_max = 10;
+      this->charge_step_max = 1;
     }
 
     //max_dmft_step
@@ -195,8 +195,8 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      // if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 10" << std::endl;
-      this->DMFT_step_max = 10;
+      // if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 5" << std::endl;
+      this->DMFT_step_max = 5;
     }
 
     //mc_step
@@ -231,6 +231,40 @@ namespace DMFT
       // if(mpi_rank()==0) std::cout << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
       this->E_window[0] = -5.0;
       this->E_window[1] = 5.0;
+    }
+
+    //dft_xc
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("dft_xc", str_val);
+
+      if(std::strcmp("hybrid", str_val[0].c_str())==0)
+        this->hyb_func = true;
+      else
+        this->hyb_func = false;
+      
+    }
+    catch (const std::string messg) {
+      std::cout << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      this->hyb_func = false;
+    }
+
+    //hyf_xc_alpha
+    try{
+      std::vector<std::string> str_val;
+      this->read_parameter("hyf_xc_alpha", str_val);
+
+      this->hyf_xc_alpha = atof(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      std::cout << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch (const bool not_given){
+      this->hyf_xc_alpha = 0.25;
     }
 
     return true;
@@ -284,7 +318,10 @@ namespace DMFT
 
         if(std::strcmp(key_val[0].c_str(), keyword)==0)
         {
-          if(key_val.size() != count+1) throw "Error in number of values of parameter  " + key_val[0];
+          if(key_val.size() != count+1){
+            std::string messg(word);
+            throw messg;
+          }
 
           for(int i=0; i<count; i++)
             val.push_back(key_val[i+1]);
@@ -303,7 +340,9 @@ namespace DMFT
           std::strcmp("mc_step", key_val[0].c_str())==0 || 
           std::strcmp("energy_window", key_val[0].c_str())==0 ||
           std::strcmp("local_symmetry", key_val[0].c_str())==0 ||
-          std::strcmp("restart", key_val[0].c_str())==0 )
+          std::strcmp("restart", key_val[0].c_str())==0 ||
+          std::strcmp("dft_xc", key_val[0].c_str())==0 ||
+          std::strcmp("hybrid_xc_coeff", key_val[0].c_str())==0 )
         {;}
         else
         {
@@ -349,6 +388,8 @@ namespace DMFT
     else if(std::strcmp("max_charge_step", word)==0) return &charge_step_max;
     else if(std::strcmp("max_dmft_step", word)==0) return &DMFT_step_max;
     else if(std::strcmp("mc_step", word)==0) return &MC_step;
+    else if(std::strcmp("hyb_func", word)==0) return &hyb_func;
+    else if(std::strcmp("hyf_xc_alpha", word)==0) return &hyf_xc_alpha;
     else
     {
       std::cout << "No parameter " << keyword << std::endl;

@@ -13,11 +13,11 @@
 #include <mkl.h>
 
 //test
-// #include <fstream>
-// #include <iomanip>
-// #include <sstream>
-// #include <string>
-// #include <cmath>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <cmath>
 
 namespace DFT_plus_DMFT
 {
@@ -108,7 +108,7 @@ namespace DFT_plus_DMFT
         std::vector<std::complex<double>>& ovlp_localorb = ovlp.overlap_localorb();
         Hermitian_matrix_sqrt_inver(
           &ovlp_localorb[0], &eigen_val[0], 
-          &work_mat[0], &Lowdin[0], norb, info_zheev ); 
+          &work_mat[0], &Lowdin[0], norb, info_zheev );
 
         for(int is=0; is<nspin; is++)
         {
@@ -116,6 +116,43 @@ namespace DFT_plus_DMFT
           // CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
           // *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
           // *beta, void *c, const MKL_INT ldc);
+
+          //===============test the orthonormality of wavefunctions=====
+          /*
+          std::vector<std::complex<double>> wfc_norm(wbands[is]*wbands[is]);
+          std::vector<std::complex<double>> wfc_ovlp_tmp(wbands[is]*nbasis);
+          const std::vector<std::complex<double>>& ovlp_all = ovlp.ovlp_aims.ovlp_mat_work();
+          cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
+                      wbands[is], nbasis, nbasis,
+                      &one,
+                      &eigenvec[is][0], wbands[is],
+                      &ovlp_all[0], nbasis,
+                      &zero,
+                      &wfc_ovlp_tmp[0], nbasis );
+
+          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                      wbands[is], wbands[is], nbasis,
+                      &one,
+                      &wfc_ovlp_tmp[0], nbasis,
+                      &eigenvec[is][0], wbands[is],
+                      &zero,
+                      &wfc_norm[0], wbands[is] );
+          
+          std::stringstream ss;
+          ss << "wfc-norm/wfc_norm_is" << is << "_ik" << ik << ".dat";
+          std::ofstream ofs(ss.str().c_str(), std::ios::out);
+
+          for(int m1=0; m1<wbands[is]; m1++)
+          {
+            for(int m2=0; m2<wbands[is]; m2++)
+            {
+              ofs << std::setw(15) << std::fixed << std::setprecision(9) << wfc_norm[m1*wbands[is]+m2].real()
+                  << std::setw(15) << std::fixed << std::setprecision(9) << wfc_norm[m1*wbands[is]+m2].imag(); 
+            }
+            ofs << std::endl;
+          }//m
+          ofs.close(); */
+
 
           cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
                       wbands[is], norb, nbasis,
@@ -179,62 +216,62 @@ namespace DFT_plus_DMFT
     }
     mkl_set_num_threads(mkl_threads);
 
-//=========TEST orthonormality========================
-// for(int is=0; is<nspin; is++)
-// {
-//   std::vector<std::complex<double>> norm(norb*norb);
-//   int ik_count=-1;
-//   for(int ik=0; ik<nkpoints; ik++)
-//   {
-//     if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
-//     ik_count++;
-//     for(int iatom1=0; iatom1<natom; iatom1++)
-//     {
-//       const int m_tot1 = norb_sub[iatom1];
-//       for(int m1=0; m1<m_tot1; m1++)
-//       {
-//         const int iorb1 = orb_index[iatom1][m1];
-//         for(int iatom2=0; iatom2<natom; iatom2++)
-//         {
-//           const int m_tot2 = norb_sub[iatom2];
-//           for(int m2=0; m2<m_tot2; m2++)
-//           {
-//             const int iorb2 = orb_index[iatom2][m2];
-//             norm[iorb1*norb+iorb2] = zero;
-//             for(int iband=0; iband<wbands[is]; iband++)
-//               norm[iorb1*norb+iorb2] += std::conj(this->projector_mat[ik_count][iatom1][is][iband*m_tot1+m1])*
-//                                    this->projector_mat[ik_count][iatom2][is][iband*m_tot2+m2];
-//           }
-//         }//iatom2
-//       }//m1
-//     }//iatom1
+    //=========TEST orthonormality========================
+    /*for(int is=0; is<nspin; is++)
+    {
+      std::vector<std::complex<double>> norm(norb*norb);
+      int ik_count=-1;
+      for(int ik=0; ik<nkpoints; ik++)
+      {
+        if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
+        ik_count++;
+        for(int iatom1=0; iatom1<natom; iatom1++)
+        {
+          const int m_tot1 = norb_sub[iatom1];
+          for(int m1=0; m1<m_tot1; m1++)
+          {
+            const int iorb1 = orb_index[iatom1][m1];
+            for(int iatom2=0; iatom2<natom; iatom2++)
+            {
+              const int m_tot2 = norb_sub[iatom2];
+              for(int m2=0; m2<m_tot2; m2++)
+              {
+                const int iorb2 = orb_index[iatom2][m2];
+                norm[iorb1*norb+iorb2] = zero;
+                for(int iband=0; iband<wbands[is]; iband++)
+                  norm[iorb1*norb+iorb2] += std::conj(this->projector_mat[ik_count][iatom1][is][iband*m_tot1+m1])*
+                                       this->projector_mat[ik_count][iatom2][is][iband*m_tot2+m2];
+              }
+            }//iatom2
+          }//m1
+        }//iatom1
 
-//     std::stringstream ss;
-//     ss << "projector_orthonormality/norm_ik" << ik << ".dat";
-//     std::ofstream ofs(ss.str().c_str(), std::ios::out);
+        std::stringstream ss;
+        ss << "projector_orthonormality/norm_ik" << ik << ".dat";
+        std::ofstream ofs(ss.str().c_str(), std::ios::out);
 
-//     for(int iatom1=0; iatom1<natom; iatom1++)
-//     {
-//       const int m_tot1 = norb_sub[iatom1];
-//       for(int m1=0; m1<m_tot1; m1++)
-//       {
-//         const int iorb1 = orb_index[iatom1][m1];
-//         for(int iatom2=0; iatom2<natom; iatom2++)
-//         {
-//           const int m_tot2 = norb_sub[iatom2];
-//           for(int m2=0; m2<m_tot2; m2++)
-//           {
-//             const int iorb2 = orb_index[iatom2][m2];
-//             ofs << is << std::setw(5) << ik << std::setw(3) << iorb1 << std::setw(3) << iorb2 <<
-//             std::setw(15) << std::fixed << std::setprecision(9) << norm[iorb1*norb+iorb2].real()
-//             << std::setw(15) << std::fixed << std::setprecision(9) << norm[iorb1*norb+iorb2].imag() << std::endl;
-//           }
-//         }//iatom2
-//       }//m1
-//     }//iatom1
-//     ofs.close();
-//   }//ik
-// }//is
+        for(int iatom1=0; iatom1<natom; iatom1++)
+        {
+          const int m_tot1 = norb_sub[iatom1];
+          for(int m1=0; m1<m_tot1; m1++)
+          {
+            const int iorb1 = orb_index[iatom1][m1];
+            for(int iatom2=0; iatom2<natom; iatom2++)
+            {
+              const int m_tot2 = norb_sub[iatom2];
+              for(int m2=0; m2<m_tot2; m2++)
+              {
+                const int iorb2 = orb_index[iatom2][m2];
+                ofs << is << std::setw(5) << ik << std::setw(3) << iorb1 << std::setw(3) << iorb2 <<
+                std::setw(15) << std::fixed << std::setprecision(9) << norm[iorb1*norb+iorb2].real()
+                << std::setw(15) << std::fixed << std::setprecision(9) << norm[iorb1*norb+iorb2].imag() << std::endl;
+              }
+            }//iatom2
+          }//m1
+        }//iatom1
+        ofs.close();
+      }//ik
+    }//is */
 
     //=============================================
     //   unitary tranform of local orbital to
@@ -249,9 +286,6 @@ namespace DFT_plus_DMFT
     {
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot = norb_sub[iatom];
-    // for(int iatom=0; iatom<natom; iatom++)
-    // {
-    //   const int m_tot = norb_sub[iatom];
 
       mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
       #pragma omp parallel num_threads(threads_num)

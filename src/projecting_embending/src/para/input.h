@@ -27,19 +27,21 @@ namespace DMFT
 
     private:
     // Input parameter
-    int flag_DFT_solver;         //1:aims, 2:ABACUS
-    double temperature;          //unit:Kelvin; default:300
-    int flag_magnetism=-1;       //AFM:1, FM:2, paramagenetism:3, none:4
-    int n_tau;                   //number of segments on the interval [0,beta] when using CTQMC impuroty solver;default:500
-    int n_omega;                 //number of Matsubara frequency points
+    int flag_DFT_solver;            //1:aims, 2:ABACUS
+    double temperature;             //unit:Kelvin; default:300
+    int flag_magnetism=-1;          //AFM:1, FM:2, paramagenetism:3, none:4
+    int n_tau;                      //number of segments on the interval [0,beta] when using CTQMC impuroty solver;default:500
+    int n_omega;                    //number of Matsubara frequency points
     //ALPS-CTHYB:1;  LPS-CTHYB-SEGMENT:2; (not supported now)
     //PACS:3;  Rutgers-CTHYB:4; iQIST:5; default:3
     int flag_impurity_solver;    
-    int flag_double_counting;    //nominal:1;   default:1
-    int charge_step_max;             //number of the maximum charge self-consistent interation step
-    int DMFT_step_max;               //number of the maximum DMFT interation step under each charge step
-    long long MC_step;           //numuber of MC sampling steps; default:1000
-    std::vector<double> E_window;  //Energy window for hybridization function; default E_window[0]=-2.0, E_window[1]=2.0;
+    int flag_double_counting;       //nominal:1;   default:1
+    int charge_step_max;            //number of the maximum charge self-consistent interation step; default:1
+    int DMFT_step_max;              //number of the maximum DMFT interation step under each charge step; default:5
+    long long MC_step;              //numuber of MC sampling steps; default:1000
+    std::vector<double> E_window;   //Energy window for hybridization function; default E_window[0]=-2.0, E_window[1]=2.0;
+    bool hyb_func;                  //Whether hybrid functional is used or not; default:false
+    double hyf_xc_alpha;            //The mixing factor in hybrid funtional; default:0.25;
 
     //parameters determined by input parameters
     double beta;                 //1/(k_b*T); unit:1/Hartree
