@@ -716,30 +716,32 @@ do
 
   start_dmft_step=1
 
-  #============Charge update===============
-  mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 1
-  if [ \$? -ne 0 ];then
-    echo "Errors occured in updating charge density!!!"
-    exit
-  fi
+  if [ \$max_charge_step -gt 1 ];then
+    #============Charge update===============
+    mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 1
+    if [ \$? -ne 0 ];then
+      echo "Errors occured in updating charge density!!!"
+      exit
+    fi
 
-  cd dft
-  rm -r outputs_to_DMFT
+    cd dft
+    rm -r outputs_to_DMFT
 
-  if [ \$dft_solver_type -eq 1 ];then
-    mpirun \$EXE_FHIaims 1>./job.log 2>./job.error
-  elif [ \$dft_solver_type -eq 2 ];then
-    mpirun \$EXE_ABACUS 1>./job.log 2>./job.error
-  else
-    echo "Errors: unspported DFT solver!!!"
-    exit
-  fi
+    if [ \$dft_solver_type -eq 1 ];then
+      mpirun \$EXE_FHIaims 1>./job.log 2>./job.error
+    elif [ \$dft_solver_type -eq 2 ];then
+      mpirun \$EXE_ABACUS 1>./job.log 2>./job.error
+    else
+      echo "Errors: unspported DFT solver!!!"
+      exit
+    fi
 
-  if [ \$? -ne 0 ];then
-    echo "Errors occured in running dft solver!!!"
-    exit
+    if [ \$? -ne 0 ];then
+      echo "Errors occured in running dft solver!!!"
+      exit
+    fi
+    cd ..
   fi
-  cd ..
 done #DFT+DMFT charge self-consistent loop 
 EOF1
 

@@ -85,18 +85,36 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
 
     #Parsing command line
-    if len(sys.argv)<2:
-        DMFT_step=1
-        for step_dir in os.listdir("impurity_solving/"):
-            if step_dir.find("step") != -1:
+    char_step=1
+    DMFT_step=1
+    if len(sys.argv) != 5:
+        for step_dir in os.listdir("dmft/"):
+            if step_dir.find("charge_step") != -1:
+                N=int(step_dir.split("p")[-1])
+                if N > char_step:
+                    char_step=N
+        
+        for step_dir in os.listdir("dmft/charge_step" + str(char_step)):
+            if step_dir.find("dmft_step") != -1:
                 N=int(step_dir.split("p")[-1])
                 if N > DMFT_step:
                     DMFT_step=N
-    else: 
-        DMFT_step = int(sys.argv[1])
+    else:
+        i=1
+        while i < len(sys.argv):
+            if sys.argv[i].find('-') == -1:
+                Awf=sys.argv[i]
+                i = i + 1
+            else:
+                if sys.argv[i].lower() == "-charge_step": char_step=int(sys.argv[i+1])
+                elif sys.argv[i].lower() == "-dmft_step": DMFT_step=int(sys.argv[i+1])
+                else: 
+                    print("Unsupported parameters ", sys.argv[i])
+                    exit
+                i = i + 2 
     
     # Number of inequivalent impuritys
-    sym = open("../DFT/outputs_to_DMFT/symmetry.dat",'r')
+    sym = open("dft/outputs_to_DMFT/symmetry.dat",'r')
     ineq_num=int(sym.readlines()[1])
 
     # Read maxent_params.dat
@@ -117,9 +135,9 @@ if __name__ == '__main__':
     iorb2ineqm = []
     Norb=0
     for ineq in range(ineq_num):
-        Sw_tmp=np.loadtxt("impurity_solving/step" \
-                        +str(DMFT_step)+"/impurity" \
-                        +str(ineq)+"/Sigma.dat", dtype=float)
+        Sw_tmp=np.loadtxt("dmft/charge_step" + str(char_step) \
+                  +"/dmft_step" + str(DMFT_step) \
+                  +"/impurity" + str(ineq) + "/Sigma.dat", dtype=float)
         Norb += int((Sw_tmp.shape[1]-1)/2)
         Sw.append(Sw_tmp)
         for m in range(int((Sw_tmp.shape[1]-1)/2)):
