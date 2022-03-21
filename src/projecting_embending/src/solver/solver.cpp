@@ -162,50 +162,12 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::cal_spectrum_func");
 
-    // double time;
-    // double seconds;
-    // timer::timestamp(time);
-
-    // if(mpi_rank()==0)
-    // {
-    //   std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-    //   std::cout << "<><><><><><><><><> Calculating spectrum <><><><><><><><><>\n";
-    //   std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;  
-    // }
-
     this->flag_axis = 1;   //real axis
-
-    // this->reading_inputs();
 
     this->imp.sigma.sigma_real.read_AC_sigma(
           this->pars.bands, 
           this->pars.in, 
           this->pars.atom );
-
-    // this->space.KS_bands_window(
-    //       this->pars.bands, 
-    //       this->pars.atom,
-    //       this->pars.in );
-    
-    // this->Mu.evaluate_mu_bisection_imag_DFT(
-    //       this->pars.bands, this->pars.atom, 
-    //       this->pars.in, this->space );
-    
-    // this->proj.elaluate_projector(
-    //       *(int*)pars.in.parameter("DFT_solver"),
-    //       pars.bands, this->space, this->pars.atom );
-    
-    // this->imp.evaluate_local_occupation( 
-    //       this->pars.in, this->pars.bands, 
-    //       this->proj, this->pars.atom,
-    //       this->space, this->Mu.mu_DFT(),
-    //       *(int*)this->pars.in.parameter("n_omega"),
-    //       *(int*)this->pars.in.parameter("magnetism") );
-
-    // this->imp.sigma.dc.cal_double_counting( 
-    //       *(int*)this->pars.in.parameter("double_counting"), 
-    //       this->pars.bands.soc(), this->pars.bands.nspins(), 
-    //       this->pars.atom, this->pars.in);
     
     this->imp.sigma.subtract_double_counting(this->flag_axis);
     
@@ -218,10 +180,6 @@ namespace DFT_plus_DMFT
           this->pars.in, this->space );
 
     if(mpi_rank()==0) this->Aw.out_spectrum();
-
-    // timer::get_time(time, seconds);
-    // if(mpi_rank()==0)
-    //   std::cout << "\nSpectrum evaluation time consuming (seconds): " << seconds << "\n" << std::endl;
 
     return;
   }

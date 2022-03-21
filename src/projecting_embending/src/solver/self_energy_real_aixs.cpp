@@ -65,7 +65,8 @@ namespace DMFT
       std::vector<std::vector<double>> Gw_im(2);
       for(int is=0; is<2; is++){
         Gw_real[is].resize(m_tot);
-        Gw_im[is].resize(m_tot);}
+        Gw_im[is].resize(m_tot);
+      }
 
       std::ifstream ifs(file.c_str(), std::ios::in);
       if (!ifs){

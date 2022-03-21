@@ -81,16 +81,12 @@ if __name__ == '__main__':
     else:
         i=1
         while i < len(sys.argv):
-            if sys.argv[i].find('-') == -1:
-                Awf=sys.argv[i]
-                i = i + 1
-            else:
-                if sys.argv[i].lower() == "-charge_step": char_step=int(sys.argv[i+1])
-                elif sys.argv[i].lower() == "-dmft_step": DMFT_step=int(sys.argv[i+1])
-                else: 
-                    print("Unsupported parameters ", sys.argv[i])
-                    exit
-                i = i + 2 
+            if sys.argv[i].lower() == "-charge_step": char_step=int(sys.argv[i+1])
+            elif sys.argv[i].lower() == "-dmft_step": DMFT_step=int(sys.argv[i+1])
+            else: 
+                print("Unsupported parameters ", sys.argv[i])
+                exit
+            i = i + 2 
 
     # print("charge step: ", char_step)
     # print("dmft step:", DMFT_step)
@@ -126,7 +122,7 @@ if __name__ == '__main__':
     for ineq in range(ineq_num):
         Gt_tmp=np.loadtxt("dmft/charge_step" + str(char_step) \
                         +"/dmft_step" + str(DMFT_step) \
-                        +"/impurity" + str(ineq)+"/" + Gtf, dtype=float)
+                        +"/impurity" + str(ineq) + "/" + Gtf, dtype=float)
         Norb += Gt_tmp.shape[1]-1
         Gt_data.append(Gt_tmp)
         for m in range(Gt_tmp.shape[1]-1):

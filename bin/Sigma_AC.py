@@ -102,16 +102,12 @@ if __name__ == '__main__':
     else:
         i=1
         while i < len(sys.argv):
-            if sys.argv[i].find('-') == -1:
-                Awf=sys.argv[i]
-                i = i + 1
-            else:
-                if sys.argv[i].lower() == "-charge_step": char_step=int(sys.argv[i+1])
-                elif sys.argv[i].lower() == "-dmft_step": DMFT_step=int(sys.argv[i+1])
-                else: 
-                    print("Unsupported parameters ", sys.argv[i])
-                    exit
-                i = i + 2 
+            if sys.argv[i].lower() == "-charge_step": char_step=int(sys.argv[i+1])
+            elif sys.argv[i].lower() == "-dmft_step": DMFT_step=int(sys.argv[i+1])
+            else: 
+                print("Unsupported parameters ", sys.argv[i])
+                exit
+            i = i + 2 
     
     # Number of inequivalent impuritys
     sym = open("dft/outputs_to_DMFT/symmetry.dat",'r')

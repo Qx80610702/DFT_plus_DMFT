@@ -59,7 +59,7 @@ namespace DMFT
                 }
               }
               this->V_dc.at(ineq).at(is).at(m*m_tot+m) = 
-                std::complex<double>((1-hyb_xc_coeff)*FLL_nominal + DC_HF, 0.0);
+                std::complex<double>((1-hyb_xc_coeff)*FLL_nominal + hyb_xc_coeff*DC_HF, 0.0);
             }
           }
           else{          
