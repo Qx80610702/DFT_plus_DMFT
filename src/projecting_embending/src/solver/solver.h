@@ -16,8 +16,10 @@
 // ==============================================================
 struct argument_lists
 {
-  int charge_step;
-  int DMFT_step;
+  int current_charge_step;
+  int current_DMFT_step;
+  int last_charge_step;
+  int last_DMFT_step;
   bool sigma_only;
   bool cal_spectrum;
   bool update_density;
@@ -48,7 +50,7 @@ namespace DFT_plus_DMFT
 
     void charge_solve();
 
-    bool scf_update();
+    bool self_energy_scf_update();
     
     void update_Anderson_impurities();
 
@@ -59,14 +61,16 @@ namespace DFT_plus_DMFT
     //==================================
     //     interfaces
     //==================================
-    int& DMFT_step(){return DMFT_iteration_step;}
-    int& charge_step(){return charge_scf_step;}
+    int& curr_dmft_step(){return current_DMFT_step;}
+    int& curr_char_step(){return current_charge_step;}
     bool convergency(){return this->flag_convergency;}
 
     private:
     int flag_axis;                     //Do calculations on imaginary (0) or real (1) axis
-    int DMFT_iteration_step;           //The step number of current DMFT iteration
-    int charge_scf_step;               //The step number of current charge scf iteration
+    int current_DMFT_step;             //The step number of current DMFT iteration
+    int current_charge_step;           //The step number of current charge scf iteration
+    int last_DMFT_step;                //The step number of current DMFT iteration
+    int last_charge_step;              //The step number of current charge scf iteration
     bool flag_convergency;             //Whether DMFT iteration convergrncy is achieved
     bool flag_eva_sigma_only;          //
     bool flag_eva_spectrum;            //calculate spectrum

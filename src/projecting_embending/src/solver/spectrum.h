@@ -25,6 +25,15 @@ class spectrum
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
+  void eva_spectrum_normalization(
+        const double mu,
+        DFT_output::KS_bands& band, 
+        DFT_output::atoms_info& atom, 
+        DFT_plus_DMFT::projector& proj,
+        DMFT::self_energy& sigma,
+        DMFT::input_info& in,
+        DFT_plus_DMFT::Hilbert_space& space );
+
   void out_spectrum();
 
   private:
@@ -38,6 +47,9 @@ class spectrum
   std::vector<std::vector<std::vector<std::vector<double>>>> Aw_loc;   
 
   //Real frequency  
-  std::vector<double> freq;                                  
+  std::vector<double> freq;             
+
+  //Spectrum function; Aw_iband_ik[is][ik][iband][iomega]
+  std::vector<std::vector<std::vector<std::vector<double>>>> Aw_ik_iband;                    
 
 };

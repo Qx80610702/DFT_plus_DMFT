@@ -392,7 +392,7 @@ namespace DMFT
       std::vector<std::vector<std::vector<std::complex<double>>>>&
             G0 = this->Weiss_omega[ineq];
 
-      std::vector<std::vector<std::vector<std::complex<double>>>>&
+      const std::vector<std::vector<std::vector<std::complex<double>>>>&
             local_sigma = this->sigma.sigma_new(0)[ineq];
 
       #pragma omp parallel for
@@ -628,29 +628,29 @@ namespace DMFT
       case 1:
         this->ALPS_hyb.output(char_step, DMFT_step, 
                mu, in, atom, band, this->impurity_level, 
-               this->Green_fun_omega, this->Weiss_omega, this->hyb_omega);
+               this->sigma.sigma_new(0), this->Weiss_omega, this->hyb_omega);
         break;
       case 2:
         this->ALPS_hyb_segment.output(char_step, DMFT_step,
                mu, in, atom, band, this->impurity_level, 
-               this->Green_fun_omega, this->Weiss_omega);
+               this->sigma.sigma_new(0), this->Weiss_omega);
         break;
       case 3:
         this->pacs.output(char_step, DMFT_step, 
                mu, in, atom, band, this->sigma.sigma_imag.Matsubara_freq(), 
-               this->impurity_level, this->Green_fun_omega, 
+               this->impurity_level, this->sigma.sigma_new(0),
                this->Weiss_omega, this->hyb_omega );
         break;
       case 4:
         this->Rutgers.output(char_step, DMFT_step, 
               mu, in, atom, band, this->sigma.sigma_imag.Matsubara_freq(), 
-              this->impurity_level, this->Green_fun_omega, 
+              this->impurity_level, this->sigma.sigma_new(0),
               this->Weiss_omega, this->hyb_omega, Umat );
         break;
       case 5: 
         this->iQIST_narcissus.output(char_step, DMFT_step, 
               mu, in, atom, band, this->sigma.sigma_imag.Matsubara_freq(), 
-              this->impurity_level, this->Green_fun_omega, 
+              this->impurity_level, this->sigma.sigma_new(0),
               this->Weiss_omega, this->hyb_omega, Umat );
         break;
       default:
@@ -670,41 +670,45 @@ namespace DMFT
   {
     debug::codestamp("impurity::read_last_step");
 
+    if(mpi_rank()==0){
+      std::cout << "Reading the last loop: charge step " << char_step << "  DMFT step " << DMFT_step << std::endl;
+    }
+
     const int ineq_num = atom.inequ_atoms();
     const int nspin = band.nspins();
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nomega = *(int*)in.parameter("n_omega");
     const std::complex<double> zero(0.0,0.0);
 
-    this->Green_fun_omega.resize(ineq_num);
-    this->hyb_omega.resize(ineq_num);
-    this->Weiss_omega.resize(ineq_num);
-    this->Green_fun_omega_save.resize(ineq_num);
-    for(int ineq=0; ineq<ineq_num; ineq++)
-    {
-      const int iatom = atom.ineq_iatom(ineq);
-      const int m_tot=norb_sub[iatom];
+    // this->Green_fun_omega.resize(ineq_num);
+    // this->hyb_omega.resize(ineq_num);
+    // this->Weiss_omega.resize(ineq_num);
+    // this->Green_fun_omega_save.resize(ineq_num);
+    // for(int ineq=0; ineq<ineq_num; ineq++)
+    // {
+    //   const int iatom = atom.ineq_iatom(ineq);
+    //   const int m_tot=norb_sub[iatom];
 
-      this->Green_fun_omega[ineq].resize(nspin);
-      this->hyb_omega[ineq].resize(nspin);
-      this->Weiss_omega[ineq].resize(nspin);
-      this->Green_fun_omega_save[ineq].resize(nspin);
+    //   this->Green_fun_omega[ineq].resize(nspin);
+    //   this->hyb_omega[ineq].resize(nspin);
+    //   this->Weiss_omega[ineq].resize(nspin);
+    //   this->Green_fun_omega_save[ineq].resize(nspin);
 
-      for(int is=0; is<nspin; is++)
-      {
-        this->Green_fun_omega[ineq][is].resize(nomega);
-        this->hyb_omega[ineq][is].resize(nomega);
-        this->Weiss_omega[ineq][is].resize(nomega);
-        this->Green_fun_omega_save[ineq][is].resize(nomega);
-        for(int iomega=0; iomega<nomega; iomega++)
-        {
-          this->Green_fun_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
-          this->hyb_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
-          this->Weiss_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
-          this->Green_fun_omega_save[ineq][is][iomega].resize(m_tot*m_tot,zero);
-        }
-      }//is
-    }//ineq
+    //   for(int is=0; is<nspin; is++)
+    //   {
+    //     this->Green_fun_omega[ineq][is].resize(nomega);
+    //     this->hyb_omega[ineq][is].resize(nomega);
+    //     this->Weiss_omega[ineq][is].resize(nomega);
+    //     this->Green_fun_omega_save[ineq][is].resize(nomega);
+    //     for(int iomega=0; iomega<nomega; iomega++)
+    //     {
+    //       this->Green_fun_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
+    //       this->hyb_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
+    //       this->Weiss_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
+    //       this->Green_fun_omega_save[ineq][is][iomega].resize(m_tot*m_tot,zero);
+    //     }
+    //   }//is
+    // }//ineq
 
     //Self-energy allocation
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
@@ -730,15 +734,38 @@ namespace DMFT
       }//ineq
     }
 
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+        sigma_save = this->sigma.sigma_imag.sigma_save_access();
+
+    if(sigma_save.empty())
+    {
+      sigma_save.resize(ineq_num);
+      for(int ineq=0; ineq<ineq_num; ineq++)
+      {
+        const int iatom = atom.ineq_iatom(ineq);
+        const int m_tot = norb_sub[iatom];
+
+        sigma_save[ineq].resize(nspin);
+        for(int is=0; is<nspin; is++)
+        {
+          sigma_save[ineq][is].resize(nomega);
+          for(int iomega=0; iomega<nomega; iomega++)
+          {
+            sigma_save[ineq][is][iomega].resize(m_tot*m_tot,zero);
+          }//is
+        }//i_omega
+      }//ineq
+    }
+
     switch(impurity_solver)
     {
       case 1:
-        this->ALPS_hyb.read_last_step(
-                char_step, DMFT_step, 
-                band, in, atom,
-                this->Green_fun_omega, 
-                this->Weiss_omega, 
-                this->Green_fun_omega_save );
+        // this->ALPS_hyb.read_last_step(
+        //         char_step, DMFT_step, 
+        //         band, in, atom,
+        //         this->Green_fun_omega, 
+        //         this->Weiss_omega, 
+        //         this->Green_fun_omega_save );
         break;
       case 2:
         // this->ALPS_hyb_segment.read_last_step(istep, band, in, atom, this->hyb_omega,
@@ -748,25 +775,19 @@ namespace DMFT
         this->pacs.read_last_step(
                 char_step, DMFT_step,
                 band, in, atom,
-                this->Green_fun_omega, 
-                this->Green_fun_omega_save, 
-                sigma_new );
+                sigma_new, sigma_save);
         break;
       case 4:
         this->Rutgers.read_last_step(
                 char_step, DMFT_step,
-                band, in, atom,
-                this->Green_fun_omega, 
-                this->Green_fun_omega_save, 
-                sigma_new );
+                band, in, atom, 
+                sigma_new, sigma_save );
         break;
       case 5:
         this->iQIST_narcissus.read_last_step(
                 char_step, DMFT_step,
-                band, in, atom,
-                this->Green_fun_omega, 
-                this->Green_fun_omega_save, 
-                sigma_new );
+                band, in, atom, 
+                sigma_new, sigma_save );
         break;
       default:
         std::cout << "Not supported impurity solver" << std::endl;
@@ -814,10 +835,11 @@ namespace DMFT
     return;
   }
 
-  bool impurity::scf_condition(const int impurity_solver, 
-                            DFT_output::KS_bands& band,
-                            DFT_output::atoms_info& atom,
-                            DMFT::input_info& in)
+  bool impurity::scf_condition(
+        const int flag_axis, 
+        DFT_output::KS_bands& band,
+        DFT_output::atoms_info& atom,
+        DMFT::input_info& in )
   {
     debug::codestamp("impurity::scf_condition");
 
@@ -827,6 +849,12 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nspin = band.nspins();
     const int nomega = *(int*)in.parameter("n_omega");
+
+    const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+        sigma_new = this->sigma.sigma_new(flag_axis);
+
+    const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+        sigma_save = this->sigma.sigma_save(flag_axis);
 
     this->scf_delta.resize(ineq_num,0.0);
     std::unique_ptr<bool[]> flag_conver(new bool [ineq_num]);
@@ -842,15 +870,16 @@ namespace DMFT
         {
           for(int m=0; m<m_tot; m++)
           {
-            this->scf_delta[ineq] += std::sqrt(std::norm( this->Green_fun_omega[ineq][is][iomega][m*m_tot+m] 
-                              - this->Green_fun_omega_save[ineq][is][iomega][m*m_tot+m] ));
+            double tmp = std::sqrt(std::norm( sigma_new[ineq][is][iomega][m*m_tot+m] 
+                        - sigma_save[ineq][is][iomega][m*m_tot+m] ));
+            if(tmp>this->scf_delta[ineq]) this->scf_delta[ineq]=tmp;
           }//m_index
         }//iomega
       }//is
-      
-      this->scf_delta[ineq] = this->scf_delta[ineq]/(nspin*nomega*m_tot);
+      this->scf_delta[ineq] *= Hartree_to_eV;
+      // this->scf_delta[ineq] = this->scf_delta[ineq]/(nspin*nomega*m_tot);
 
-      if(this->scf_delta[ineq]>5.0e-4)
+      if(this->scf_delta[ineq]>1.0e-3)
         flag_conver[ineq] = false;
       else
         flag_conver[ineq] = true;
@@ -943,7 +972,7 @@ namespace DMFT
                 DFT_plus_DMFT::Hilbert_space& space,
                 const double mu,
                 const int nomega,
-                const int mag)
+                const int mag )
   {
     debug::codestamp("impurity::evaluate_local_occupation");
 
@@ -958,6 +987,8 @@ namespace DMFT
     const std::vector<std::vector<int>>& orb_index = atom.Im2iorb();
     const int norb = atom.norb();
     const std::vector<double>& fk = band.kweight();
+    std::vector<std::vector<std::vector<double>>> dft_occ_num = band.dft_occ();
+    const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();
 
     const std::complex<double> zero(0.0,0.0), im(0.0,1.0), one(1.0,0.0);
     
@@ -998,6 +1029,97 @@ namespace DMFT
     if(mpi_rank()==0) std::cout << "\n===========Local occupation number========" << std::endl;
 
     //evaluation
+    if(nspin==1 && !band.soc()){
+      for(auto& iter1 : dft_occ_num)
+        for(auto& iter2 : iter1)
+          for(auto& iter3 : iter2)
+            iter3 /= 2.0;
+    }
+
+    for(int ineq=0; ineq<ineq_num; ineq++)
+    {
+      const int iatom = atom.ineq_iatom(ineq);
+      const int m_tot = sub_norb[iatom];
+
+      int ik_count=0;
+      for(int ik=0; ik<nks; ik++)
+      {
+        if(ik%nprocs != myid) continue;
+
+        for(int is=0; is<nspin; is++)
+        {
+          const std::vector<double>& epsilon = space.eigen_val()[is][ik];     
+          const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
+      
+            for(int m=0; m<m_tot; m++)
+              for(int iband=0; iband<wbands[is]; iband++)
+                local_occ_tmp[iatom][is][m] += 
+                  ( std::conj(projector[iband*m_tot + m])*
+                    dft_occ_num[is][ik][ wb2ib[is][iband] ]*fk[ik]*
+                    projector[iband*m_tot + m] ).real();
+        }//is
+        ik_count++;
+      }//ik
+
+      //reduce operation
+      for(int is=0; is<nspin; is++){
+        MPI_Allreduce( &local_occ_tmp[iatom][is][0], 
+                       &local_occ[iatom][is][0], m_tot, 
+                       MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+      }
+
+      if(nspin==1) local_occ[iatom][1] = local_occ[iatom][0];
+
+      //=============================================
+      //   Local symmetry operation
+      //=============================================
+      const int local_symmetry = atom.local_sym();
+      const int corr_L=atom.L(ineq);
+      for(int is=0; is<2; is++)
+        DFT_output::atoms_info::symmetry_operation_vector<double>(
+          local_symmetry, corr_L, m_tot, &local_occ[iatom][is][0] );
+      //=============================================
+
+      for(int is=0; is<2; is++)
+        for(int m=0; m<m_tot; m++)
+          occ_num[iatom][is] += local_occ[iatom][is][m];
+      
+      for(int iatom1=0; iatom1<atom.total_atoms(); iatom1++)
+      {
+        if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
+        {
+          int symm=0;       //symmetry
+
+          if(mag==1 && atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry;AFM
+
+          for(int ispin=0; ispin<2; ispin++)
+            for(int m=0; m<m_tot; m++)
+              local_occ[iatom1][ispin][m] = local_occ[iatom][(ispin+symm)%2][m];
+
+          for(int is=0; is<2; is++)
+            for(int m=0; m<m_tot; m++)
+              occ_num[iatom1][is] += local_occ[iatom1][is][m];
+        }
+      }
+
+      if(mpi_rank()==0)
+      {
+        for(int is=0; is<nspin; is++)
+        {
+          std::cout << "===========impurity:" << ineq << " spin:" << is << "========\n";
+          for(int m=0; m<m_tot; m++)
+            if(nspin==1)
+              std::cout << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
+            else
+              std::cout << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
+          std::cout << std::endl;
+        }
+      }
+
+    }//ineq
+    
+    //evaluation
+    /*
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -1078,7 +1200,7 @@ namespace DMFT
         }
       }
 
-    }//ineq
+    }//ineq */
 
     /*
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -1193,8 +1315,7 @@ namespace DMFT
         }
       }
 
-    }//ineq
-    */
+    }//ineq */
 
     return;
   }

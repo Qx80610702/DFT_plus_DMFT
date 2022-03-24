@@ -50,6 +50,9 @@ namespace DMFT
               sigma_new(const int axis_flag); //0: imaginary axis, 1:real axis
 
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+              sigma_save(const int axis_flag); //0: imaginary axis, 1:real axis
+
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
               correlated_sigma(const int axis_flag); //0: imaginary axis, 1:real axis
 
     std::vector<std::vector<std::vector<std::complex<double>>>>&

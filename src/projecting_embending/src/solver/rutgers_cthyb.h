@@ -29,19 +29,16 @@ namespace DMFT
           DFT_output::atoms_info& atom,
           std::vector<std::vector<std::
           vector<std::vector<
-          std::complex<double>>>>>& Gw_qmc,
+          std::complex<double>>>>>& Sw,
           std::vector<std::vector<std::
           vector<std::vector<
-          std::complex<double>>>>>& Gw_save,
-          std::vector<std::vector<std::
-          vector<std::vector<
-          std::complex<double>>>>>& Sw );
+          std::complex<double>>>>>& Sw_save );
 
     void output(const int char_step, const int DMFT_step,
           const double mu, DMFT::input_info& in, 
           DFT_output::atoms_info& atom, DFT_output::KS_bands& band, const std::vector<double>& freq,
           std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
-          std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,
+          std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Sigma_in,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& hyb_omega,
           DMFT::coulomb_tensor& Umat );

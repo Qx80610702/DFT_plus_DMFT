@@ -86,17 +86,19 @@ namespace DFT_plus_DMFT
 
     bool converged=false;
     double elw = window[0], eup = window[1];
+    double mid_n_elec;
+    
     for(int istep=0; istep<50; istep++) //50 may be a very safe value
     {
       this->sigma_corrected_mu = (elw + eup) / 2.0;
       
-      double mid_n_elec=this->evaluate_electrons_number_imag(
+      mid_n_elec=this->evaluate_electrons_number_imag(
               band, space, sigma, atom, proj, beta, 
               magnetism, this->sigma_corrected_mu );
 
-      if((mid_n_elec - n_valence)>=-1.0e-6 &&  (mid_n_elec - n_valence)<= 1.0e-6)
+      if((mid_n_elec - n_valence)>=-1.0e-9 &&  (mid_n_elec - n_valence)<= 1.0e-9)
         converged = true;
-      else if((mid_n_elec - n_valence) < -1.0e-6)
+      else if((mid_n_elec - n_valence) < -1.0e-9)
         elw = this->sigma_corrected_mu;
       else
         eup = this->sigma_corrected_mu;

@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   std::cout.rdbuf(fileBuf);
 
   // Parsing commond line
-  argument_lists args_val = {1, 1, false, false, false};  //default values
+  argument_lists args_val = {1, 1, 1, 1, false, false, false};  //default values
   if(argc>1)
   {
     std::vector<std::string> all_args(argv+1,argv+argc);
@@ -47,10 +47,9 @@ int main(int argc, char **argv)
 
 bool parsing_commond_line(std::vector<std::string>& all_args, argument_lists& args)
 {
-  for(std::vector<std::string>::iterator iter=all_args.begin(); iter!=all_args.end(); iter += 2)
+  for(std::vector<std::string>::iterator iter=all_args.begin(); iter!=all_args.end(); )
   {
     std::string param = *iter;
-    std::string value = *(iter+1);
     
     size_t pos_begin=0;
     if (param.substr(0,2)=="--") pos_begin=2;
@@ -61,21 +60,45 @@ bool parsing_commond_line(std::vector<std::string>& all_args, argument_lists& ar
       std::exit(EXIT_FAILURE);
     }
 
-    if(std::strcmp("charge.step", param.substr(pos_begin).c_str())==0)
-      args.charge_step = atoi(value.c_str());
-    else if(std::strcmp("dmft.step", param.substr(pos_begin).c_str())==0)
-      args.DMFT_step = atoi(value.c_str());
-    else if(std::strcmp("eva.sigma_only", param.substr(pos_begin).c_str())==0)
+    if(std::strcmp("current_step", param.substr(pos_begin).c_str())==0){
+      std::string value1 = *(iter+1);
+      std::string value2 = *(iter+2);
+
+      args.current_charge_step = atoi(value1.c_str());
+      args.current_DMFT_step = atoi(value2.c_str());
+
+      iter += 3;
+    }
+    else if(std::strcmp("last_step", param.substr(pos_begin).c_str())==0){
+      std::string value1 = *(iter+1);
+      std::string value2 = *(iter+2);
+
+      args.last_charge_step = atoi(value1.c_str());
+      args.last_DMFT_step = atoi(value2.c_str());
+
+      iter += 3;
+    }
+    else if(std::strcmp("eva.sigma_only", param.substr(pos_begin).c_str())==0){
+      std::string value = *(iter+1);
       args.sigma_only = (bool)atoi(value.c_str());
-    else if(std::strcmp("eva.spectrum", param.substr(pos_begin).c_str())==0)
+      iter += 2;
+    }
+    else if(std::strcmp("eva.spectrum", param.substr(pos_begin).c_str())==0){
+      std::string value = *(iter+1);
       args.cal_spectrum = (bool)atoi(value.c_str());
-    else if(std::strcmp("eva.density", param.substr(pos_begin).c_str())==0)
+      iter += 2;
+    }
+    else if(std::strcmp("eva.density", param.substr(pos_begin).c_str())==0){
+      std::string value = *(iter+1);
       args.update_density = (bool)atoi(value.c_str());
+      iter += 2;
+    }
     else
     {
       std::cout << "Illegal arguments : " << param << '\n';
       std::exit(EXIT_FAILURE);
     }
   }
+
   return true;
 }

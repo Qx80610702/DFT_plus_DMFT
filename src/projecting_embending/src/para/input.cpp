@@ -183,6 +183,22 @@ namespace DMFT
       this->charge_step_max = 1;
     }
 
+    //charge_mix_beta
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("charge_mix_beta", str_val);
+
+      this->charge_mix_beta = atof(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      std::cout << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // if(mpi_rank()==0) std::cout << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
+      this->charge_mix_beta = 0.05;
+    }
+
     //max_dmft_step
     try {
       std::vector<std::string> str_val;
@@ -197,6 +213,22 @@ namespace DMFT
     catch(const bool not_given){
       // if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 5" << std::endl;
       this->DMFT_step_max = 5;
+    }
+
+    //max_dft_step
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("max_dft_step", str_val);
+
+      this->DFT_step_max = atoi(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      std::cout << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 5" << std::endl;
+      this->DFT_step_max = 1;
     }
 
     //mc_step
@@ -337,11 +369,13 @@ namespace DMFT
           std::strcmp("double_counting", key_val[0].c_str())==0 ||
           std::strcmp("max_charge_step", key_val[0].c_str())==0 ||
           std::strcmp("max_dmft_step", key_val[0].c_str())==0 ||
+          std::strcmp("max_dft_step", key_val[0].c_str())==0 ||
           std::strcmp("mc_step", key_val[0].c_str())==0 || 
           std::strcmp("energy_window", key_val[0].c_str())==0 ||
           std::strcmp("local_symmetry", key_val[0].c_str())==0 ||
           std::strcmp("restart", key_val[0].c_str())==0 ||
           std::strcmp("dft_xc", key_val[0].c_str())==0 ||
+          std::strcmp("charge_mix_beta", key_val[0].c_str())==0 ||
           std::strcmp("hybrid_xc_coeff", key_val[0].c_str())==0 )
         {;}
         else
@@ -387,9 +421,11 @@ namespace DMFT
     else if(std::strcmp("double_counting", word)==0) return &flag_double_counting;
     else if(std::strcmp("max_charge_step", word)==0) return &charge_step_max;
     else if(std::strcmp("max_dmft_step", word)==0) return &DMFT_step_max;
+    else if(std::strcmp("max_dft_step", word)==0) return &DFT_step_max;
     else if(std::strcmp("mc_step", word)==0) return &MC_step;
     else if(std::strcmp("hyb_func", word)==0) return &hyb_func;
     else if(std::strcmp("hyf_xc_alpha", word)==0) return &hyf_xc_alpha;
+    else if(std::strcmp("charge_mix_beta", word)==0) return &charge_mix_beta;
     else
     {
       std::cout << "No parameter " << keyword << std::endl;

@@ -31,10 +31,10 @@ namespace DFT_output
       int index_ham(int rc, int icell, int i_basis);
       int index_col_ham(int index);
       double ovlp_mat_real(int index);
+      int nbasis(){return n_basis;}
       std::vector<std::complex<double>>& ovlp_mat(){return this->ovlp_matrix_k;}
       std::vector<std::complex<double>>& local_ovlp(){return this->ovlp_localorb_k;}
-      
-std::vector<std::complex<double>>& ovlp_mat_work(){return this->ovlp_matrix_work;}
+      std::vector<std::complex<double>>& ovlp_mat_work(){return this->ovlp_matrix_work;}
 
       private:
       int n_cells_in_hamiltonian;

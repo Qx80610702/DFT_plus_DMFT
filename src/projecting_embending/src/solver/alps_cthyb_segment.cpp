@@ -22,7 +22,7 @@ namespace DMFT
         const double mu, DMFT::input_info& in, 
         DFT_output::atoms_info& atom, DFT_output::KS_bands& band,
         std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
-        std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,
+        std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Sigma_in,
         std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss)
   {
     //======================================================
@@ -73,7 +73,7 @@ namespace DMFT
             hoppinga = Eimp[ineq];
       
       std::vector<std::vector<std::vector<std::complex<double>>>>&
-            Gf_ina = Gf_in[ineq];
+            Sigma_ina = Sigma_in[ineq];
 
       std::vector<std::vector<std::vector<std::complex<double>>>>& 
             Weissa = Weiss[ineq];
@@ -192,36 +192,36 @@ namespace DMFT
       // ofs_G0.close();
 
       //==================================================
-      //   write  Gf.in; the input Green function 
+      //   write  Gf.in; the input self-eenry 
       //   of current step (in Matrsubara frequency), 
       //   which will be read by last step to judge whether
       //   the self-consistency is achieved
       //==================================================
-      std::string Gf_file = current_dir+"/Gf.in";
-      std::ofstream ofs_gf(Gf_file.c_str(), std::ios::out);
+      std::string Sig_file = current_dir+"/Sigma.in";
+      std::ofstream ofs_Sig(Sig_file.c_str(), std::ios::out);
 
       for(int iomega=0; iomega<nomega; iomega++)
       {
-        ofs_gf << std::setw(5) << iomega;
+        ofs_Sig << std::setw(5) << iomega;
         for(int is=0; is<2; is++)
         {
           for(int m=0; m<m_tot; m++)
           {
             if(nspin==1)
-              ofs_gf << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[0][iomega][m*m_tot+m].real()/Hartree_to_eV
+              ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
+                     << Sigma_ina[0][iomega][m*m_tot+m].real()*Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[0][iomega][m*m_tot+m].imag()/Hartree_to_eV;
+                     << Sigma_ina[0][iomega][m*m_tot+m].imag()*Hartree_to_eV;
             else
-              ofs_gf << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[is][iomega][m*m_tot+m].real()/Hartree_to_eV
+              ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
+                     << Sigma_ina[is][iomega][m*m_tot+m].real()*Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[is][iomega][m*m_tot+m].imag()/Hartree_to_eV ;      
+                     << Sigma_ina[is][iomega][m*m_tot+m].imag()*Hartree_to_eV ;      
           }//m
         }//is
-        ofs_gf << std::endl;
+        ofs_Sig << std::endl;
       }//iomega
-      ofs_gf.close();
+      ofs_Sig.close();
 
     }//ineq
 

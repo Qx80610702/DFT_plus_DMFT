@@ -42,10 +42,10 @@ namespace DMFT
 
         const double averJ = atom.Jval(iatom);
 
-        this->V_dc.at(ineq).resize(nspin_tmp);
+        this->V_dc[ineq].resize(nspin_tmp);
         for(int is=0; is<nspin_tmp; is++)
         {       
-          this->V_dc.at(ineq).at(is).resize(m_tot*m_tot,zero);
+          this->V_dc[ineq][is].resize(m_tot*m_tot, zero);
  
           const double FLL_nominal = averU*(atom.occ_num(iatom,0)+atom.occ_num(iatom,1)-0.5)
                             -averJ*(atom.occ_num(iatom,is)-0.5);
@@ -64,7 +64,7 @@ namespace DMFT
           }
           else{          
             for(int m=0; m<m_tot; m++)
-              this->V_dc.at(ineq).at(is).at(m*m_tot+m) = std::complex<double>(FLL_nominal,0.0);  //*atom.occ_num_m()[iatom][is][m];
+              this->V_dc[ineq][is][m*m_tot+m] = std::complex<double>(FLL_nominal, 0.0);  //*atom.occ_num_m()[iatom][is][m];
           }
 
           if(mpi_rank()==0)

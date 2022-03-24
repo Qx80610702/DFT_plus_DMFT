@@ -70,8 +70,8 @@ namespace DMFT
 
         for(int i_omega=0; i_omega<n_omega; i_omega++)
         {
-          sigma_new[ineq][is][i_omega].resize(m_tot*m_tot);
-          sigma_correlatd[ineq][is][i_omega].resize(m_tot*m_tot);
+          sigma_new[ineq][is][i_omega].resize(m_tot*m_tot, zero);
+          sigma_correlatd[ineq][is][i_omega].resize(m_tot*m_tot, zero);
 
           for(int m_index=0; m_index<m_tot*m_tot; m_index++)
               sigma_new[ineq][is][i_omega][m_index] = Vdca[is][m_index];
@@ -208,7 +208,7 @@ namespace DMFT
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
             sigma_correlatd = this->correlated_sigma(axis_flag);
     
-    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+    const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
               sigma_new = this->sigma_new(axis_flag);
 
     //Allocation
@@ -275,6 +275,23 @@ namespace DMFT
       break;
     case 1:
       return this->sigma_real.sigma_new_access();
+      break;
+    default:
+      std::cout << "Error parameter of axis_flag" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+  }
+
+  std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+            self_energy::sigma_save(const int axis_flag)
+  {
+    switch(axis_flag)
+    {
+    case 0:
+      return this->sigma_imag.sigma_save_access();
+      break;
+    case 1:
+      return this->sigma_real.sigma_save_access();
       break;
     default:
       std::cout << "Error parameter of axis_flag" << std::endl;

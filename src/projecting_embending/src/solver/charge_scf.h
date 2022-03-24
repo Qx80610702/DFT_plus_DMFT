@@ -31,7 +31,17 @@ namespace DFT_plus_DMFT
     public:
     void update_char_dens(
         const int axis_flag,
-        DFT_plus_DMFT::chemical_potential Mu,
+        DFT_plus_DMFT::chemical_potential& Mu,
+        DFT_output::KS_bands& band, 
+        DFT_output::atoms_info& atom, 
+        DFT_plus_DMFT::projector& proj,
+        DMFT::self_energy& sigma,
+        DMFT::input_info& in,
+        DFT_plus_DMFT::Hilbert_space& space );
+
+    void eva_new_char_dens(
+        const int axis_flag,
+        DFT_plus_DMFT::chemical_potential& Mu,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
@@ -68,18 +78,26 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& dense_cmplx );
 
+    void read_char_dense(
+        const int dft_solver,
+        const int nks );
+
+    void mix_char_dense(const double mix_beta);
+
     void output_char_dense(
         const int dft_solver,
         const int nks );
 
-    void prepare_nscf_dft(const int dft_solver);
+    void prepare_nscf_dft(
+        const int dft_solver,
+        const int max_DFT_step );
 
     private:
     std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;       //dens_mat[ik][ispin][nbasis*nbasis]
     std::vector<std::vector<std::vector<double>>> fik_DMFT;       //fik_DMFT[is][ik][iband]
 
-
+    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_last;  //dens_mat_last[ik][ispin][nbasis*nbasis]
+    
     // std::vector<std::vector<std::vector<double>>> fik_test;       //fik_test[is][ik][iband]
-
   };
 }

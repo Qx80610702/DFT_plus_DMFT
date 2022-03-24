@@ -22,7 +22,7 @@ namespace DMFT
         const double mu, DMFT::input_info& in, 
         DFT_output::atoms_info& atom, DFT_output::KS_bands& band,
         std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
-        std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,
+        std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Sigma_in,
         std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss,
         std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& hyb_omega)
   {
@@ -75,7 +75,7 @@ namespace DMFT
             hoppinga = Eimp[ineq];
       
       const std::vector<std::vector<std::vector<std::complex<double>>>>&
-            Gf_ina = Gf_in[ineq];
+            Sigma_ina = Sigma_in[ineq];
 
       const std::vector<std::vector<std::vector<std::complex<double>>>>& 
             Weissa = Weiss[ineq];
@@ -236,13 +236,13 @@ namespace DMFT
       ofs_hopping.close();
 
       //==================================================
-      //   write  Gf.in; the input Green function 
+      //   write  Gf.in; the input self-energy 
       //   of current step (in Matrsubara frequency), 
       //   which will be read by last step to judge whether
       //   the self-consistency is achieved
       //==================================================
-      std::string Gf_file = current_dir+"/Gf.in";
-      std::ofstream ofs_gf(Gf_file.c_str(), std::ios::out);
+      std::string Sig_file = current_dir+"/Sigma.in";
+      std::ofstream ofs_Sig(Sig_file.c_str(), std::ios::out);
   
       for(int iomega=0; iomega<nomega; iomega++)
       {
@@ -254,23 +254,23 @@ namespace DMFT
             int m2 = m_index%m_tot;
 
             if(nspin==1)
-              ofs_gf << std::left << std::setw(5) << iomega << std::setw(2) << is 
+              ofs_Sig << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Gf_ina[0][iomega][m_index].real()/Hartree_to_eV << " "
+                  << Sigma_ina[0][iomega][m_index].real()*Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Gf_ina[0][iomega][m_index].imag()/Hartree_to_eV << '\n';
+                  << Sigma_ina[0][iomega][m_index].imag()*Hartree_to_eV << '\n';
             else
-              ofs_gf << std::left << std::setw(5) << iomega << std::setw(2) << is 
+              ofs_Sig << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Gf_ina[is][iomega][m_index].real()/Hartree_to_eV << " "
+                  << Sigma_ina[is][iomega][m_index].real()*Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Gf_ina[is][iomega][m_index].imag()/Hartree_to_eV << '\n';
+                  << Sigma_ina[is][iomega][m_index].imag()*Hartree_to_eV << '\n';
           }//m_index
         }//iomega
       }
-      ofs_gf.close();
+      ofs_Sig.close();
 
       //=====================================================
       //        write  Weiss function
@@ -380,7 +380,7 @@ namespace DMFT
     std::string char_step_dir= char_dir_ss.str();
 
     std::stringstream dmft_dir_ss;
-    dmft_dir_ss << "/dmft_step" << DMFT_step-1;
+    dmft_dir_ss << "/dmft_step" << DMFT_step;
     std::string dmft_step_dir= dmft_dir_ss.str();
 
     for(int ineq=0; ineq<ineq_num; ineq++)

@@ -18,7 +18,7 @@ namespace DMFT
         const double mu, DMFT::input_info& in, 
         DFT_output::atoms_info& atom, DFT_output::KS_bands& band, const std::vector<double>& freq,
         std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
-        std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,
+        std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Sigma_in,
         std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss,
         std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& hyb_omega,
         DMFT::coulomb_tensor& Umat)
@@ -74,7 +74,7 @@ namespace DMFT
             Utensor = Umat.Coulomb_matrix()[ineq];
       
       const std::vector<std::vector<std::vector<std::complex<double>>>>&
-            Gf_ina = Gf_in[ineq];
+            Sigma_ina = Sigma_in[ineq];
 
 
       std::stringstream site_dir_ss;
@@ -123,35 +123,35 @@ namespace DMFT
       this->write_cix(nspin, m_tot, current_dir+"/ctqmc.cix", Eimpa, Utensor);
 
       //==================================================
-      //   write  Gf.in; the input Green function 
+      //   write  Sigma.in; the input self-energy 
       //   of current step (in Matrsubara frequency), 
       //   which will be read by last step to judge whether
       //   the self-consistency is achieved
       //==================================================
-      std::string Gf_file = current_dir+"/Gf.in";
-      std::ofstream ofs_gf(Gf_file.c_str(), std::ios::out);
+      std::string Sig_file = current_dir+"/Sigma.in";
+      std::ofstream ofs_Sig(Sig_file.c_str(), std::ios::out);
       for(int iomega=0; iomega<nomega; iomega++)
       {
-        ofs_gf << std::setw(5) << iomega;
+        ofs_Sig << std::setw(5) << iomega;
         for(int is=0; is<2; is++)
         {
           for(int m=0; m<m_tot; m++)
           {
             if(nspin==1)
-              ofs_gf << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[0][iomega][m*m_tot+m].real()/Hartree_to_eV
+              ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
+                     << Sigma_ina[0][iomega][m*m_tot+m].real()*Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[0][iomega][m*m_tot+m].imag()/Hartree_to_eV;
+                     << Sigma_ina[0][iomega][m*m_tot+m].imag()*Hartree_to_eV;
             else
-              ofs_gf << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[is][iomega][m*m_tot+m].real()/Hartree_to_eV
+              ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
+                     << Sigma_ina[is][iomega][m*m_tot+m].real()*Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Gf_ina[is][iomega][m*m_tot+m].imag()/Hartree_to_eV ;
+                     << Sigma_ina[is][iomega][m*m_tot+m].imag()*Hartree_to_eV ;
           }//m_index
         }//is
-        ofs_gf << '\n';
+        ofs_Sig << '\n';
       }//iomega
-      ofs_gf.close();
+      ofs_Sig.close();
 
     }//ineq
 
@@ -441,13 +441,10 @@ namespace DMFT
         DFT_output::atoms_info& atom,
         std::vector<std::vector<std::
         vector<std::vector<
-        std::complex<double>>>>>& Gw_qmc,
+        std::complex<double>>>>>& Sw,
         std::vector<std::vector<std::
         vector<std::vector<
-        std::complex<double>>>>>& Gw_save,
-        std::vector<std::vector<std::
-        vector<std::vector<
-        std::complex<double>>>>>& Sw )
+        std::complex<double>>>>>& Sw_save )
   {
     debug::codestamp("Rutgers_CTHYB::read_last_step");
 
@@ -456,6 +453,8 @@ namespace DMFT
     const bool soc = band.soc();
     const int nspin = band.nspins();
     const int magnetism = *(int*)in.parameter("magnetism");
+
+    int count=0;
 
     double omega, real, imag;
     std::string str_tmp;
@@ -467,24 +466,21 @@ namespace DMFT
     std::string char_step_dir= char_dir_ss.str();
 
     std::stringstream dmft_dir_ss;
-    dmft_dir_ss << "/dmft_step" << DMFT_step-1;
+    dmft_dir_ss << "/dmft_step" << DMFT_step;
     std::string dmft_step_dir= dmft_dir_ss.str();
 
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot=norb_sub[iatom];
-      const int nomega = Gw_save[ineq][0].size();
+      const int nomega = Sw_save[ineq][0].size();
 
       std::stringstream site_dir_ss;
       site_dir_ss << "/impurity" << ineq;
       std::string site_dir= site_dir_ss.str();
 
       std::vector<std::vector<std::vector<std::complex<double>>>>&
-            Gw_savea = Gw_save[ineq];
-
-      std::vector<std::vector<std::vector<std::complex<double>>>>&
-            Gw_qmca = Gw_qmc[ineq];
+            Sw_savea = Sw_save[ineq];
       
       std::vector<std::vector<std::vector<std::complex<double>>>>&
             Swa = Sw[ineq];
@@ -496,15 +492,91 @@ namespace DMFT
       //=================================================
       //    Read interacting Green function of last step
       //=================================================
-      std::string Gf_file = current_dir+"/Gw.out";
-      std::ifstream ifs_gf(Gf_file.c_str(), std::ios::in);
+      // std::string Gf_file = current_dir+"/Gw.out";
+      // std::ifstream ifs_gf(Gf_file.c_str(), std::ios::in);
 
-      if (!ifs_gf)  
-	    {
-	    	std::cout << "Fail to oepn " << Gf_file.c_str() << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
+      // if (!ifs_gf)  
+	    // {
+	    // 	std::cout << "Fail to oepn " << Gf_file.c_str() << std::endl;
+      //   std::exit(EXIT_FAILURE);
+      // }
 
+      // std::vector<std::vector<double>> Gw_real(2);
+      // std::vector<std::vector<double>> Gw_im(2);
+      // for(int is=0; is<2; is++)
+      // {
+      //   Gw_real[is].resize(m_tot);
+      //   Gw_im[is].resize(m_tot);
+      // }
+
+      // ifs_gf.seekg(0);    //set the position at the beginning of the file
+      // ifs_gf >> str_tmp;
+      // ifs_gf.ignore(400,'\n');
+      // int count=0;
+      // while(ifs_gf.good())
+      // {     
+      //   ifs_gf >> omega;
+      //   if(ifs_gf.eof()) break; //Check whether end of file is reached
+       
+      //   for(int is=0; is<2; is++)
+      //   {
+      //     for(int m=0; m<m_tot; m++)
+      //     {           
+      //       ifs_gf >> Gw_real[is][m];
+      //       ifs_gf >> Gw_im[is][m];
+      //     }
+      //   }
+      //   ifs_gf.ignore(150,'\n');
+
+      //   for(int is=0; is<nspin; is++)
+      //   {
+      //     for(int m=0; m<m_tot; m++)
+      //     {
+      //       if(magnetism==3 || magnetism==4)//none magnetic or paramamagnetic
+      //       {
+      //         if(nspin==1) 
+      //         {
+      //           Gw_real[0][m] = (Gw_real[0][m]+Gw_real[1][m])/2.0;
+      //           Gw_im[0][m] = (Gw_im[0][m]+Gw_im[1][m])/2.0;
+      //         }
+      //         else
+      //         {
+      //           Gw_real[0][m] = (Gw_real[0][m]+Gw_real[1][m])/2.0;
+      //           Gw_real[1][m] = Gw_real[0][m];
+      //           Gw_im[0][m] = (Gw_im[0][m]+Gw_im[1][m])/2.0;
+      //           Gw_im[1][m] = Gw_im[0][m];
+      //         }
+      //       }
+      //     }       
+      //     DFT_output::atoms_info::symmetry_operation_vector<double>(
+      //               atom.local_sym(), atom.L(ineq), 
+      //               m_tot, &Gw_real[is][0]);
+
+      //     DFT_output::atoms_info::symmetry_operation_vector<double>(
+      //               atom.local_sym(), atom.L(ineq), 
+      //               m_tot, &Gw_im[is][0]);
+                 
+      //   }
+
+      //   for(int is=0; is<nspin; is++)
+      //     for(int m=0; m<m_tot; m++)
+      //       Gw_qmca[is][count][m*m_tot+m] = Hartree_to_eV*
+      //       std::complex<double>(Gw_real[is][m],Gw_im[is][m]);
+
+      //   count++;
+      //   if(ifs_gf.eof()) break;//Check whether end of file is reached       
+      // }
+      // ifs_gf.close();
+
+      // if(count<nomega)
+      // {
+      //   std::cout << "The number of Matsubara points of Gw.dat is less than nomega\n";
+      //   std::exit(EXIT_FAILURE);
+      // }
+
+      //=============================================
+      //    Read input self-energy of last step
+      //=============================================
       std::vector<std::vector<double>> Gw_real(2);
       std::vector<std::vector<double>> Gw_im(2);
       for(int is=0; is<2; is++)
@@ -513,108 +585,40 @@ namespace DMFT
         Gw_im[is].resize(m_tot);
       }
 
-      ifs_gf.seekg(0);    //set the position at the beginning of the file
-      ifs_gf >> str_tmp;
-      ifs_gf.ignore(400,'\n');
-      int count=0;
-      while(ifs_gf.good())
-      {     
-        ifs_gf >> omega;
-        if(ifs_gf.eof()) break; //Check whether end of file is reached
-       
-        for(int is=0; is<2; is++)
-        {
-          for(int m=0; m<m_tot; m++)
-          {           
-            ifs_gf >> Gw_real[is][m];
-            ifs_gf >> Gw_im[is][m];
-          }
-        }
-        ifs_gf.ignore(150,'\n');
+      std::string Gf_save_file = current_dir+"/Sigma.in";
+      std::ifstream ifs_sigsave(Gf_save_file.c_str(), std::ios::in);
 
-        for(int is=0; is<nspin; is++)
-        {
-          for(int m=0; m<m_tot; m++)
-          {
-            if(magnetism==3 || magnetism==4)//none magnetic or paramamagnetic
-            {
-              if(nspin==1) 
-              {
-                Gw_real[0][m] = (Gw_real[0][m]+Gw_real[1][m])/2.0;
-                Gw_im[0][m] = (Gw_im[0][m]+Gw_im[1][m])/2.0;
-              }
-              else
-              {
-                Gw_real[0][m] = (Gw_real[0][m]+Gw_real[1][m])/2.0;
-                Gw_real[1][m] = Gw_real[0][m];
-                Gw_im[0][m] = (Gw_im[0][m]+Gw_im[1][m])/2.0;
-                Gw_im[1][m] = Gw_im[0][m];
-              }
-            }
-          }       
-          DFT_output::atoms_info::symmetry_operation_vector<double>(
-                    atom.local_sym(), atom.L(ineq), 
-                    m_tot, &Gw_real[is][0]);
-
-          DFT_output::atoms_info::symmetry_operation_vector<double>(
-                    atom.local_sym(), atom.L(ineq), 
-                    m_tot, &Gw_im[is][0]);
-                 
-        }
-
-        for(int is=0; is<nspin; is++)
-          for(int m=0; m<m_tot; m++)
-            Gw_qmca[is][count][m*m_tot+m] = Hartree_to_eV*
-            std::complex<double>(Gw_real[is][m],Gw_im[is][m]);
-
-        count++;
-        if(ifs_gf.eof()) break;//Check whether end of file is reached       
-      }
-      ifs_gf.close();
-
-      if(count<nomega)
-      {
-        std::cout << "The number of Matsubara points of Gw.dat is less than nomega\n";
-        std::exit(EXIT_FAILURE);
-      }
-
-      //=============================================
-      //    Read input Green function of last step
-      //=============================================
-      std::string Gf_save_file = current_dir+"/Gf.in";
-      std::ifstream ifs_gfsave(Gf_save_file.c_str(), std::ios::in);
-
-      if (!ifs_gfsave)  
+      if (!ifs_sigsave)  
 	    {
 	    	std::cout << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
-      ifs_gfsave.seekg(0);    //set the position at the beginning of the file
+      ifs_sigsave.seekg(0);    //set the position at the beginning of the file
       count=0;
-      while(ifs_gfsave.good())
+      while(ifs_sigsave.good())
       {
-        ifs_gfsave >> omega;
-        if(ifs_gfsave.eof()) break; //Check whether end of file is reached 
+        ifs_sigsave >> omega;
+        if(ifs_sigsave.eof()) break; //Check whether end of file is reached 
         for(int is=0; is<2; is++)
         {
           for(int m=0; m<m_tot; m++)
           {
-            ifs_gfsave >> Gw_real[is][m];
-            ifs_gfsave >> Gw_im[is][m];
+            ifs_sigsave >> Gw_real[is][m];
+            ifs_sigsave >> Gw_im[is][m];
           }
         }
-        ifs_gfsave.ignore(150,'\n');
+        ifs_sigsave.ignore(150,'\n');
 
         for(int is=0; is<nspin; is++)
           for(int m=0; m<m_tot; m++)
-            Gw_savea[is][count][m*m_tot+m] = Hartree_to_eV*
-            std::complex<double>(Gw_real[is][m],Gw_im[is][m]);
+            Sw_savea[is][count][m*m_tot+m] = 
+              std::complex<double>(Gw_real[is][m],Gw_im[is][m])/Hartree_to_eV;
 
         count++;
-        if(ifs_gfsave.eof()) break;//Check whether end of file is reached       
+        if(ifs_sigsave.eof()) break;//Check whether end of file is reached       
       }
-      ifs_gfsave.close();
+      ifs_sigsave.close();
 
       //=================================================
       //    Read self-energy of last step

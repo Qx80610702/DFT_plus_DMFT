@@ -25,6 +25,7 @@ namespace DFT_output
     double n_electrons(){return tot_elec_num;}
     const std::vector<std::vector<std::vector<double>>>& enk(){return eigen_values;}
     const std::vector<double>& kweight(){return k_weight;}
+    const std::vector<std::vector<std::vector<double>>>& dft_occ(){return DFT_occ_numbers;}
 
     private:
 
@@ -39,6 +40,8 @@ namespace DFT_output
     //=============================
     int nspin;                   //Total number of spin
     std::vector<std::vector<std::vector<double>>> eigen_values;      //eigen_values[i_spin][ik][i_bands]
+
+    std::vector<std::vector<std::vector<double>>> DFT_occ_numbers;   //DFT_occ_numbers[i_spin][ik][i_bands]
 
     std::vector<double> k_weight;       //k_weight[ik]
 

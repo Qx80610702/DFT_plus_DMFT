@@ -17,8 +17,34 @@
 namespace DFT_plus_DMFT
 {
   void Charge_SCF::update_char_dens(
+      const int axis_flag,
+      DFT_plus_DMFT::chemical_potential& Mu,
+      DFT_output::KS_bands& band, 
+      DFT_output::atoms_info& atom, 
+      DFT_plus_DMFT::projector& proj,
+      DMFT::self_energy& sigma,
+      DMFT::input_info& in,
+      DFT_plus_DMFT::Hilbert_space& space)
+  {
+    debug::codestamp("Charge_SCF::update_char_dens");
+
+    this->eva_new_char_dens(
+          axis_flag, Mu, band, atom, 
+          proj, sigma, in, space );
+
+
+    this->dens_mat_last = this->dens_mat;
+    this->read_char_dense(
+        *(int*)in.parameter("dft_solver"), band.nk() );
+
+    this->mix_char_dense(*(double*)in.parameter("charge_mix_beta"));
+
+    return;
+  }
+
+  void Charge_SCF::eva_new_char_dens(
         const int axis_flag,
-        DFT_plus_DMFT::chemical_potential Mu,
+        DFT_plus_DMFT::chemical_potential& Mu,
         DFT_output::KS_bands& band, 
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
@@ -26,13 +52,14 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space)
   {
-    debug::codestamp("Charge_SCF::update_char_dens");
+    debug::codestamp("Charge_SCF::eva_new_char_dens");
 
     const int nks=band.nk();
     const int nspin=band.nspins();
     std::vector<double> k_weight = band.kweight();
     const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();
     const std::vector<int>& wbands = space.Wbands();
+    const int n_valence = space.valence();
     std::vector<std::vector<std::vector<double>>> fik_wind = Mu.fik();
     const int dft_solver = *(int*)in.parameter("dft_solver");
 
@@ -66,17 +93,6 @@ namespace DFT_plus_DMFT
       for(int ik=0; ik<task_nks; ik++)
         for(int iband=0; iband<wbands[is]; iband++)
           this->fik_DMFT[is][ik][ wb2ib[is][iband] ] = fik_wind[is][ik][iband];
-    
-    //=======TEST=======
-    // std::ofstream ofs("fik-test.dat", std::ios::out);
-    // for(int is=0; is<nspin; is++)
-    //   for(int ik=0; ik<task_nks; ik++){
-    //     ofs << std::setw(4) << k_map[ik];
-    //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
-    //       ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_DMFT[is][ik][iband];
-    //     ofs << std::endl;
-    //   }
-    // ofs.close();
 
     //fik*k_weight
     for(int ik=0; ik<task_nks; ik++){
@@ -102,32 +118,106 @@ namespace DFT_plus_DMFT
       for(int ik=0; ik<k_weight.size(); ik++)
         k_weight[ik] *= 2.0;
 
+    double val_sum = 0.0, val_tmp=0.0;
+    for(int ik=0; ik<task_nks; ik++){
+      for(int is=0; is<nspin; is++){
+        for(int iband=0; iband<wbands[is]; iband++){
+          val_tmp += this->fik_DMFT[is][ik][ wb2ib[is][iband] ]*k_weight[ k_map[ik] ];
+        }
+      }
+    }
+    MPI_Allreduce(&val_tmp, &val_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for(int ik=0; ik<task_nks; ik++){
+      for(int is=0; is<nspin; is++){
+        for(int iband=0; iband<wbands[is]; iband++){
+          this->fik_DMFT[is][ik][ wb2ib[is][iband] ] *= (n_valence/val_sum);
+        }
+      }
+    }
+
+    //=======TEST=======
+    std::ofstream ofs("fik-test.dat", std::ios::out);
+    for(int is=0; is<nspin; is++)
+      for(int ik=0; ik<task_nks; ik++){
+        ofs << std::setw(4) << k_map[ik];
+        for(int iband=0; iband<=wb2ib[is].back(); iband++)
+          ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_DMFT[is][ik][iband];
+        ofs << std::endl;
+      }
+    ofs.close();
+
     for(int is=0; is<nspin; is++)
       for(int ik=0; ik<task_nks; ik++)
         for(int iband=0; iband<=wb2ib[is].back(); iband++)
           this->fik_DMFT[is][ik][iband] *= k_weight[ k_map[ik] ]; 
+    // Test
+    double val_fik = 0.0, core_fik=0.0;
+    double val_fik_tmp = 0.0, core_fik_tmp=0.0;
+    for(int ik=0; ik<task_nks; ik++){
+      for(int is=0; is<nspin; is++){
+        for(int iband=0; iband<wbands[is]; iband++)
+              val_fik_tmp += this->fik_DMFT[is][ik][ wb2ib[is][iband] ];
 
+        for(int iband=0; iband<wb2ib[is][0]; iband++){
+          core_fik_tmp += this->fik_DMFT[is][ik][iband];
+        }
+      }
+    }
+    MPI_Allreduce(&val_fik_tmp, &val_fik, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&core_fik_tmp, &core_fik, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    std::cout << "Sum of fik of valence bands: " << val_fik << std::endl;
+    std::cout << "Sum of fik of core bands: " << core_fik << std::endl; 
     
     int max_threads=omp_get_max_threads();
     int threads_num = (max_threads>k_map.size()? k_map.size() : max_threads);
     const int mkl_threads = mkl_get_max_threads();
     mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
-
+const std::complex<double> zero(0.0,0.0), one(1.0,0.0);
+double Nele=0.0;
     #pragma omp parallel num_threads(threads_num)
     {
       std::vector<std::vector<std::complex<double>>> eigenvector;
       // std::vector<std::vector<std::complex<double>>> dens_cmplx;
 
+      DFT_output::overlap_matrix ovlp(dft_solver, "dft/outputs_to_DMFT/overlap_matrix");
+      const int n_basis = ovlp.ovlp_aims.nbasis();
+      std::vector<std::complex<double>> mat_tmp(n_basis*n_basis);
+
       #pragma omp for
-      for(int ik=0; ik<task_nks; ik++)
+      for(int ik=0; ik<task_nks; ik++){
         this->eva_k_densmat( 
           dft_solver, nspin, 
           ik, k_map[ik], space, 
           eigenvector, this->dens_mat[ik] );
+
+        //========Test==========
+        ovlp.evaluate_ovlp_k(k_map[ik], atom);        //caculate overlap matrix in k-space
+        const std::vector<std::complex<double>>& ovlp_mat = ovlp.ovlp_aims.ovlp_mat_work();
+
+        for(int is=0; is<nspin; is++){
+          double tmp=0.0;
+          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                      n_basis, n_basis, n_basis,
+                      &one,
+                      &this->dens_mat[ik][is][0], n_basis,
+                      &ovlp_mat[0], n_basis,
+                      &zero,
+                      &mat_tmp[0], n_basis);
+
+          for(int ibasis=0; ibasis<n_basis; ibasis++)
+            tmp += mat_tmp[ibasis*n_basis+ibasis].real();
+          
+          #pragma omp atomic
+            Nele += tmp;
+        } 
+
+      }
     }
     mkl_set_num_threads(mkl_threads);
 
-    this->output_char_dense(dft_solver, nks);
+    double ntmp;
+    MPI_Allreduce(&Nele, &ntmp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    std::cout << "Number of total electrons : " << ntmp << std::endl;
 
     return;
   }
@@ -308,7 +398,7 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& eigenvector,
         std::vector<std::vector<
-        std::complex<double>>>& dense_cmplx  )
+        std::complex<double>>>& dense_cmplx )
   {
     debug::codestamp("Charge_SCF::eva_k_densmat");
 
@@ -356,6 +446,60 @@ namespace DFT_plus_DMFT
     return;
   }
 
+  void Charge_SCF::read_char_dense(
+      const int dft_solver,
+      const int nks )
+  {
+    debug::codestamp("Charge_SCF::read_char_dense");
+
+    switch(dft_solver)
+    {
+      case 1: //aims
+        #ifdef __FHIaims
+        this->char_scf_aims.read_charge_density(nks, this->dens_mat_last);
+        #else
+        std::cout << "FHI-aims has not been installed!!!  ";
+        std::cout << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+        #endif   
+        break;
+      case 2: //ABACUS
+        #ifdef __ABACUS
+        // this->char_scf_aims.output_charge_density(file, dens_cmplx);
+        std::cout << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
+        std::exit(EXIT_FAILURE);
+        #else
+        std::cout << "ABACUS has not been installed!!!  ";
+        std::cout << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+        #endif
+        break;
+      default:
+        std::cout << "Not supported DFT_solver" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    return;
+  }
+
+  void Charge_SCF::mix_char_dense(
+    const double mix_beta )
+  {
+    debug::codestamp("Charge_SCF::mix_char_dense");
+
+    for(int ik=0; ik<this->dens_mat.size(); ik++){
+      for(int is=0; is<this->dens_mat[ik].size(); is++){
+        for(int i=0; i<this->dens_mat[ik][is].size(); i++){
+          this->dens_mat[ik][is][i] = 
+            (1.0-mix_beta)*this->dens_mat[ik][is][i] +
+            mix_beta*this->dens_mat_last[ik][is][i];
+        }
+      }
+    }
+
+    return;
+  }
+
   void Charge_SCF::output_char_dense(
       const int dft_solver,
       const int nks )
@@ -393,7 +537,8 @@ namespace DFT_plus_DMFT
   }
 
   void Charge_SCF::prepare_nscf_dft(
-      const int dft_solver )
+      const int dft_solver, 
+      const int max_DFT_step )
   {
     debug::codestamp("Charge_SCF::prepare_nscf_dft");
 
@@ -401,7 +546,7 @@ namespace DFT_plus_DMFT
     {
       case 1: //aims
         #ifdef __FHIaims
-        this->char_scf_aims.prepare_nscf_dft();
+        this->char_scf_aims.prepare_nscf_dft(max_DFT_step);
         #else
         std::cout << "FHI-aims has not been installed!!!  ";
         std::cout << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;

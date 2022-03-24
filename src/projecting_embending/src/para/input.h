@@ -36,14 +36,16 @@ namespace DMFT
     //PACS:3;  Rutgers-CTHYB:4; iQIST:5; default:3
     int flag_impurity_solver;    
     int flag_double_counting;       //nominal:1;   default:1
-    int charge_step_max;            //number of the maximum charge self-consistent interation step; default:1
-    int DMFT_step_max;              //number of the maximum DMFT interation step under each charge step; default:5
+    int charge_step_max;            //number of the maximum charge self-consistent interation loop; default:1
+    int DMFT_step_max;              //number of the maximum DMFT interation step under each charge loop; default:5
+    int DFT_step_max;               //number of the maximum DFT interation step under each charge loop; default:1
     long long MC_step;              //numuber of MC sampling steps; default:1000
     std::vector<double> E_window;   //Energy window for hybridization function; default E_window[0]=-2.0, E_window[1]=2.0;
     bool hyb_func;                  //Whether hybrid functional is used or not; default:false
     double hyf_xc_alpha;            //The mixing factor in hybrid funtional; default:0.25;
+    double charge_mix_beta;         //The charge density mixing parameter; default:0.05
 
-    //parameters determined by input parameters
+    //parameters determined by input temperature
     double beta;                 //1/(k_b*T); unit:1/Hartree
 
   };

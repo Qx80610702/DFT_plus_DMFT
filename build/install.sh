@@ -550,15 +550,25 @@ if [ -z \$max_DMFT_step ];then
   max_DMFT_step=5
 fi
 
-#========Current charge and DMFT step
-start_charge_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2, \$3}' | grep -v "#" | awk '{print \$2}'\`
+#========The current and last charge and DMFT step
+start_charge_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$0}' | grep -v "#" | awk '{print \$2}'\`
 if [ -z \$start_charge_step ];then
   start_charge_step=1
 fi
 
-start_dmft_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$1, \$2, \$3}' | grep -v "#" | awk '{print \$3}'\`
+start_dmft_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$0}' | grep -v "#" | awk '{print \$3}'\`
 if [ -z \$start_dmft_step ];then
   start_dmft_step=1
+fi
+
+last_charge_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$0}' | grep -v "#" | awk '{print \$4}'\`
+if [ -z \$last_charge_step ];then
+  last_charge_step=1
+fi
+
+last_dmft_step=\`grep -i "restart" DMFT.in | awk '{sub(/^[ \\t]+/,"");print \$0}' | awk '{print \$0}' | grep -v "#" | awk '{print \$5}'\`
+if [ -z \$last_dmft_step ];then
+  last_dmft_step=1
 fi
 
 # if [ -d dmft_solving ]
@@ -591,7 +601,9 @@ do
     #==================================================
     #     Run projecting and embeding
     #==================================================
-    mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 0
+    mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT \\
+    -current_step \$char_step \$dmft_step \\
+    -last_step \$last_charge_step \$last_dmft_step -eva.density 0
 
     if [ \$? -ne 0 ]; then
       echo "Errors occured in running projecting_embeding"
@@ -601,7 +613,7 @@ do
     #=========judge whether convergency is reached==============
     flag_conver=0
     if [ \$dmft_step -gt 1 ]; then
-      convergency=\`grep "DMFT self-consistency in DMFT loop" DMFT_running.log | awk 'END{print \$0}' | awk -F ": "   '{print \$2}'\`
+      convergency=\`grep "Self-consistency of self-energy" DMFT_running.log | awk 'END{print \$0}' | awk -F ": "   '{print \$2}'\`
       if [ "\$convergency" = "true" ]; then
         flag_conver=1
       else
@@ -712,13 +724,17 @@ do
     cd ../../../
     #if [ \$i -eq 1 ]; then break; fi
 
+    last_dmft_step=\$dmft_step
   done #DMFT self-consistency loop
 
   start_dmft_step=1
 
   if [ \$max_charge_step -gt 1 ];then
     #============Charge update===============
-    mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT -charge.step \$char_step -dmft.step \$dmft_step -eva.density 1
+    mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT \\
+    -current_step \$char_step \$dmft_step \\
+    -last_step \$last_charge_step \$last_dmft_step -eva.density 1
+
     if [ \$? -ne 0 ];then
       echo "Errors occured in updating charge density!!!"
       exit
@@ -742,6 +758,7 @@ do
     fi
     cd ..
   fi
+  last_charge_step=\$char_step
 done #DFT+DMFT charge self-consistent loop 
 EOF1
 

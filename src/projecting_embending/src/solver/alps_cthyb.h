@@ -40,7 +40,7 @@ namespace DMFT
           const double mu, DMFT::input_info& in, 
           DFT_output::atoms_info& atom, DFT_output::KS_bands& band,
           std::vector<std::vector<std::vector<std::complex<double>>>>& Eimp,
-          std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Gf_in,
+          std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Sigma_in,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& Weiss,
           std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& hyb_omega);
 

@@ -43,12 +43,15 @@ namespace DFT_output
       if_bands.ignore(150, '\n');
 
       this->eigen_values.resize(this->nspin);
+      this->DFT_occ_numbers.resize(this->nspin);
       for(int ispin=0; ispin<nspin; ispin++)
       {
         this->eigen_values[ispin].resize(this->kpoints);
+        this->DFT_occ_numbers[ispin].resize(this->kpoints);
         for(int ik=0; ik<kpoints; ik++)
         {
           this->eigen_values[ispin][ik].resize(this->nbands);
+          this->DFT_occ_numbers[ispin][ik].resize(this->nbands);
         }
       }
 
@@ -60,8 +63,9 @@ namespace DFT_output
         if_bands >> k_index;
 
         if_bands >> this->eigen_values[spin_index][k_index][bands_index];
-        if_bands.ignore(150, '\n');
+        if_bands >> this->DFT_occ_numbers[spin_index][k_index][bands_index];
 
+        if_bands.ignore(150, '\n');
         if(if_bands.eof()) break;  //Check whether end of file is reached 
       }
       if_bands.close();

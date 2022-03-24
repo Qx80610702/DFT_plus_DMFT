@@ -9,7 +9,7 @@ import sys
 def read_latt_vector(DFT_solver):
     latvec = []
     if DFT_solver.lower() == "aims":
-        for line in open("../DFT/geometry.in"):
+        for line in open("./dft/geometry.in"):
             line = line.strip().split("#")[0]
             words = line.strip().split()
             if len(words) == 0:
@@ -21,7 +21,7 @@ def read_latt_vector(DFT_solver):
                 latvec += [ np.array(list(map(float,words[1:4]))) ]
     elif DFT_solver.lower() == "abacus":
         latt=1.0
-        STRU=open("../DFT/STRU",'r')
+        STRU=open("./dft/STRU",'r')
         lines=STRU.readlines()
         i=0
         while i < len(lines):

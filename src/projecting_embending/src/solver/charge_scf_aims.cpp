@@ -49,9 +49,9 @@ namespace DFT_plus_DMFT
 
         std::string file = ss.str();
         
-        std::stringstream rmfl;
-        rmfl << "test -f " << file << " && rm " << file;
-        system(rmfl.str().c_str());
+        // std::stringstream rmfl;
+        // rmfl << "test -f " << file << " && rm " << file;
+        // system(rmfl.str().c_str());
 
         //Fortran order : column major
         for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
@@ -69,7 +69,56 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF_aims::prepare_nscf_dft()
+  void Charge_SCF_aims::read_charge_density(
+        const int nks, 
+        std::vector<std::vector<std::vector<
+        std::complex<double>>>>& dens_mat_cmplx)
+  {
+    debug::codestamp("Charge_SCF_aims::read_charge_density");
+    const int nbasis = (int)std::sqrt(dens_mat_cmplx[0][0].size());
+
+    std::vector<int> k_map;
+    int task_nks=0;
+    for(int ik=0; ik<nks; ik++){
+      if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to the process id
+      task_nks +=1;
+      k_map.push_back(ik);
+    }
+
+    elsi_rw_handle rwh;
+    c_elsi_init_rw(&rwh,0,0,nbasis,0.0);
+
+    for(int ik=0; ik<task_nks; ik++){
+      for(int ispin=0; ispin<dens_mat_cmplx[0].size(); ispin++){
+        std::stringstream ss;
+        ss << "dft/D_spin_" 
+           << std::setfill('0') << std::setw(2) << ispin+1
+           << "_kpt_"
+           << std::setfill('0') << std::setw(6) << k_map[ik]+1
+           << ".csc";
+
+        std::string file = ss.str();
+        
+        // std::stringstream rmfl;
+        // rmfl << "test -f " << file << " && rm " << file;
+        // system(rmfl.str().c_str());
+
+        c_elsi_read_mat_complex(rwh, &file[0], reinterpret_cast<double _Complex*>(dens_mat_cmplx[ik][ispin].data()));
+
+        //C++ order : row major
+        for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
+          for(int ibasis2=0; ibasis2<nbasis; ibasis2++)
+            dens_mat_cmplx[ik][ispin][ibasis1*nbasis + ibasis2] = 
+              std::conj(dens_mat_cmplx[ik][ispin][ibasis1*nbasis + ibasis2]);
+      }
+    }
+
+    c_elsi_finalize_rw(rwh);
+
+    return;
+  }
+
+  void Charge_SCF_aims::prepare_nscf_dft(const int max_DFT_step)
   {
     debug::codestamp("Charge_SCF_aims::prepare_nscf_dft");
 
@@ -123,12 +172,16 @@ namespace DFT_plus_DMFT
           
           if(std::strcmp(param.c_str(), "dft_plus_dmft")==0){
             ofs << line_str << std::endl;
-            ofs << "  charge_mix_param    1.0" << std::endl;
-            ofs << "  sc_iter_limit    1" << std::endl;
+            // ofs << "  charge_mix_param    1.0" << std::endl;
+            ofs << "  sc_iter_limit    " << max_DFT_step << std::endl;
             ofs << "  elsi_restart read 1" << std::endl;
+            ofs << "  elsi_restart write 1" << std::endl;
           }
+          // else if(max_DFT_step!=1 && std::strcmp(param.c_str(), "charge_mix_param")==0 ){
+          //   ofs << line_str << std::endl;
+          // }
           else{
-            if(std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
+            if(//std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
               std::strcmp(param.c_str(), "elsi_restart") !=0 &&
               std::strcmp(param.c_str(), "sc_iter_limit") !=0 )
               ofs << line_str << std::endl;

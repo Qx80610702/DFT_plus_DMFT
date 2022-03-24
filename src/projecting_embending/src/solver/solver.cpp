@@ -14,11 +14,13 @@
 namespace DFT_plus_DMFT
 {
   solver::solver(argument_lists& args):
-  charge_scf_step(args.charge_step),
-  DMFT_iteration_step(args.DMFT_step),
+  current_charge_step(args.current_charge_step),
+  current_DMFT_step(args.current_DMFT_step),
+  last_charge_step(args.last_charge_step),
+  last_DMFT_step(args.last_DMFT_step),
   flag_eva_sigma_only(args.sigma_only),
   flag_eva_spectrum(args.cal_spectrum),
-  flag_update_density(args.update_density)
+  flag_update_density(args.update_density )
   {;}
 
   void solver::solve()
@@ -32,9 +34,10 @@ namespace DFT_plus_DMFT
     this->reading_inputs();
     
     //Check whwther dmft iteration convergency achieveed in last dmft step
-    if(!this->flag_eva_spectrum && !this->flag_update_density){
-      this->flag_convergency = this->scf_update();
-      if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
+    if( !this->flag_eva_spectrum ){
+      this->flag_convergency = this->self_energy_scf_update();
+      if(this->flag_eva_sigma_only) return;   //Only calculated the self enegy of last step
+      if(!this->flag_update_density && this->flag_convergency && this->current_DMFT_step>1) return;
     }
 
     if(mpi_rank()==0){
@@ -44,44 +47,29 @@ namespace DFT_plus_DMFT
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl; 
       }
       else if(this->flag_update_density){
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-        std::cout << "<><><><><><><><><> Update charge density <><><><><><><><><>\n";
-        std::cout << "<><> Charge step:" 
-                  << std::setw(4) << this->charge_scf_step 
-                  << "; DMFT step:"
-                  << std::setw(4) << this->DMFT_iteration_step - 1
-                  << " <><>\n";
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+        std::cout << "<><><><><><><><><>  Update charge density <><><><><><><><><>\n";
+        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
       }
       else{
-        if(this->DMFT_iteration_step == 1){
           std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-          std::cout << "<><><><><><>  Current charge self-consitent step:" 
-                    << std::setw(4) << this->charge_scf_step << "  <><><>\n";
+          std::cout << "<><><><><><>  Current charge step" 
+                    << std::setw(4) << this->current_charge_step 
+                    << " DMFT step" << std::setw(4) << this->current_DMFT_step 
+                    << " <><><><>\n"; 
           std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
-          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-          std::cout << "<><><><><><>  Current DMFT iteration step:" 
-                    << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
-          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
-        } 
-        else{
-          std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-          std::cout << "<><><><><><>  Current DMFT iteration step:" 
-                    << std::setw(4) << this->DMFT_iteration_step << "  <><><><><><>\n";
-          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
-        }
       }
     }
     
     this->space.KS_bands_window(
-          this->charge_scf_step,
+          this->current_charge_step,
           this->pars.bands, 
           this->pars.atom,
           this->pars.in );
 
-    this->Mu.evaluate_mu_bisection_imag_DFT(
-          this->pars.bands, this->pars.atom, 
-          this->pars.in, this->space);
+    // this->Mu.evaluate_mu_bisection_imag_DFT(
+    //       this->pars.bands, this->pars.atom, 
+    //       this->pars.in, this->space);
     
     this->proj.elaluate_projector(
           *(int*)pars.in.parameter("DFT_solver"),
@@ -134,7 +122,7 @@ namespace DFT_plus_DMFT
     // this->flag_convergency = this->scf_update();
     // if(this->flag_eva_sigma_only || this->flag_convergency) return;  //Only calculated the self enegy of last step
 
-    if(this->DMFT_iteration_step==1)
+    if(this->current_charge_step == 1 && this->current_DMFT_step==1)
       this->imp.sigma.initial_guess( 
             this->flag_axis,
             this->pars.bands.soc(), 
@@ -173,7 +161,13 @@ namespace DFT_plus_DMFT
     
     this->Mu.read_chemical_potential();
 
-    this->Aw.eva_spectrum(
+    // this->Aw.eva_spectrum(
+    //       this->Mu.mu_corrected(),
+    //       this->pars.bands, this->pars.atom, 
+    //       this->proj, this->imp.sigma, 
+    //       this->pars.in, this->space );
+
+    this->Aw.eva_spectrum_normalization(
           this->Mu.mu_corrected(),
           this->pars.bands, this->pars.atom, 
           this->proj, this->imp.sigma, 
@@ -210,26 +204,31 @@ namespace DFT_plus_DMFT
     }
 
     this->imp.read_last_step( 
-            this->charge_scf_step,
-            this->DMFT_iteration_step,
+            this->last_charge_step,
+            this->last_DMFT_step,
             *(int*)pars.in.parameter("impurity_solver"),
             this->pars.bands, this->pars.in, this->pars.atom );
 
     this->imp.sigma.subtract_double_counting(this->flag_axis);
 
     this->Mu.update_chemical_potential(
-             this->flag_axis, this->pars.bands, 
-             this->pars.atom, this->proj, 
-             this->imp.sigma, this->pars.in, this->space );
+            this->flag_axis, this->pars.bands, 
+            this->pars.atom, this->proj, 
+            this->imp.sigma, this->pars.in, this->space );
 
     this->Char_scf.update_char_dens(
-             this->flag_axis, this->Mu,
-             this->pars.bands, this->pars.atom, 
-             this->proj, this->imp.sigma, 
-             this->pars.in, this->space );
+            this->flag_axis, this->Mu,
+            this->pars.bands, this->pars.atom, 
+            this->proj, this->imp.sigma, 
+            this->pars.in, this->space );
+
+    this->Char_scf.output_char_dense(
+            *(int*)pars.in.parameter("dft_solver"),
+            this->pars.bands.nk() );
 
     this->Char_scf.prepare_nscf_dft(
-            *(int*)pars.in.parameter("dft_solver") );
+            *(int*)pars.in.parameter("dft_solver"),
+            *(int*)pars.in.parameter("max_dft_step") );
     
     return;
   }
@@ -247,17 +246,16 @@ namespace DFT_plus_DMFT
     // this->pars.tetra.read();
   }
 
-  bool solver::scf_update()
+  bool solver::self_energy_scf_update()
   {
-    debug::codestamp("solver::scf_update");
+    debug::codestamp("solver::self_energy_scf_update");
 
     const double beta = *(double*)pars.in.parameter("beta");
     const int nomega = *(int*)pars.in.parameter("n_omega");
 
     bool convergency=false;
 
-    if(this->flag_axis==0)
-    {
+    if(this->flag_axis==0){
       this->imp.sigma.sigma_imag.nomega() = nomega;
       this->imp.sigma.sigma_imag.inverse_T() = beta;
       this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
@@ -266,30 +264,33 @@ namespace DFT_plus_DMFT
           freq[iomega] = (2*iomega+1)*PI/beta;
     }
 
-    if(this->DMFT_iteration_step>1)
+    if(this->current_charge_step>1 || this->current_DMFT_step>1)
     {
       this->imp.read_last_step(
-            this->charge_scf_step,
-            this->DMFT_iteration_step,
+            this->last_charge_step,
+            this->last_DMFT_step,
             *(int*)pars.in.parameter("impurity_solver"),
             this->pars.bands, this->pars.in, this->pars.atom );
 
       convergency = this->imp.scf_condition(
-            *(int*)pars.in.parameter("impurity_solver"),
-            this->pars.bands, this->pars.atom, this->pars.in );
+            this->flag_axis,this->pars.bands, 
+            this->pars.atom, this->pars.in );
 
       if(mpi_rank()==0 && !this->flag_eva_sigma_only)
       {
         if(convergency)
-          std::cout << "\nDMFT self-consistency in DMFT loop " << DMFT_iteration_step-1 
+          std::cout << "\nSelf-consistency of self-energy in charge step" 
+                    << std::setw(4) << this->last_charge_step 
+                    << "  dmft step" << std::setw(4) << this->last_DMFT_step 
                     << " : true\n";
         else
-          std::cout << "\nDMFT self-consistency in DMFT loop " << DMFT_iteration_step-1 
+          std::cout << "\nSelf-consistency of self-energy in charge step" 
+                    << std::setw(4) << this->last_charge_step 
+                    << "  dmft step" << std::setw(4) << this->last_DMFT_step 
                     << " : false\n";
           
-        std::cout << "    impuritys            delta_scf\n";
-        for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++)
-        {
+        std::cout << "    impuritys            Delta_Sigma\n";
+        for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
           std::cout << "    impurity" << ineq << "          " 
                     << std::setiosflags(std::ios::scientific) 
                     << this->imp.delta_scf()[ineq] << std::endl;
@@ -302,7 +303,7 @@ namespace DFT_plus_DMFT
 
         if(mpi_rank()==0)
           this->imp.ALPS_hyb.out_sigma_last_step( 
-                this->DMFT_iteration_step, this->pars.bands, 
+                this->last_DMFT_step, this->pars.bands, 
                 this->pars.in, this->pars.atom,
                 this->imp.sigma.sigma_imag.sigma_new_access());
       }
@@ -334,7 +335,7 @@ namespace DFT_plus_DMFT
               this->pars.atom, this->pars.bands.nspins(),
               *(double*)this->pars.in.parameter("beta"),
               *(int*)this->pars.in.parameter("n_tau"),
-              *(int*)this->pars.in.parameter("n_omega"));
+              *(int*)this->pars.in.parameter("n_omega") );
     }
 
 // timer::get_time(time,seconds);
@@ -345,15 +346,15 @@ namespace DFT_plus_DMFT
 
   void solver::output_to_impurity_solver()
   {
-    this->imp.out(this->charge_scf_step,
-                  this->DMFT_iteration_step,
+    this->imp.out(this->current_charge_step,
+                  this->current_DMFT_step,
                   *(int*)this->pars.in.parameter("impurity_solver"),
                   this->Mu.mu_corrected(), this->pars.bands, 
-                  this->pars.in, this->pars.atom, this->Umat);
+                  this->pars.in, this->pars.atom, this->Umat );
 
     this->Umat.out_coulomb_tensor(
-                  1, this->charge_scf_step, 
-                  this->DMFT_iteration_step,
+                  1, this->current_charge_step, 
+                  this->current_DMFT_step,
                   *(int*)this->pars.in.parameter("impurity_solver"),
                   this->pars.atom, this->pars.bands );
   }
