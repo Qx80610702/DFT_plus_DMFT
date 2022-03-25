@@ -734,7 +734,7 @@ do
 
   start_dmft_step=1
 
-  if [ \$max_charge_step -gt 1 ];then
+  if [ \$max_charge_step -gt 1 -a \$char_step -lt \$max_charge_step ];then
     #============Charge update===============
     mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT \\
     -current_step \$char_step \$dmft_step \\
