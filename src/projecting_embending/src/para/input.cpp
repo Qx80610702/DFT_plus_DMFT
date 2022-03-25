@@ -183,6 +183,22 @@ namespace DMFT
       this->charge_step_max = 1;
     }
 
+    //delta_sigma
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("delta_sigma", str_val);
+
+      this->delta_sigma = atof(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      std::cout << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // if(mpi_rank()==0) std::cout << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
+      this->delta_sigma = 0.1;
+    }
+
     //charge_mix_beta
     try {
       std::vector<std::string> str_val;
@@ -212,7 +228,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       // if(mpi_rank()==0) std::cout << "Warning: max_dmft_step is not given and set default value 5" << std::endl;
-      this->DMFT_step_max = 5;
+      this->DMFT_step_max = 1;
     }
 
     //max_dft_step
@@ -376,6 +392,7 @@ namespace DMFT
           std::strcmp("restart", key_val[0].c_str())==0 ||
           std::strcmp("dft_xc", key_val[0].c_str())==0 ||
           std::strcmp("charge_mix_beta", key_val[0].c_str())==0 ||
+          std::strcmp("delta_sigma", key_val[0].c_str())==0 ||
           std::strcmp("hybrid_xc_coeff", key_val[0].c_str())==0 )
         {;}
         else
@@ -426,6 +443,7 @@ namespace DMFT
     else if(std::strcmp("hyb_func", word)==0) return &hyb_func;
     else if(std::strcmp("hyf_xc_alpha", word)==0) return &hyf_xc_alpha;
     else if(std::strcmp("charge_mix_beta", word)==0) return &charge_mix_beta;
+    else if(std::strcmp("delta_sigma", word)==0) return &delta_sigma;
     else
     {
       std::cout << "No parameter " << keyword << std::endl;

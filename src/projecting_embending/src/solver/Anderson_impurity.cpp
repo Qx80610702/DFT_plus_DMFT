@@ -670,9 +670,9 @@ namespace DMFT
   {
     debug::codestamp("impurity::read_last_step");
 
-    if(mpi_rank()==0){
-      std::cout << "Reading the last loop: charge step " << char_step << "  DMFT step " << DMFT_step << std::endl;
-    }
+    // if(mpi_rank()==0){
+    //   std::cout << "Reading the last loop: charge step " << char_step << "  DMFT step " << DMFT_step << std::endl;
+    // }
 
     const int ineq_num = atom.inequ_atoms();
     const int nspin = band.nspins();
@@ -849,6 +849,7 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const int nspin = band.nspins();
     const int nomega = *(int*)in.parameter("n_omega");
+    const double sc_criteria = *(double*)in.parameter("delta_sigma");
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
         sigma_new = this->sigma.sigma_new(flag_axis);
@@ -879,7 +880,7 @@ namespace DMFT
       this->scf_delta[ineq] *= Hartree_to_eV;
       // this->scf_delta[ineq] = this->scf_delta[ineq]/(nspin*nomega*m_tot);
 
-      if(this->scf_delta[ineq]>1.0e-3)
+      if(this->scf_delta[ineq]>sc_criteria)
         flag_conver[ineq] = false;
       else
         flag_conver[ineq] = true;

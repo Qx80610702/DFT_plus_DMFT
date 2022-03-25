@@ -598,6 +598,10 @@ for((char_step=\$start_charge_step;char_step<=\$max_charge_step;char_step=char_s
 do
   for((dmft_step=\$start_dmft_step;dmft_step<=\$max_DMFT_step;dmft_step=dmft_step+1))
   do
+    if [ \$dmft_step -gt 1 ];then
+      last_charge_step=\$char_step
+    fi
+
     #==================================================
     #     Run projecting and embeding
     #==================================================
@@ -606,6 +610,7 @@ do
     -last_step \$last_charge_step \$last_dmft_step -eva.density 0
 
     if [ \$? -ne 0 ]; then
+      last_dmft_step=\$dmft_step
       echo "Errors occured in running projecting_embeding"
       exit
     fi
@@ -733,7 +738,7 @@ do
     #============Charge update===============
     mpirun -n \$nodes -env OMP_NUM_THREADS=\$num_threads \$EXE_DMFT \\
     -current_step \$char_step \$dmft_step \\
-    -last_step \$last_charge_step \$last_dmft_step -eva.density 1
+    -last_step \$char_step \$last_dmft_step -eva.density 1
 
     if [ \$? -ne 0 ];then
       echo "Errors occured in updating charge density!!!"

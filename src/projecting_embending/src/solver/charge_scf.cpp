@@ -7,12 +7,10 @@
 #include <omp.h>
 #include <mpi.h>
 #include <memory>
-
-#include <mkl.h>
-
-//===test===
 #include <fstream>
 #include <iomanip>
+
+#include <mkl.h>
 
 namespace DFT_plus_DMFT
 {
@@ -32,10 +30,27 @@ namespace DFT_plus_DMFT
           axis_flag, Mu, band, atom, 
           proj, sigma, in, space );
 
+    // this->output_char_dense(
+    //       *(int*)in.parameter("dft_solver"), band.nk() );
 
-    this->dens_mat_last = this->dens_mat;
     this->read_char_dense(
         *(int*)in.parameter("dft_solver"), band.nk() );
+
+    // //TEST
+    // double delta_tmp=0.0, delta=0.0;
+    // for(int ik=0; ik<this->dens_mat.size(); ik++){
+    //   for(int is=0; is<this->dens_mat[ik].size(); is++){
+    //     for(int i=0; i<this->dens_mat[ik][is].size(); i++){
+    //       delta_tmp += std::sqrt(std::norm( this->dens_mat[ik][is][i] 
+    //             - this->dens_mat_last[ik][is][i] ));
+    //     }
+    //   }
+    // }
+
+    // MPI_Allreduce(&delta_tmp, &delta, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    // std::cout << "The difference between the input and output rho: " 
+    //           << std::setw(15) << std::setprecision(9) << delta << std::endl;
 
     this->mix_char_dense(*(double*)in.parameter("charge_mix_beta"));
 
@@ -451,6 +466,17 @@ double Nele=0.0;
       const int nks )
   {
     debug::codestamp("Charge_SCF::read_char_dense");
+
+    const std::complex<double> zero(0.0,0.0);
+    
+    //Allocation
+    this->dens_mat_last.resize(this->dens_mat.size());
+    for(int ik=0; ik<this->dens_mat.size(); ik++){
+      this->dens_mat_last[ik].resize( this->dens_mat[ik].size() );
+      for(int is=0; is<this->dens_mat[ik].size(); is++){
+        this->dens_mat_last[ik][is].resize( this->dens_mat[ik][is].size(), zero);
+      }
+    }
 
     switch(dft_solver)
     {

@@ -47,17 +47,29 @@ namespace DFT_plus_DMFT
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl; 
       }
       else if(this->flag_update_density){
-        std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-        std::cout << "<><><><><><><><><>  Update charge density <><><><><><><><><>\n";
+        std::cout.setf(std::ios::left);
+        std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+        std::cout << "<><><><><><><><><> Update charge density <><><><><><><><><>\n";
         std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+        std::cout << "    Last DFT+DMFT loop : charge step " << this->last_charge_step 
+                  << ",  DMFT step " << this->last_DMFT_step << std::endl;
+        std::cout.unsetf(std::ios::left);
       }
       else{
-          std::cout << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-          std::cout << "<><><><><><>  Current charge step" 
-                    << std::setw(4) << this->current_charge_step 
-                    << " DMFT step" << std::setw(4) << this->current_DMFT_step 
-                    << " <><><><>\n"; 
+          std::cout.setf(std::ios::left);
+          if(this->current_charge_step!=1 || this->current_DMFT_step!=1) std::cout << std::endl;
+
+          std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+          std::cout << "<><><><><><> Current charge step " << this->current_charge_step 
+                    << " DMFT step "  << this->current_DMFT_step 
+                    << " <><><><><><>\n"; 
           std::cout << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+
+          if(this->current_charge_step!=1 || this->current_DMFT_step!=1){
+            std::cout << "    Last DFT+DMFT loop : charge step " << this->last_charge_step 
+                    << ",  DMFT step " << this->last_DMFT_step << std::endl;
+          }
+          std::cout.unsetf(std::ios::left);
       }
     }
     
@@ -272,28 +284,30 @@ namespace DFT_plus_DMFT
             *(int*)pars.in.parameter("impurity_solver"),
             this->pars.bands, this->pars.in, this->pars.atom );
 
-      convergency = this->imp.scf_condition(
-            this->flag_axis,this->pars.bands, 
-            this->pars.atom, this->pars.in );
+      if(!this->flag_update_density){
+        convergency = this->imp.scf_condition(
+              this->flag_axis,this->pars.bands, 
+              this->pars.atom, this->pars.in );
 
-      if(mpi_rank()==0 && !this->flag_eva_sigma_only)
-      {
-        if(convergency)
-          std::cout << "\nSelf-consistency of self-energy in charge step" 
-                    << std::setw(4) << this->last_charge_step 
-                    << "  dmft step" << std::setw(4) << this->last_DMFT_step 
-                    << " : true\n";
-        else
-          std::cout << "\nSelf-consistency of self-energy in charge step" 
-                    << std::setw(4) << this->last_charge_step 
-                    << "  dmft step" << std::setw(4) << this->last_DMFT_step 
-                    << " : false\n";
-          
-        std::cout << "    impuritys            Delta_Sigma\n";
-        for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
-          std::cout << "    impurity" << ineq << "          " 
-                    << std::setiosflags(std::ios::scientific) 
-                    << this->imp.delta_scf()[ineq] << std::endl;
+        if(mpi_rank()==0 && !this->flag_eva_sigma_only)
+        {
+          if(convergency)
+            std::cout << "\nSelf-consistency of self-energy in charge step" 
+                      << std::setw(4) << this->last_charge_step 
+                      << "  dmft step" << std::setw(4) << this->last_DMFT_step 
+                      << " : true\n";
+          else
+            std::cout << "\nSelf-consistency of self-energy in charge step" 
+                      << std::setw(4) << this->last_charge_step 
+                      << "  dmft step" << std::setw(4) << this->last_DMFT_step 
+                      << " : false\n";
+            
+          std::cout << "    impuritys            Delta_Sigma\n";
+          for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
+            std::cout << "    impurity" << ineq << "          " 
+                      << std::setiosflags(std::ios::scientific) 
+                      << this->imp.delta_scf()[ineq] << std::endl;
+          }
         }
       }
 

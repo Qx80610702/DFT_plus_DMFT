@@ -236,11 +236,11 @@ namespace DFT_plus_DMFT
     return nele_sum;
   }
 
-    void chemical_potential::evaluate_mu_bisection_imag_DFT(
-          DFT_output::KS_bands& band, 
-          DFT_output::atoms_info& atom,
-          DMFT::input_info& in,
-          DFT_plus_DMFT::Hilbert_space& space)
+  void chemical_potential::evaluate_mu_bisection_imag_DFT(
+        DFT_output::KS_bands& band, 
+        DFT_output::atoms_info& atom,
+        DMFT::input_info& in,
+        DFT_plus_DMFT::Hilbert_space& space)
   {
     debug::codestamp("chemical_potential::evaluate_mu_bisection_DFT");
 
