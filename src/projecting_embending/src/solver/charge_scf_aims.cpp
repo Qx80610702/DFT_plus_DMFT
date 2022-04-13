@@ -175,7 +175,7 @@ namespace DFT_plus_DMFT
             // ofs << "  charge_mix_param    1.0" << std::endl;
             ofs << "  sc_iter_limit    " << max_DFT_step << std::endl;
             ofs << "  elsi_restart read 1" << std::endl;
-            ofs << "  elsi_restart write 1" << std::endl;
+            // ofs << "  elsi_restart write 1" << std::endl;
           }
           // else if(max_DFT_step!=1 && std::strcmp(param.c_str(), "charge_mix_param")==0 ){
           //   ofs << line_str << std::endl;

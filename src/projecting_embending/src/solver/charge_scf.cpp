@@ -150,45 +150,46 @@ namespace DFT_plus_DMFT
       }
     }
 
-    //=======TEST=======
-    std::ofstream ofs("fik-test.dat", std::ios::out);
-    for(int is=0; is<nspin; is++)
-      for(int ik=0; ik<task_nks; ik++){
-        ofs << std::setw(4) << k_map[ik];
-        for(int iband=0; iband<=wb2ib[is].back(); iband++)
-          ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_DMFT[is][ik][iband];
-        ofs << std::endl;
-      }
-    ofs.close();
+    // //=======TEST=======
+    // std::ofstream ofs("fik-test.dat", std::ios::out);
+    // for(int is=0; is<nspin; is++)
+    //   for(int ik=0; ik<task_nks; ik++){
+    //     ofs << std::setw(4) << k_map[ik];
+    //     for(int iband=0; iband<=wb2ib[is].back(); iband++)
+    //       ofs << std::setw(15) << std::fixed << std::setprecision(12) << this->fik_DMFT[is][ik][iband];
+    //     ofs << std::endl;
+    //   }
+    // ofs.close();
 
     for(int is=0; is<nspin; is++)
       for(int ik=0; ik<task_nks; ik++)
         for(int iband=0; iband<=wb2ib[is].back(); iband++)
           this->fik_DMFT[is][ik][iband] *= k_weight[ k_map[ik] ]; 
-    // Test
-    double val_fik = 0.0, core_fik=0.0;
-    double val_fik_tmp = 0.0, core_fik_tmp=0.0;
-    for(int ik=0; ik<task_nks; ik++){
-      for(int is=0; is<nspin; is++){
-        for(int iband=0; iband<wbands[is]; iband++)
-              val_fik_tmp += this->fik_DMFT[is][ik][ wb2ib[is][iband] ];
+          
+    // // Test
+    // double val_fik = 0.0, core_fik=0.0;
+    // double val_fik_tmp = 0.0, core_fik_tmp=0.0;
+    // for(int ik=0; ik<task_nks; ik++){
+    //   for(int is=0; is<nspin; is++){
+    //     for(int iband=0; iband<wbands[is]; iband++)
+    //           val_fik_tmp += this->fik_DMFT[is][ik][ wb2ib[is][iband] ];
 
-        for(int iband=0; iband<wb2ib[is][0]; iband++){
-          core_fik_tmp += this->fik_DMFT[is][ik][iband];
-        }
-      }
-    }
-    MPI_Allreduce(&val_fik_tmp, &val_fik, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allreduce(&core_fik_tmp, &core_fik, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    std::cout << "Sum of fik of valence bands: " << val_fik << std::endl;
-    std::cout << "Sum of fik of core bands: " << core_fik << std::endl; 
+    //     for(int iband=0; iband<wb2ib[is][0]; iband++){
+    //       core_fik_tmp += this->fik_DMFT[is][ik][iband];
+    //     }
+    //   }
+    // }
+    // MPI_Allreduce(&val_fik_tmp, &val_fik, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    // MPI_Allreduce(&core_fik_tmp, &core_fik, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    // std::cout << "Sum of fik of valence bands: " << val_fik << std::endl;
+    // std::cout << "Sum of fik of core bands: " << core_fik << std::endl; 
     
     int max_threads=omp_get_max_threads();
     int threads_num = (max_threads>k_map.size()? k_map.size() : max_threads);
     const int mkl_threads = mkl_get_max_threads();
     mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
-const std::complex<double> zero(0.0,0.0), one(1.0,0.0);
-double Nele=0.0;
+// const std::complex<double> zero(0.0,0.0), one(1.0,0.0);
+// double Nele=0.0;
     #pragma omp parallel num_threads(threads_num)
     {
       std::vector<std::vector<std::complex<double>>> eigenvector;
@@ -205,34 +206,34 @@ double Nele=0.0;
           ik, k_map[ik], space, 
           eigenvector, this->dens_mat[ik] );
 
-        //========Test==========
-        ovlp.evaluate_ovlp_k(k_map[ik], atom);        //caculate overlap matrix in k-space
-        const std::vector<std::complex<double>>& ovlp_mat = ovlp.ovlp_aims.ovlp_mat_work();
+        // //========Test==========
+        // ovlp.evaluate_ovlp_k(k_map[ik], atom);        //caculate overlap matrix in k-space
+        // const std::vector<std::complex<double>>& ovlp_mat = ovlp.ovlp_aims.ovlp_mat_work();
 
-        for(int is=0; is<nspin; is++){
-          double tmp=0.0;
-          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                      n_basis, n_basis, n_basis,
-                      &one,
-                      &this->dens_mat[ik][is][0], n_basis,
-                      &ovlp_mat[0], n_basis,
-                      &zero,
-                      &mat_tmp[0], n_basis);
+        // for(int is=0; is<nspin; is++){
+        //   double tmp=0.0;
+        //   cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+        //               n_basis, n_basis, n_basis,
+        //               &one,
+        //               &this->dens_mat[ik][is][0], n_basis,
+        //               &ovlp_mat[0], n_basis,
+        //               &zero,
+        //               &mat_tmp[0], n_basis);
 
-          for(int ibasis=0; ibasis<n_basis; ibasis++)
-            tmp += mat_tmp[ibasis*n_basis+ibasis].real();
+        //   for(int ibasis=0; ibasis<n_basis; ibasis++)
+        //     tmp += mat_tmp[ibasis*n_basis+ibasis].real();
           
-          #pragma omp atomic
-            Nele += tmp;
-        } 
+        //   #pragma omp atomic
+        //     Nele += tmp;
+        // } 
 
       }
     }
     mkl_set_num_threads(mkl_threads);
 
-    double ntmp;
-    MPI_Allreduce(&Nele, &ntmp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    std::cout << "Number of total electrons : " << ntmp << std::endl;
+    // double ntmp;
+    // MPI_Allreduce(&Nele, &ntmp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    // std::cout << "Number of total electrons : " << ntmp << std::endl;
 
     return;
   }

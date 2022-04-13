@@ -1029,14 +1029,8 @@ namespace DMFT
 
     if(mpi_rank()==0) std::cout << "\n===========Local occupation number========" << std::endl;
 
-    //evaluation
-    if(nspin==1 && !band.soc()){
-      for(auto& iter1 : dft_occ_num)
-        for(auto& iter2 : iter1)
-          for(auto& iter3 : iter2)
-            iter3 /= 2.0;
-    }
-
+    //==========evaluation========
+    // /*
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -1049,7 +1043,6 @@ namespace DMFT
 
         for(int is=0; is<nspin; is++)
         {
-          const std::vector<double>& epsilon = space.eigen_val()[is][ik];     
           const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
       
             for(int m=0; m<m_tot; m++)
@@ -1117,9 +1110,9 @@ namespace DMFT
         }
       }
 
-    }//ineq
-    
-    //evaluation
+    }//ineq  
+    // */
+
     /*
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
@@ -1201,9 +1194,10 @@ namespace DMFT
         }
       }
 
-    }//ineq */
+    }//ineq 
+    */
 
-    /*
+    /* 
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -1243,7 +1237,6 @@ namespace DMFT
       }
 
       //evaluate local occupation
-     
       for(int m=0; m<m_tot; m++)
       {
         for(int is=0; is<nspin; is++)
@@ -1316,7 +1309,8 @@ namespace DMFT
         }
       }
 
-    }//ineq */
+    }//ineq
+    */
 
     return;
   }

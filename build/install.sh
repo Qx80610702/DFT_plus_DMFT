@@ -44,7 +44,7 @@ FHIaims_install_dir=`grep "FHIaims_install_dir" install.vars | awk '{sub(/^[ \t]
 FHIaims_exe=`grep "FHIaims_exe" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 
 #The installing path of ABACUS if ABACUS has been built  
-ABACUS_install_dir=`grep "ABACUS_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+# ABACUS_install_dir=`grep "ABACUS_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 ABACUS_exe=`grep "ABACUS_exe" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 
 #========Starting compilation========
@@ -265,13 +265,13 @@ then
   cd $root_dir/src/projecting_embending/build/
   rm ./*
 
-  if [ -z $ABACUS_install_dir ];then
+  if [ -z $ABACUS_exe ];then
     MACRO_ABACUS=
   else
     MACRO_ABACUS=-D__ABACUS
   fi
 
-  if [ -z $FHIaims_install_dir ];then    
+  if [ -z $FHIaims_install_dir];then    #FHI-aims has not been built
 cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
 OPTIONS = -g -qopenmp -O3 -std=c++14
@@ -335,7 +335,7 @@ clean:
 .cpp.o:
 	\${CPLUSPLUS_MPI} \${OPTIONS} \${INCLUDES} -c \${MACRO} \$< -o \$@
 EOF
-  else   #FHI-aims has been built
+  else #FHI-aims has been built
   cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
 OPTIONS = -g -qopenmp -O3 -std=c++14

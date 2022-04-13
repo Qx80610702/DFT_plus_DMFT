@@ -38,18 +38,18 @@ class spectrum
 
   private:
   //Spectrum function; Awk[is][iomega][ik]
-  std::vector<std::vector<std::vector<double>>> Awk;    
+  std::vector<std::vector<std::vector<double>>> Awk;
 
   //Spectrum function; DOS[is][iomega]
-  std::vector<std::vector<double>> DOS;    
+  std::vector<std::vector<double>> DOS;
 
   //Spectrum function; Aw_loc[ineq][is][iomega][m] 
-  std::vector<std::vector<std::vector<std::vector<double>>>> Aw_loc;   
+  std::vector<std::vector<std::vector<std::vector<double>>>> Aw_loc;
 
   //Real frequency  
-  std::vector<double> freq;             
+  std::vector<double> freq;
 
   //Spectrum function; Aw_iband_ik[is][ik][iband][iomega]
-  std::vector<std::vector<std::vector<std::vector<double>>>> Aw_ik_iband;                    
+  std::vector<std::vector<std::vector<std::vector<double>>>> Aw_ik_iband;
 
 };

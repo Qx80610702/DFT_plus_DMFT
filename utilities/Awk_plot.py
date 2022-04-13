@@ -30,7 +30,7 @@ def read_latt_vector(DFT_solver):
                 i += 1
                 continue
             if words[0].lower() == "lattice_constant":
-                latt=float(lines[i+1])
+                latt=float(lines[i+1].split()[0])
                 i += 2
                 continue
             elif words[0].lower() == "lattice_vectors":

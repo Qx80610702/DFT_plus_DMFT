@@ -164,7 +164,7 @@ if __name__ == '__main__':
         beta = np.pi/freq[0]
         tau = np.linspace(0, beta, params['Ntau']+1)
         
-        #=============Analytical continuation=============================
+        #====================Analytical continuation======================
         #   Construct auxiliary function and invert Fourier transform
         # ================================================================
         Sigoo = Sw[imp][-1,1+2*mag]+Sw[imp][-1,2+2*mag]*1.0j

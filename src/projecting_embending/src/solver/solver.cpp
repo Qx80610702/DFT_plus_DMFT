@@ -79,9 +79,9 @@ namespace DFT_plus_DMFT
           this->pars.atom,
           this->pars.in );
 
-    // this->Mu.evaluate_mu_bisection_imag_DFT(
-    //       this->pars.bands, this->pars.atom, 
-    //       this->pars.in, this->space);
+    this->Mu.evaluate_mu_bisection_imag_DFT(
+          this->pars.bands, this->pars.atom, 
+          this->pars.in, this->space);
     
     this->proj.elaluate_projector(
           *(int*)pars.in.parameter("DFT_solver"),

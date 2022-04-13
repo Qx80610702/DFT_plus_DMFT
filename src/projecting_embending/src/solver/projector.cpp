@@ -217,7 +217,8 @@ namespace DFT_plus_DMFT
     mkl_set_num_threads(mkl_threads);
 
     //=========TEST orthonormality========================
-    /*for(int is=0; is<nspin; is++)
+    /*
+    for(int is=0; is<nspin; is++)
     {
       std::vector<std::complex<double>> norm(norb*norb);
       int ik_count=-1;
@@ -271,7 +272,8 @@ namespace DFT_plus_DMFT
         }//iatom1
         ofs.close();
       }//ik
-    }//is */
+    }//is 
+    */
 
     //=============================================
     //   unitary tranform of local orbital to
