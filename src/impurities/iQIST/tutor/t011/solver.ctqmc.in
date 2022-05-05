@@ -1,0 +1,20 @@
+# t011/solver.ctqmc.in
+
+#
+# note:
+#
+# 1. please use the narcissus code
+#
+# 2. please change Uc and mune (mune = Uc / 2.0) and do the calculation again
+#
+# 3. focus the solver.hist.dat file
+#
+# 4. for reference, see Fig.~3 in Phys. Rev. Lett. 97, 076405 (2006)
+#
+
+isscf = 2
+isspn = 2
+part  = 1.00
+Uc    = 3.00
+mune  = 1.50
+beta  = 100.

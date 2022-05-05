@@ -194,6 +194,7 @@ if __name__ == '__main__':
     vmm = [0,max(map(max,Awkw))*intensity]
 
     plt.xticks([])
+    plt.ylabel("Energy (eV)")
     plt.imshow(Awkw, origin='lower', interpolation='bilinear', cmap=cm.plasma, vmin=vmm[0], vmax=vmm[1], aspect='auto')
     if showcolorbar==1: plt.colorbar()
 

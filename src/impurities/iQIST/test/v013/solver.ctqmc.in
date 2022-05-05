@@ -1,0 +1,36 @@
+# v013/solver.ctqmc.in
+
+#
+# note:
+#
+# 1. for the first step, please:
+#
+#     1) comment out the last two lines
+#
+#     2) do the self-consistent calculation
+#
+# 2. for the second step, please:
+#
+#     1) copy solver.hyb.dat to solver.hyb.in
+#
+#     2) uncomment the last two lines
+#
+#     3) conduct the calculation again
+#
+
+isscf  = 2
+isscr  = 2
+isspn  = 2
+isvrt  = 1
+nffrq  = 64
+nbfrq  = 1
+nsweep = 40000000
+Uc     = 8.00
+lc     = 2.23606797749979 
+wc     = 2.00
+mune   = 4.00
+beta   = 50.0
+part   = 1.00
+
+isscf  = 1
+isvrt  = 2
