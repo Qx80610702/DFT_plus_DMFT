@@ -50,7 +50,7 @@ namespace DFT_plus_DMFT
 
     timer::get_time(time, seconds);
     GlobalV::ofs_running << "Time consuming for evaluate chemical potention: " 
-                << (int)seconds  << std::endl;
+                << (int)seconds << "s" << std::endl;
 
     return;
   }

@@ -579,7 +579,7 @@ namespace DFT_plus_DMFT
         GlobalV::ofs_error << "FHI-aims has not been installed!!!  ";
         GlobalV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
         std::exit(EXIT_FAILURE);
-        #endif   
+        #endif
         break;
       case 2: //ABACUS
         #ifdef __ABACUS
@@ -596,6 +596,8 @@ namespace DFT_plus_DMFT
         GlobalV::ofs_error << "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
+
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
     return;
   }

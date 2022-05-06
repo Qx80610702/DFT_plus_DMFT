@@ -656,6 +656,7 @@ namespace DMFT
   }
 
   void impurity::read_self_energy(
+        const bool restart,
         const int char_step,
         const int DMFT_step,
         const int impurity_solver, 
@@ -795,11 +796,13 @@ namespace DMFT
         std::exit(EXIT_FAILURE);
     }
 
-    for(int ineq=0; ineq<sigma_new.size(); ineq++)
-      for(int is=0; is<sigma_new[ineq].size(); is++)
-        for(int iomega=0; iomega<sigma_new[ineq][is].size(); iomega++)
-          for(int mindex=0; mindex<sigma_new[ineq][is][iomega].size(); mindex++)
-            sigma_save[ineq][is][iomega][mindex] = sigma_new[ineq][is][iomega][mindex];
+    if(restart){
+      for(int ineq=0; ineq<sigma_new.size(); ineq++)
+        for(int is=0; is<sigma_new[ineq].size(); is++)
+          for(int iomega=0; iomega<sigma_new[ineq][is].size(); iomega++)
+            for(int mindex=0; mindex<sigma_new[ineq][is][iomega].size(); mindex++)
+              sigma_save[ineq][is][iomega][mindex] = sigma_new[ineq][is][iomega][mindex];
+    }
 
 // if(mpi_rank()==0)
 // {
@@ -850,7 +853,7 @@ namespace DMFT
   {
     debug::codestamp("impurity::scf_condition");
 
-    bool convergency=true;
+    bool convergency = true;
 
     const int ineq_num = atom.inequ_atoms();
     const std::vector<int>& norb_sub = atom.iatom_norb();
@@ -858,13 +861,17 @@ namespace DMFT
     const int nomega = *(int*)in.parameter("n_omega");
     const double sc_criteria = *(double*)in.parameter("delta_sigma");
 
-    const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
         sigma_new = this->sigma.sigma_new(flag_axis);
 
-    const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+    std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
         sigma_save = this->sigma.sigma_save(flag_axis);
 
-    this->scf_delta.resize(ineq_num,0.0);
+    if(this->scf_delta.empty()) this->scf_delta.resize(ineq_num,1.0e-9);
+    else
+      for(double& iter : this->scf_delta)
+        iter = 1.0e-9;
+
     std::unique_ptr<bool[]> flag_conver(new bool [ineq_num]);
 
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -880,13 +887,15 @@ namespace DMFT
           {
             double tmp = std::sqrt(std::norm( sigma_new[ineq][is][iomega][m*m_tot+m] 
                         - sigma_save[ineq][is][iomega][m*m_tot+m] ));
-            if(tmp>this->scf_delta[ineq]) this->scf_delta[ineq]=tmp;
+            if(tmp>this->scf_delta[ineq]) this->scf_delta[ineq] = tmp;
           }//m_index
         }//iomega
       }//is
       this->scf_delta[ineq] *= GlobalC::Hartree_to_eV;
       // this->scf_delta[ineq] = this->scf_delta[ineq]/(nspin*nomega*m_tot);
-
+      // std::cout << "scf_delta : " << this->scf_delta[ineq] << std::endl;
+      // std::cout << "sc_criteria : " << sc_criteria << std::endl;
+      
       if(this->scf_delta[ineq]>sc_criteria)
         flag_conver[ineq] = false;
       else
@@ -898,10 +907,16 @@ namespace DMFT
     {
       if(!flag_conver[ineq])
       {
-        convergency=false;
+        convergency = false;
         break;
       }
     }
+
+    for(int ineq=0; ineq<sigma_new.size(); ineq++)
+      for(int is=0; is<sigma_new[ineq].size(); is++)
+        for(int iomega=0; iomega<sigma_new[ineq][is].size(); iomega++)
+          for(int mindex=0; mindex<sigma_new[ineq][is][iomega].size(); mindex++)
+            sigma_save[ineq][is][iomega][mindex] = sigma_new[ineq][is][iomega][mindex];
 
     return convergency;
   }

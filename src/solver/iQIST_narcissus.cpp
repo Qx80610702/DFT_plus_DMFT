@@ -646,7 +646,7 @@ namespace DMFT
 
       std::string date;
       timer::get_date_time(date);
-      GlobalV::ofs_running << "  impurity" << ineq << "    " << date;
+      GlobalV::ofs_running << "  impurity" << ineq << "     " << date;
       GlobalV::ofs_running.flush();
 
       double time, seconds;
@@ -655,10 +655,8 @@ namespace DMFT
 
       iqist_narcissus_run_();
 
-      MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
-
       timer::get_date_time(date);
-      GlobalV::ofs_running << "      " << date;
+      GlobalV::ofs_running << "       " << date;
 
       timer::get_time(time, seconds, minutes, hours);
 
@@ -668,9 +666,10 @@ namespace DMFT
 
       ierr = chdir("../../../../");
       if(ierr != 0){
-        std::cout << "Process " << mpi_rank() << " fails to return to root directory " << current_dir << std::endl;
+        std::cout << "Process " << mpi_rank() << " fails to return to root directory " << std::endl;
       }
 
+      MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
     }//ineq
 
     return;

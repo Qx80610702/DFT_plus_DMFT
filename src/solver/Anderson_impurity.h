@@ -66,6 +66,7 @@ namespace DMFT
           const int mag);
 
     void read_self_energy(
+          const bool restart,
           const int char_step,
           const int DMFT_step,
           const int impurity_solver, 

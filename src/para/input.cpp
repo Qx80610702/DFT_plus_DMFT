@@ -492,7 +492,7 @@ namespace DMFT
     else if(std::strcmp("start_dmft_step", word)==0) return &start_DMFT_step;
     else if(std::strcmp("last_charge_step", word)==0) return &last_charge_step;
     else if(std::strcmp("last_dmft_step", word)==0) return &last_DMFT_step;
-    else if(std::strcmp("retart", word)==0) return &flag_restart;
+    else if(std::strcmp("restart", word)==0) return &flag_restart;
     else
     {
       GlobalV::ofs_error << "No parameter " << keyword << std::endl;

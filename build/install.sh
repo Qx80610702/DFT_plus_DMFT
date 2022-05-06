@@ -41,7 +41,8 @@ fi
 #============DFT softwares path=========
 #The installing path of FHI-aims if FHI-aims has been built  
 FHIaims_install_dir=`grep "FHIaims_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
-FHIaims_exe=`grep "FHIaims_exe" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+FHIaims_lib_path=`grep "FHIaims_lib_path" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+FHIaims_lib_name=`grep "FHIaims_lib_name" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 
 #The installing path of ABACUS if ABACUS has been built  
 # ABACUS_install_dir=`grep "ABACUS_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
@@ -374,7 +375,8 @@ cd $root_dir/build
 #====================================
 #    PART 4: DFT+DMFT
 #====================================
-if [ ! -f $../bin/DMFT ]
+# if [ ! -f ../bin/DFTDMFT ]
+if [ ! -f DFTDMFT ]
 then
   if [ -z $ABACUS_exe ];then
     MACRO_ABACUS=
@@ -449,7 +451,7 @@ all:\${OBJS}
 clean:
 	rm *.o
 	rm -f ../bin/DFTDMFT
-#	rm -f ../bin/maxent
+	rm -f ../bin/maxent
 
 #==========================
 #       rules
@@ -475,7 +477,9 @@ LIB_iQIST = -L${root_dir}/build/impurities/iQIST/ct_hyb1 -l:libnarcissus.a \\
 LIB_RUTGERS = -L${root_dir}/build/impurities/Rutgers -l:librutgers.a \\
 -L${root_dir}/build/impurities/Rutgers/dependencies/gsl-2.6/lib -l:libgslcblas.a -l:libgsl.a
 
-LIBRARY = \$(LIB_MKL) \$(LIB_PACS) \$(LIB_iQIST) \$(LIB_RUTGERS) \$(LIB_elsi) 
+LIB_aims = -L${FHIaims_lib_path} -l${FHIaims_lib_name}
+
+LIBRARY = \$(LIB_MKL) \$(LIB_PACS) \$(LIB_iQIST) \$(LIB_RUTGERS) \$(LIB_elsi) \$(LIB_aims)
 
 VPATH=../src \\
 :../src/para \\
@@ -528,7 +532,7 @@ all:\${OBJS}
 clean:
 	rm *.o
 	rm -f ../bin/DFTDMFT
-#	rm -f ../bin/maxent
+	rm -f ../bin/maxent
 
 #==========================
 #       rules
@@ -537,7 +541,7 @@ clean:
 	\${CPLUSPLUS_MPI} \${OPTIONS} \${INCLUDES} -c \${MACRO} \$< -o \$@
 EOF
   fi
-  make -j
+  # make -j
 fi
 
 cd $root_dir/build

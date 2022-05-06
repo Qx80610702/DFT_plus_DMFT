@@ -105,9 +105,9 @@ void get_date_time(std::string& date)
   int month = p->tm_mon + 1;
   ss << year << "." << std::setfill('0') << std::setw(2) << month 
      << "." << std::setfill('0') << std::setw(2) << p->tm_mday 
-     << "--" << p->tm_hour 
-     << ":" <<p->tm_min
-     << ":" <<p->tm_sec;
+     << "-" << std::setfill('0') << std::setw(2) << p->tm_hour 
+     << ":" << std::setfill('0') << std::setw(2) << p->tm_min
+     << ":" << std::setfill('0') << std::setw(2) << p->tm_sec;
   
   date = ss.str();
   return;

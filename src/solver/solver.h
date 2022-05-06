@@ -62,7 +62,7 @@ namespace DFT_plus_DMFT
 
     void cal_spectrum_func();
 
-    void charge_solve();
+    void DMFT_charge_updating();
     
     void update_Anderson_impurities();
 
@@ -71,6 +71,10 @@ namespace DFT_plus_DMFT
         const int DMFT_step );
 
     void reading_inputs();
+
+    void charge_mixing();
+
+    void run_nscf_dft(const int dft_solver);
 
     public:  //static member function
     static void set_ios(std::ofstream& ofs_running, std::ofstream& ofs_error);
