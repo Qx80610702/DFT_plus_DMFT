@@ -9,22 +9,6 @@
 #include "spectrum.h"
 #include "charge_scf.h"
 
-//================Arguments lists(command line)==================
-// -dmft.step : current dmft step, default value : 1;
-// -eva.sigma_only : whether calculate self-energy only 
-//  (only for impurity solver ALPS-CTHYB), default value : false
-// ==============================================================
-struct argument_lists
-{
-  int current_charge_step;
-  int current_DMFT_step;
-  int last_charge_step;
-  int last_DMFT_step;
-  bool sigma_only;
-  bool cal_spectrum;
-  bool update_density;
-};
-
 namespace DFT_plus_DMFT
 {
   class solver
@@ -44,6 +28,12 @@ namespace DFT_plus_DMFT
     
     void solve();
 
+    void working_init();
+
+    void DFT_DMFT_scf();
+
+    void cal_spectrum_func();
+
     void projecting_embeding(
         const int charge_step, 
         const int DMFT_step);
@@ -58,10 +48,6 @@ namespace DFT_plus_DMFT
         const int charge_step, 
         const int DMFT_step);
 
-    void init_working_axis();
-
-    void cal_spectrum_func();
-
     void DMFT_charge_updating();
     
     void update_Anderson_impurities();
@@ -71,8 +57,6 @@ namespace DFT_plus_DMFT
         const int DMFT_step );
 
     void reading_inputs();
-
-    void charge_mixing();
 
     void run_nscf_dft(const int dft_solver);
 
@@ -88,14 +72,7 @@ namespace DFT_plus_DMFT
 
     private:
     int flag_axis;                     //Do calculations on imaginary (0) or real (1) axis
-    // int current_DMFT_step;             //The step number of current DMFT iteration
-    // int current_charge_step;           //The step number of current charge scf iteration
-    // int last_DMFT_step;                //The step number of current DMFT iteration
-    // int last_charge_step;              //The step number of current charge scf iteration
-    // bool flag_convergency;             //Whether DMFT iteration convergrncy is achieved
-    // bool flag_eva_sigma_only;          //
-    bool flag_eva_spectrum;            //calculate spectrum
-    // bool flag_update_density;          //update charge density
+    int calculation_type;              //DFT+DMFT scf:0; spectra:1; default:0
 
   };
 }

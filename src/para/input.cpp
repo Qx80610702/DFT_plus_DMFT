@@ -18,6 +18,29 @@ namespace DMFT
 
     GlobalV::ofs_running << "Reading DMFT.in ......" << std::endl;
 
+    //calculation
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("calculation", str_val);
+
+      if(std::strcmp("scf", str_val[0].c_str())==0)
+        this->calculation_type = 0;
+      else if(std::strcmp("spectra", str_val[0].c_str())==0)
+        this->calculation_type = 1;
+      else{
+        GlobalV::ofs_error << "Unsupported paramater for the key calculationi" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }  
+    }
+    catch (const std::string messg) {
+      GlobalV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      GlobalV::ofs_running << "Warning: calculation is not given and set default value scf" << std::endl;
+      this->calculation_type = 0;
+    }
+
     //dft_solver
     try {
       std::vector<std::string> str_val;
@@ -104,8 +127,9 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_error << "Error: parameter magnetism must be given!!!" << std::endl;
-      std::exit(EXIT_FAILURE);
+      this->flag_magnetism = 3;
+      // GlobalV::ofs_error << "Error: parameter magnetism must be given!!!" << std::endl;
+      // std::exit(EXIT_FAILURE);
     }
 
     //impurity_solver
@@ -142,8 +166,8 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: impurity_solver is not given and set default value pacs" << std::endl;
-      this->flag_impurity_solver = 3;
+      GlobalV::ofs_running << "Warning: impurity_solver is not given and set default value Rutgers" << std::endl;
+      this->flag_impurity_solver = 4;
     }
 
     //double_counting
@@ -422,6 +446,7 @@ namespace DMFT
           break;
         }
         else if(
+          std::strcmp("calculation", key_val[0].c_str())==0 || 
           std::strcmp("dft_solver", key_val[0].c_str())==0 || 
           std::strcmp("temperature", key_val[0].c_str())==0 ||
           std::strcmp("magnetism", key_val[0].c_str())==0 ||
@@ -473,6 +498,7 @@ namespace DMFT
     this->strtolower(keyword, word);
 
     if(std::strcmp("dft_solver", word)==0) return &flag_DFT_solver;
+    else if(std::strcmp("calculation", word)==0) return &calculation_type;
     else if(std::strcmp("temperature", word)==0) return &temperature;
     else if(std::strcmp("beta", word)==0) return &beta;
     else if(std::strcmp("magnetism", word)==0) return &flag_magnetism;

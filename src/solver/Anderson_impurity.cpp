@@ -300,44 +300,45 @@ namespace DMFT
           DFT_output::atoms_info::symmetry_operation_matrix<std::complex<double>>(
             local_symmetry, corr_L, m_tot, &this->Green_fun_omega[ineq][is][iomega][0] );
 
-// tests
-// if(mpi_rank()==0)
-// {
-// std::ofstream ofs_gf("Gf_omega.dat", std::ios::out);
-// for(int iomega=0; iomega<nomega; iomega++)
-// {
-//   for(int is=0; is<2; is++)
-//   {
-//     for(int m1=0; m1<m_tot; m1++)
-//        for(int m2=0; m2<m_tot; m2++)
-//         if(nspin==1)
-//           ofs_gf << std::setw(5) << iomega
-//            << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
-//            << std::setw(15) << std::fixed << std::setprecision(9)
-//            << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV
-//            << std::setw(15) << std::fixed << std::setprecision(9) 
-//            << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV
-//            << std::setw(15) << std::fixed << std::setprecision(9) 
-//            << std::sqrt(std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV,2) +
-//               std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV,2))<< '\n';
-//         else
-//           ofs_gf << std::setw(5) << iomega 
-//            << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
-//            << std::setw(15) << std::fixed << std::setprecision(9)
-//            << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV
-//            << std::setw(15) << std::fixed << std::setprecision(9) 
-//            << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV 
-//            << std::setw(15) << std::fixed << std::setprecision(9) 
-//            << std::sqrt(std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV,2) +
-//               std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV,2))<< '\n';  
-//   }
-// }
-// ofs_gf.close();
-// }
+      /* //test
+      if(mpi_rank()==0)
+      {
+        std::ofstream ofs_gf("Gf_omega.dat", std::ios::out);
+        for(int iomega=0; iomega<nomega; iomega++)
+        {
+          for(int is=0; is<2; is++)
+          {
+            for(int m1=0; m1<m_tot; m1++)
+              for(int m2=0; m2<m_tot; m2++)
+                if(nspin==1)
+                  ofs_gf << std::setw(5) << iomega
+                  << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
+                  << std::setw(15) << std::fixed << std::setprecision(9)
+                  << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV
+                  << std::setw(15) << std::fixed << std::setprecision(9) 
+                  << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV
+                  << std::setw(15) << std::fixed << std::setprecision(9) 
+                  << std::sqrt(std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV,2) +
+                      std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV,2))<< '\n';
+                else
+                  ofs_gf << std::setw(5) << iomega 
+                  << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
+                  << std::setw(15) << std::fixed << std::setprecision(9)
+                  << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV
+                  << std::setw(15) << std::fixed << std::setprecision(9) 
+                  << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV 
+                  << std::setw(15) << std::fixed << std::setprecision(9) 
+                  << std::sqrt(std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV,2) +
+                      std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV,2))<< '\n';  
+          }
+        }
+        ofs_gf.close();
+      }
+      */
     }//ineq
 
     //==========================================================================
-    //             PART 2:Hybridization function and Weiss Green's function
+    //             PART 2 : Hybridization function and Weiss Green's function
     //==========================================================================
     //Allocation
     if(this->hyb_omega.empty())
@@ -410,23 +411,24 @@ namespace DMFT
         }//is
       }//iomega
 
-//tests
-// std::ofstream ofs_hyb("Hyb_omega.dat", std::ios::out);
-// for(int iomega=0; iomega<nomega; iomega++)
-// {
-//   for(int is=0; is<nspin; is++)
-//   {
-//     for(int m1=0; m1<m_tot; m1++)
-//       for(int m2=0; m2<m_tot; m2++)
-//        ofs_hyb << std::setw(5) << iomega << std::setw(2) << is
-//        << std::setw(3) << m1 << std::setw(3) << m2
-//        << std::setw(15) << std::fixed << std::setprecision(9) 
-//        << hyb[is][iomega][m1*m_tot+m2].real()
-//        << std::setw(15) << std::fixed << std::setprecision(9) 
-//        << hyb[is][iomega][m1*m_tot+m2].imag() << '\n';
-//   }
-// }
-// ofs_hyb.close();
+      /* //tests
+      std::ofstream ofs_hyb("Hyb_omega.dat", std::ios::out);
+      for(int iomega=0; iomega<nomega; iomega++)
+      {
+        for(int is=0; is<nspin; is++)
+        {
+          for(int m1=0; m1<m_tot; m1++)
+            for(int m2=0; m2<m_tot; m2++)
+            ofs_hyb << std::setw(5) << iomega << std::setw(2) << is
+            << std::setw(3) << m1 << std::setw(3) << m2
+            << std::setw(15) << std::fixed << std::setprecision(9) 
+            << hyb[is][iomega][m1*m_tot+m2].real()
+            << std::setw(15) << std::fixed << std::setprecision(9) 
+            << hyb[is][iomega][m1*m_tot+m2].imag() << '\n';
+        }
+      }
+      ofs_hyb.close();
+      */
 
     }//ineq
 
@@ -685,36 +687,6 @@ namespace DMFT
     const int nomega = this->sigma.nomega(axis_flag);
     const std::complex<double> zero(0.0,0.0);
 
-    // this->Green_fun_omega.resize(ineq_num);
-    // this->hyb_omega.resize(ineq_num);
-    // this->Weiss_omega.resize(ineq_num);
-    // this->Green_fun_omega_save.resize(ineq_num);
-    // for(int ineq=0; ineq<ineq_num; ineq++)
-    // {
-    //   const int iatom = atom.ineq_iatom(ineq);
-    //   const int m_tot=norb_sub[iatom];
-
-    //   this->Green_fun_omega[ineq].resize(nspin);
-    //   this->hyb_omega[ineq].resize(nspin);
-    //   this->Weiss_omega[ineq].resize(nspin);
-    //   this->Green_fun_omega_save[ineq].resize(nspin);
-
-    //   for(int is=0; is<nspin; is++)
-    //   {
-    //     this->Green_fun_omega[ineq][is].resize(nomega);
-    //     this->hyb_omega[ineq][is].resize(nomega);
-    //     this->Weiss_omega[ineq][is].resize(nomega);
-    //     this->Green_fun_omega_save[ineq][is].resize(nomega);
-    //     for(int iomega=0; iomega<nomega; iomega++)
-    //     {
-    //       this->Green_fun_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
-    //       this->hyb_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
-    //       this->Weiss_omega[ineq][is][iomega].resize(m_tot*m_tot,zero);
-    //       this->Green_fun_omega_save[ineq][is][iomega].resize(m_tot*m_tot,zero);
-    //     }
-    //   }//is
-    // }//ineq
-
     //Self-energy allocation
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
         sigma_new = this->sigma.sigma_imag.sigma_new_access();
@@ -803,44 +775,46 @@ namespace DMFT
             for(int mindex=0; mindex<sigma_new[ineq][is][iomega].size(); mindex++)
               sigma_save[ineq][is][iomega][mindex] = sigma_new[ineq][is][iomega][mindex];
     }
-
-// if(mpi_rank()==0)
-// {
-//   std::ofstream ofs("G_omga.dat", std::ios::out);
-//   for(int ineq=0; ineq<ineq_num; ineq++)
-//   {
-//     const int iatom = atom.ineq_iatom(ineq);
-//     const int m_tot=norb_sub[iatom];
     
-//     for(int iomega=0; iomega<nomega; iomega++)
-//     {
-//       for(int is=0; is<2; is++)
-//       {
-//         for(int m_index=0; m_index<m_tot*m_tot; m_index++)
-//         {
-//           int m1 = m_index/m_tot;
-//             int m2 = m_index%m_tot;
+    /* test
+    if(mpi_rank()==0)
+    {
+      std::ofstream ofs("G_omga.dat", std::ios::out);
+      for(int ineq=0; ineq<ineq_num; ineq++)
+      {
+        const int iatom = atom.ineq_iatom(ineq);
+        const int m_tot=norb_sub[iatom];
+        
+        for(int iomega=0; iomega<nomega; iomega++)
+        {
+          for(int is=0; is<2; is++)
+          {
+            for(int m_index=0; m_index<m_tot*m_tot; m_index++)
+            {
+              int m1 = m_index/m_tot;
+                int m2 = m_index%m_tot;
 
-//             if(nspin==1)
-//               ofs << std::left << std::setw(5) << iomega << std::setw(2) << is 
-//                   << std::setw(3) << m1 << std::setw(3) << m2
-//                   << std::setw(20) << std::fixed << std::setprecision(12) 
-//                   << this->Green_fun_omega[ineq][0][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
-//                   << std::setw(20) << std::fixed << std::setprecision(12) 
-//                   << this->Green_fun_omega[ineq][0][iomega][m_index].imag()/GlobalC::Hartree_to_eV << '\n';
-//             else
-//               ofs << std::left << std::setw(5) << iomega << std::setw(2) << is 
-//                   << std::setw(3) << m1 << std::setw(3) << m2
-//                   << std::setw(20) << std::fixed << std::setprecision(12) 
-//                   << this->Green_fun_omega[ineq][is][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
-//                   << std::setw(20) << std::fixed << std::setprecision(12) 
-//                   << this->Green_fun_omega[ineq][is][iomega][m_index].imag()/GlobalC::Hartree_to_eV << '\n';
-//         }
-//       }
-//     }//is
-//   }//ineq
-//   ofs.close();
-// }
+                if(nspin==1)
+                  ofs << std::left << std::setw(5) << iomega << std::setw(2) << is 
+                      << std::setw(3) << m1 << std::setw(3) << m2
+                      << std::setw(20) << std::fixed << std::setprecision(12) 
+                      << this->Green_fun_omega[ineq][0][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
+                      << std::setw(20) << std::fixed << std::setprecision(12) 
+                      << this->Green_fun_omega[ineq][0][iomega][m_index].imag()/GlobalC::Hartree_to_eV << '\n';
+                else
+                  ofs << std::left << std::setw(5) << iomega << std::setw(2) << is 
+                      << std::setw(3) << m1 << std::setw(3) << m2
+                      << std::setw(20) << std::fixed << std::setprecision(12) 
+                      << this->Green_fun_omega[ineq][is][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
+                      << std::setw(20) << std::fixed << std::setprecision(12) 
+                      << this->Green_fun_omega[ineq][is][iomega][m_index].imag()/GlobalC::Hartree_to_eV << '\n';
+            }
+          }
+        }//is
+      }//ineq
+      ofs.close();
+    }
+    */
 
     return;
   }

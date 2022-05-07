@@ -18,23 +18,9 @@ extern "C" void aims_(int* mpi_comm, int* unit, bool* mpi_switch);
 
 namespace DFT_plus_DMFT
 {
-  // solver::solver(argument_lists& args):
-  // current_charge_step(args.current_charge_step),
-  // current_DMFT_step(args.current_DMFT_step),
-  // last_charge_step(args.last_charge_step),
-  // last_DMFT_step(args.last_DMFT_step),
-  // flag_eva_sigma_only(args.sigma_only),
-  // flag_eva_spectrum(args.cal_spectrum),
-  // flag_update_density(args.update_density )
-  // {;}
-
   void solver::solve()
   {
     debug::codestamp("solver::sovle");
-
-    double time;
-    double seconds;
-    timer::timestamp(time);
     
     this->set_ios(GlobalV::ofs_running, GlobalV::ofs_error);
 
@@ -43,114 +29,21 @@ namespace DFT_plus_DMFT
 
     this->reading_inputs();
 
-    this->init_working_axis();
+    this->working_init();
 
-    int loop_count = 1;
-    bool charge_convergency = false;
-    bool sigma_convergency = false;
-    int last_char_step = *(int*)this->pars.in.parameter("last_charge_step");
-    int last_DMFT_step = *(int*)this->pars.in.parameter("last_dmft_step");
-    //===============================================
-    //           Charge loop
-    //===============================================
-    for(int char_step = *(int*)this->pars.in.parameter("start_charge_step"); 
-        char_step <= *(int*)this->pars.in.parameter("max_charge_step") && 
-        (!charge_convergency || !sigma_convergency); char_step++)
+    switch(this->calculation_type)
     {
-      GlobalV::ofs_running << "\n=========== Begin DFT+DMFT loop ================" << std::endl;
-      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-      GlobalV::ofs_running << "<><><><><><><><><> Charge step " << char_step << " <><><><><><><><><><><><><>\n"; 
-      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+    case 0: //DFT+DMFT scf
+      return this->DFT_DMFT_scf();
+      break;
+    case 1: //specctra
+      return this->cal_spectrum_func();
+      break;
+    default:
+      GlobalV::ofs_error << "Unknown calculation type" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
 
-      this->space.KS_bands_window(
-          char_step,
-          this->pars.bands, 
-          this->pars.atom,
-          this->pars.in );
-
-      this->Mu.evaluate_mu_bisection_imag_DFT(
-            this->pars.bands, this->pars.atom, 
-            this->pars.in, this->space);
-
-      this->proj.elaluate_projector(
-            *(int*)pars.in.parameter("DFT_solver"),
-            pars.bands, this->space, this->pars.atom );
-
-      this->imp.evaluate_local_occupation( 
-            this->pars.in, this->pars.bands, 
-            this->proj, this->pars.atom,
-            this->space, this->Mu.mu_DFT(),
-            *(int*)this->pars.in.parameter("n_omega"),
-            *(int*)this->pars.in.parameter("magnetism") );
-
-      this->imp.sigma.dc.cal_double_counting( 
-            *(int*)this->pars.in.parameter("double_counting"), 
-            this->pars.bands.soc(), this->pars.bands.nspins(), 
-            this->pars.atom, this->pars.in,
-            *(bool*)this->pars.in.parameter("hyb_func"),
-            *(double*)this->pars.in.parameter("hyf_xc_alpha") );
-      
-      //=========================================
-      //            DMFT loop
-      //=========================================
-      for(int dmft_step = *(int*)this->pars.in.parameter("start_dmft_step");
-          dmft_step <= *(int*)this->pars.in.parameter("max_dmft_step") &&
-          !sigma_convergency; dmft_step++)
-      {
-        // GlobalV::ofs_running.setf(std::ios::left);
-        // if(char_step!=1 || dmft_step!=1) GlobalV::ofs_running << std::endl;
-
-        GlobalV::ofs_running << "\n<><><><><><><><><><><>  DMFT step "  << dmft_step << " <><><><><><><><><><><>\n";
-
-        // if(char_step!=1 || dmft_step!=1){
-        //   GlobalV::ofs_running << "    Last DFT+DMFT loop : charge step " << last_char_step 
-        //           << ",  DMFT step " << last_DMFT_step << std::endl;
-        // }
-        // GlobalV::ofs_running.unsetf(std::ios::left);
-
-        if(dmft_step>1) last_char_step = char_step;
-
-        if(char_step==1 && dmft_step==1)
-          this->imp.sigma.initial_guess( 
-                this->flag_axis,
-                this->pars.bands.soc(), 
-                this->pars.bands.nspins(), 
-                this->pars.atom );
-        else
-          if(*(bool*)this->pars.in.parameter("restart") && loop_count==1)
-            this->imp.read_self_energy(
-              true, last_char_step, last_DMFT_step,
-              *(int*)pars.in.parameter("impurity_solver"),
-              this->pars.bands, this->pars.in, this->pars.atom );
-
-        this->projecting_embeding(char_step, dmft_step);
-   
-        this->impurity_solving(
-            *(int*)this->pars.in.parameter("impurity_solver"),
-              char_step, dmft_step, this->pars.atom );
-        
-        sigma_convergency = this->sigma_scf_update(char_step, dmft_step );
-
-        last_DMFT_step = dmft_step;
-
-        loop_count++;
-      }//dmft loop
-
-      if( *(int*)this->pars.in.parameter("max_dmft_step") > 1 && 
-          char_step < *(int*)this->pars.in.parameter("max_dmft_step") )
-      {
-        this->DMFT_charge_updating();
-
-        for(int dft_step=1; dft_step <= *(int*)this->pars.in.parameter("max_dft_step"); dft_step++)
-        {
-          this->charge_mixing();
-
-          this->run_nscf_dft(*(int*)this->pars.in.parameter("dft_solver"));
-        }
-      }
-
-    }//charge loop
-    
     /*
     //Check whwther dmft iteration convergency achieveed in last dmft step
     if( !this->flag_eva_spectrum ){
@@ -233,6 +126,148 @@ namespace DFT_plus_DMFT
     
     return;
   }
+
+  void solver::DFT_DMFT_scf()
+  {
+    debug::codestamp("solver::DFT_DMFT_scf");
+    
+    double time, seconds;
+    int days, hours, minutes;
+    std::string start_date, end_date;
+
+    timer::timestamp(time);
+    timer::get_date_time(start_date);
+
+    int loop_count = 1, charge_loop_count = 1;
+    bool charge_convergency = false;
+    bool sigma_convergency = false;
+    int last_char_step = *(int*)this->pars.in.parameter("last_charge_step");
+    int last_DMFT_step = *(int*)this->pars.in.parameter("last_dmft_step");
+
+    //===============================================
+    //           Charge loop
+    //===============================================
+    for(int char_step = *(int*)this->pars.in.parameter("start_charge_step"); 
+        char_step <= *(int*)this->pars.in.parameter("max_charge_step") && 
+        (!charge_convergency || !sigma_convergency); char_step++)
+    {
+      GlobalV::ofs_running << "\n================ Begin DFT+DMFT scf loop ================" << std::endl;
+      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+      GlobalV::ofs_running << "<><><><><><><><><> Charge step " << char_step << " <><><><><><><><><><><><><>\n"; 
+      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+
+      this->space.KS_bands_window(
+          char_step,
+          this->pars.bands, 
+          this->pars.atom,
+          this->pars.in );
+
+      this->Mu.evaluate_mu_bisection_imag_DFT(
+            this->pars.bands, this->pars.atom, 
+            this->pars.in, this->space);
+
+      this->proj.elaluate_projector(
+            *(int*)pars.in.parameter("DFT_solver"),
+            pars.bands, this->space, this->pars.atom );
+
+      this->imp.evaluate_local_occupation( 
+            this->pars.in, this->pars.bands, 
+            this->proj, this->pars.atom,
+            this->space, this->Mu.mu_DFT(),
+            *(int*)this->pars.in.parameter("n_omega"),
+            *(int*)this->pars.in.parameter("magnetism") );
+
+      this->imp.sigma.dc.cal_double_counting( 
+            *(int*)this->pars.in.parameter("double_counting"), 
+            this->pars.bands.soc(), this->pars.bands.nspins(), 
+            this->pars.atom, this->pars.in,
+            *(bool*)this->pars.in.parameter("hyb_func"),
+            *(double*)this->pars.in.parameter("hyf_xc_alpha") );
+
+      //=========================================
+      //            DMFT loop
+      //=========================================
+      for(int dmft_step = *(int*)this->pars.in.parameter("start_dmft_step");
+          dmft_step <= *(int*)this->pars.in.parameter("max_dmft_step") &&
+          !sigma_convergency; dmft_step++)
+      {
+        GlobalV::ofs_running << "\n<><><><><><><><><><><>  DMFT step "  << dmft_step << " <><><><><><><><><><><>\n";
+
+        if(dmft_step>1) last_char_step = char_step;
+
+        if(char_step==1 && dmft_step==1)
+          this->imp.sigma.initial_guess( 
+                this->flag_axis,
+                this->pars.bands.soc(), 
+                this->pars.bands.nspins(), 
+                this->pars.atom );
+        else
+          if(*(bool*)this->pars.in.parameter("restart") && loop_count==1)
+            this->imp.read_self_energy(
+              true, last_char_step, last_DMFT_step,
+              *(int*)pars.in.parameter("impurity_solver"),
+              this->pars.bands, this->pars.in, this->pars.atom );
+
+        this->projecting_embeding(char_step, dmft_step);
+
+        this->impurity_solving(
+            *(int*)this->pars.in.parameter("impurity_solver"),
+              char_step, dmft_step, this->pars.atom );
+
+        sigma_convergency = this->sigma_scf_update(char_step, dmft_step );
+
+        last_DMFT_step = dmft_step;
+
+        loop_count++;
+      }//dmft loop
+
+      if( *(int*)this->pars.in.parameter("max_charge_step") > 1 && 
+          char_step < *(int*)this->pars.in.parameter("max_charge_step") )
+      {
+        this->DMFT_charge_updating();
+
+        //=========================================
+        //            DFT loop
+        //=========================================
+        for(int dft_step=1; dft_step <= *(int*)this->pars.in.parameter("max_dft_step"); dft_step++)
+        {
+          this->Char_scf.mix_char_dense(
+              *(double*)this->pars.in.parameter("charge_mix_beta") );
+
+          this->Char_scf.output_char_dense(
+            *(int*)pars.in.parameter("dft_solver"),
+            this->pars.bands.nk() );
+
+          if(charge_loop_count==1){
+            this->Char_scf.prepare_nscf_dft(
+                  *(int*)pars.in.parameter("dft_solver"),
+                  *(int*)pars.in.parameter("max_dft_step") );
+          }
+
+          this->run_nscf_dft(
+              *(int*)this->pars.in.parameter("dft_solver") );
+        }//DFT loop
+      }
+
+      charge_loop_count++;
+    }//charge loop
+
+    timer::get_time(time, seconds, minutes, hours, days);
+    timer::get_date_time(end_date);
+
+    GlobalV::ofs_running << "\nCongratulations!!! The DFT+DMFT calculation finished" << std::endl;
+    GlobalV::ofs_running << "========================== The full time records ==========================" << std::endl;
+    GlobalV::ofs_running << "       starting time              ending time              time-consumption" << std::endl;
+    GlobalV::ofs_running << "      " << start_date
+                         << "       " << end_date 
+                         << "           " 
+                         << days << "d "
+                         << hours << "h " 
+                         << minutes << "m "
+                         << (int)seconds << "s" << std::endl;
+
+    return;
+  }
   
   void solver::projecting_embeding(
         const int charge_step, 
@@ -251,7 +286,7 @@ namespace DFT_plus_DMFT
 
     this->update_Anderson_impurities();
 
-    //prepare the file needed by impurity solver
+    //prepare the files needed by the impurity solvers
     if(mpi_rank()==0) this->output_to_impurity_solver(charge_step, DMFT_step); 
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
@@ -287,14 +322,6 @@ namespace DFT_plus_DMFT
     if(this->flag_eva_spectrum) this->cal_spectrum_func();
     else if(this->flag_update_density) this->charge_solve();
     else this->DMFT_solve();
-
-    timer::get_time(time, seconds);
-    if(this->flag_eva_spectrum)
-      GlobalV::ofs_running << "\nSpectrum evaluation time consuming (seconds): " << seconds  << std::endl;
-    else if(this->flag_update_density)
-      GlobalV::ofs_running << "\nUpdating charge density time consuming (seconds): " << seconds  << std::endl;
-    else
-      GlobalV::ofs_running << "\nProjecting and embending time consuming (seconds): " << seconds  << std::endl;
     */
     
     return;
@@ -340,29 +367,34 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void solver::init_working_axis()
+  void solver::working_init()
   {
-    debug::codestamp("solver::init_working_axis");
+    debug::codestamp("solver::working_init");
 
-    const int impurity_solver = *(int*)this->pars.in.parameter("impurity_solver");
-    const double beta = *(double*)pars.in.parameter("beta");
-    const int nomega = *(int*)pars.in.parameter("n_omega");
+    this->calculation_type = *(int*)this->pars.in.parameter("calculation");
 
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4 ||
-       impurity_solver==5 )
-       this->flag_axis = 0;       //imaginary axis
-    else this->flag_axis = 1;     //real axis
+    if(this->calculation_type == 1) this->flag_axis = 1;   //spectra
+    else if(this->calculation_type == 0){                  //DFT+DMFT scf
+      const int impurity_solver = *(int*)this->pars.in.parameter("impurity_solver");
+      const double beta = *(double*)pars.in.parameter("beta");
+      const int nomega = *(int*)pars.in.parameter("n_omega");
 
-    if(this->flag_axis==0){
-      this->imp.sigma.sigma_imag.nomega() = nomega;
-      this->imp.sigma.sigma_imag.inverse_T() = beta;
-      this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
-      auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
-      for(int iomega=0; iomega<nomega; iomega++)
-          freq[iomega] = (2*iomega+1)*GlobalC::PI/beta;
+      if(impurity_solver==1 || 
+         impurity_solver==2 || 
+         impurity_solver==3 ||
+         impurity_solver==4 ||
+         impurity_solver==5 )
+         this->flag_axis = 0;       //imaginary axis
+      else this->flag_axis = 1;     //real axis
+
+      if(this->flag_axis==0){
+        this->imp.sigma.sigma_imag.nomega() = nomega;
+        this->imp.sigma.sigma_imag.inverse_T() = beta;
+        this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
+        auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
+        for(int iomega=0; iomega<nomega; iomega++)
+            freq[iomega] = (2*iomega+1)*GlobalC::PI/beta;
+      }
     }
 
     return;
@@ -372,7 +404,34 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::cal_spectrum_func");
 
-    this->flag_axis = 1;   //real axis
+    GlobalV::ofs_running << "\n================ Begin calculating DFT+DMFT spectra ================" << std::endl;
+
+    this->space.KS_bands_window(
+          2, this->pars.bands, 
+          this->pars.atom,
+          this->pars.in );
+
+    this->Mu.evaluate_mu_bisection_imag_DFT(
+          this->pars.bands, this->pars.atom, 
+          this->pars.in, this->space);
+
+    this->proj.elaluate_projector(
+          *(int*)pars.in.parameter("DFT_solver"),
+          pars.bands, this->space, this->pars.atom );
+
+    this->imp.evaluate_local_occupation( 
+          this->pars.in, this->pars.bands, 
+          this->proj, this->pars.atom,
+          this->space, this->Mu.mu_DFT(),
+          *(int*)this->pars.in.parameter("n_omega"),
+          *(int*)this->pars.in.parameter("magnetism") );
+
+    this->imp.sigma.dc.cal_double_counting( 
+          *(int*)this->pars.in.parameter("double_counting"), 
+          this->pars.bands.soc(), this->pars.bands.nspins(), 
+          this->pars.atom, this->pars.in,
+          *(bool*)this->pars.in.parameter("hyb_func"),
+          *(double*)this->pars.in.parameter("hyf_xc_alpha") );
 
     this->imp.sigma.sigma_real.read_AC_sigma(
           this->pars.bands, 
@@ -396,6 +455,8 @@ namespace DFT_plus_DMFT
           this->pars.in, this->space );
 
     if(mpi_rank()==0) this->Aw.out_spectrum();
+
+    GlobalV::ofs_running << "DFT+DMFT spectra calculation stop successfuly!!!" << std::endl;
 
     return;
   }
@@ -447,14 +508,6 @@ namespace DFT_plus_DMFT
             this->pars.bands, this->pars.atom, 
             this->proj, this->imp.sigma, 
             this->pars.in, this->space );
-
-    this->Char_scf.output_char_dense(
-            *(int*)pars.in.parameter("dft_solver"),
-            this->pars.bands.nk() );
-
-    this->Char_scf.prepare_nscf_dft(
-            *(int*)pars.in.parameter("dft_solver"),
-            *(int*)pars.in.parameter("max_dft_step") );
     
     return;
   }
@@ -478,19 +531,7 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::sigma_scf_update");
 
-    // const double beta = *(double*)pars.in.parameter("beta");
-    // const int nomega = *(int*)pars.in.parameter("n_omega");
-
     bool convergency = false;
-
-    // if(this->flag_axis==0){
-    //   this->imp.sigma.sigma_imag.nomega() = nomega;
-    //   this->imp.sigma.sigma_imag.inverse_T() = beta;
-    //   this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
-    //   auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
-    //   for(int iomega=0; iomega<nomega; iomega++)
-    //       freq[iomega] = (2*iomega+1)*GlobalC::PI/beta;
-    // }
 
     this->imp.read_self_energy(
           false, charge_step, DMFT_step,
@@ -512,17 +553,6 @@ namespace DFT_plus_DMFT
                 // << std::setiosflags(std::ios::scientific) 
                 << this->imp.delta_scf()[ineq] << std::endl;
     }
-
-      // if(*(int*)pars.in.parameter("impurity_solver")==1) //ALPS-CTHYB do not output self-enrgy
-      // {
-      //   this->imp.update_self_energy( this->pars.bands, this->pars.atom, this->pars.in );
-
-      //   if(mpi_rank()==0)
-      //     this->imp.ALPS_hyb.out_sigma_last_step( 
-      //           this->last_DMFT_step, this->pars.bands, 
-      //           this->pars.in, this->pars.atom,
-      //           this->imp.sigma.sigma_imag.sigma_new_access());
-      // }
 
     return convergency;
   }
@@ -584,17 +614,16 @@ namespace DFT_plus_DMFT
     }
   }
 
-  void solver::charge_mixing()
-  {
-    debug::codestamp("solver::charge_mixing");
-
-    return;
-  }
-
   void solver::run_nscf_dft(
       const int dft_solver )
   {
     debug::codestamp("solver::run_nscf_dft");
+
+    double time, seconds;
+    int minutes;
+    timer::timestamp(time);
+
+    GlobalV::ofs_running << "\nStart non-self-consistent DFT..." << std::endl;
 
     int ierr = chdir("./dft");
     if(ierr != 0){
@@ -638,6 +667,11 @@ namespace DFT_plus_DMFT
       std::cout << "Process " << mpi_rank() << " fails to return to root directory " << std::endl;
     }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+
+    timer::get_time(time, seconds, minutes);
+    GlobalV::ofs_running << "End non-self-consistent DFT. The time consumption of this DFT step : " 
+                         << minutes << "m "
+                         << (int)seconds << "s" << std::endl;
 
     return;
   }

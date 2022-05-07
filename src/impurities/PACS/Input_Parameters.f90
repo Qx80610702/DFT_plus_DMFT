@@ -76,6 +76,7 @@ MODULE Inputs
     REAL(DP) :: data(4*nOrbit)
     CHARACTER*10000 :: line
 
+    IF(ALLOCATED(H0w)) DEALLOCATE(H0w)
     ALLOCATE(H0w(nOmega, 2*nOrbit))
 
     IF (ID == master) THEN
@@ -102,6 +103,7 @@ MODULE Inputs
 
     CHARACTER*1000 :: line
 
+    IF(ALLOCATED(Mu_vec)) DEALLOCATE(Mu_vec) 
     ALLOCATE(Mu_vec(2*nOrbit))
 
     IF (ID == master) THEN

@@ -33,7 +33,7 @@ namespace DMFT
     int n_tau;                      //number of segments on the interval [0,beta] when using CTQMC impuroty solver;default:500
     int n_omega;                    //number of Matsubara frequency points
     //ALPS-CTHYB:1;  LPS-CTHYB-SEGMENT:2; (not supported now)
-    //PACS:3;  Rutgers-CTHYB:4; iQIST:5; default:3
+    //PACS:3;  Rutgers-CTHYB:4; iQIST:5; default:4
     int flag_impurity_solver;    
     int flag_double_counting;       //nominal:1;   default:1
     int charge_step_max;            //number of the maximum charge self-consistent interation loop; default:1
@@ -45,6 +45,7 @@ namespace DMFT
     double hyf_xc_alpha;            //The mixing factor in hybrid funtional; default:0.25;
     double charge_mix_beta;         //The charge density mixing parameter; default:0.05
     double delta_sigma;             //The convergency criteria of self-energy (unit eV); default:0.1
+    int calculation_type;           //DFT+DMFT scf:0; spectra:1; default:0
 
     //restart
     bool flag_restart;              

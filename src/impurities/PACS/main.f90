@@ -73,4 +73,51 @@ subroutine PACS_Run
 
   DEALLOCATE(Eloc_Imp, ImpurityOccupancy_, H0w_Imp, Sigma_Imp)
 
+  CALL CLEAN_MEMORY
+
 end subroutine
+
+SUBROUTINE CLEAN_MEMORY
+  use MPI_mod
+  use Segment_Phys
+  use Segment_Util
+
+  IMPLICIT NONE
+
+  ! Moudle MPI_mod
+  IF(ALLOCATED(status)) DEALLOCATE(status)
+
+  ! Moudle Segment_Phys
+  IF(ALLOCATED(nInsertSegment)) DEALLOCATE(nInsertSegment)
+  IF(ALLOCATED(nInsertAntiSegment)) DEALLOCATE(nInsertAntiSegment)
+  IF(ALLOCATED(nRemoveSegment)) DEALLOCATE(nRemoveSegment)
+  IF(ALLOCATED(nRemoveAntiSegment)) DEALLOCATE(nRemoveAntiSegment)
+  IF(ALLOCATED(nShiftSegment)) DEALLOCATE(nShiftSegment)
+  IF(ALLOCATED(nEmptyFull)) DEALLOCATE(nEmptyFull)
+  IF(ALLOCATED(Gt_Bin_Reduce)) DEALLOCATE(Gt_Bin_Reduce)
+  IF(ALLOCATED(Gt_Bin)) DEALLOCATE(Gt_Bin)
+  IF(ALLOCATED(MCsign_Bin)) DEALLOCATE(MCsign_Bin)
+  IF(ALLOCATED(MCsign_Reduce)) DEALLOCATE(MCsign_Reduce)
+  IF(ALLOCATED(Gst_Bin)) DEALLOCATE(Gst_Bin)
+  IF(ALLOCATED(Gst_Bin_Reduce)) DEALLOCATE(Gst_Bin_Reduce)
+  IF(ALLOCATED(nk_Probability)) DEALLOCATE(nk_Probability)
+
+  ! Module Segment_Util
+  IF(ALLOCATED(Omega)) DEALLOCATE(Omega)
+  IF(ALLOCATED(G0w)) DEALLOCATE(G0w)
+  IF(ALLOCATED(Gw)) DEALLOCATE(Gw)
+  IF(ALLOCATED(Sigma)) DEALLOCATE(Sigma)
+  IF(ALLOCATED(H0w)) DEALLOCATE(H0w)
+  IF(ALLOCATED(Eimp)) DEALLOCATE(Eimp)
+  IF(ALLOCATED(H0t)) DEALLOCATE(H0t)
+  IF(ALLOCATED(ImpurityOccupancy)) DEALLOCATE(ImpurityOccupancy)
+  IF(ALLOCATED(Gt)) DEALLOCATE(Gt)
+  IF(ALLOCATED(Gst)) DEALLOCATE(Gst)
+  IF(ALLOCATED(Umat)) DEALLOCATE(Umat)
+  IF(ALLOCATED(LegenPoly)) DEALLOCATE(LegenPoly)
+  IF(ALLOCATED(CoeffLegenPoly)) DEALLOCATE(CoeffLegenPoly)
+  IF(ALLOCATED(LegenPolyMatsubara)) DEALLOCATE(LegenPolyMatsubara)
+
+END SUBROUTINE CLEAN_MEMORY
+
+
