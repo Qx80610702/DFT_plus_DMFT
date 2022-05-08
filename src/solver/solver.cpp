@@ -44,86 +44,6 @@ namespace DFT_plus_DMFT
       std::exit(EXIT_FAILURE);
     }
 
-    /*
-    //Check whwther dmft iteration convergency achieveed in last dmft step
-    if( !this->flag_eva_spectrum ){
-      this->flag_convergency = this->self_energy_scf_update();
-      if(this->flag_eva_sigma_only) return;   //Only calculated the self enegy of last step
-      if(!this->flag_update_density && this->flag_convergency && this->current_DMFT_step>1) return;
-    }
-
-    if(this->flag_eva_spectrum){
-      GlobalV::ofs_running << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-      GlobalV::ofs_running << "<><><><><><><><><> Calculating spectrum <><><><><><><><><>\n";
-      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl; 
-    }
-    else if(this->flag_update_density){
-      GlobalV::ofs_running.setf(std::ios::left);
-      GlobalV::ofs_running << "\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-      GlobalV::ofs_running << "<><><><><><><><><> Update charge density <><><><><><><><><>\n";
-      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
-      GlobalV::ofs_running << "    Last DFT+DMFT loop : charge step " << this->last_charge_step 
-                << ",  DMFT step " << this->last_DMFT_step << std::endl;
-      GlobalV::ofs_running.unsetf(std::ios::left);
-    }
-    else{
-        GlobalV::ofs_running.setf(std::ios::left);
-        if(this->current_charge_step!=1 || this->current_DMFT_step!=1) GlobalV::ofs_running << std::endl;
-
-        GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-        GlobalV::ofs_running << "<><><><><><> Current charge step " << this->current_charge_step 
-                  << " DMFT step "  << this->current_DMFT_step 
-                  << " <><><><><><>\n"; 
-        GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
-
-        if(this->current_charge_step!=1 || this->current_DMFT_step!=1){
-          GlobalV::ofs_running << "    Last DFT+DMFT loop : charge step " << this->last_charge_step 
-                  << ",  DMFT step " << this->last_DMFT_step << std::endl;
-        }
-        GlobalV::ofs_running.unsetf(std::ios::left);
-    }
-    
-    this->space.KS_bands_window(
-          this->current_charge_step,
-          this->pars.bands, 
-          this->pars.atom,
-          this->pars.in );
-
-    this->Mu.evaluate_mu_bisection_imag_DFT(
-          this->pars.bands, this->pars.atom, 
-          this->pars.in, this->space);
-    
-    this->proj.elaluate_projector(
-          *(int*)pars.in.parameter("DFT_solver"),
-          pars.bands, this->space, this->pars.atom );
-    
-    this->imp.evaluate_local_occupation( 
-          this->pars.in, this->pars.bands, 
-          this->proj, this->pars.atom,
-          this->space, this->Mu.mu_DFT(),
-          *(int*)this->pars.in.parameter("n_omega"),
-          *(int*)this->pars.in.parameter("magnetism") );
-
-    this->imp.sigma.dc.cal_double_counting( 
-          *(int*)this->pars.in.parameter("double_counting"), 
-          this->pars.bands.soc(), this->pars.bands.nspins(), 
-          this->pars.atom, this->pars.in,
-          *(bool*)this->pars.in.parameter("hyb_func"),
-          *(double*)this->pars.in.parameter("hyf_xc_alpha") );
-
-    if(this->flag_eva_spectrum) this->cal_spectrum_func();
-    else if(this->flag_update_density) this->charge_solve();
-    else this->DMFT_solve();
-
-    timer::get_time(time, seconds);
-    if(this->flag_eva_spectrum)
-      GlobalV::ofs_running << "\nSpectrum evaluation time consuming (seconds): " << seconds  << std::endl;
-    else if(this->flag_update_density)
-      GlobalV::ofs_running << "\nUpdating charge density time consuming (seconds): " << seconds  << std::endl;
-    else
-      GlobalV::ofs_running << "\nProjecting and embending time consuming (seconds): " << seconds  << std::endl;
-    */
-    
     return;
   }
 
@@ -550,7 +470,7 @@ namespace DFT_plus_DMFT
     GlobalV::ofs_running << "    impuritys            Delta_Sigma (eV)\n";
     for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
       GlobalV::ofs_running << "    impurity" << ineq << "              " 
-                // << std::setiosflags(std::ios::scientific) 
+                << std::setprecision(3) << std::setiosflags(std::ios::scientific)
                 << this->imp.delta_scf()[ineq] << std::endl;
     }
 

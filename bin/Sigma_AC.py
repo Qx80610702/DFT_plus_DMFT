@@ -6,7 +6,7 @@ import sys, os, shutil
 from math import pow
 from numpy.linalg import inv
 
-maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/build/maxent/maxent"
+maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/bin/maxent"
 
 def polynomial_regression(fw, freq):
     im=complex(0.0,1.0)

@@ -17,6 +17,7 @@ namespace DMFT
     debug::codestamp("input_info::read");
 
     GlobalV::ofs_running << "Reading DMFT.in ......" << std::endl;
+    GlobalV::ofs_running << "=========== All parameters used in the running time ===========" << std::endl;
 
     //calculation
     try {
@@ -37,9 +38,13 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: calculation is not given and set default value scf" << std::endl;
+      // GlobalV::ofs_running << "Warning: calculation is not given and set default value scf" << std::endl;
       this->calculation_type = 0;
     }
+
+    GlobalV::ofs_running << "calculation  ";
+    if(this->calculation_type==0) GlobalV::ofs_running << "scf" << std::endl;
+    else if(this->calculation_type==1) GlobalV::ofs_running << "spectra" << std::endl;
 
     //dft_solver
     try {
@@ -73,7 +78,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: dft_solver is not given and set default value aims" << std::endl;
+      // GlobalV::ofs_running << "Warning: dft_solver is not given and set default value aims" << std::endl;
       this->flag_DFT_solver = 1;   //FHI-aims
       #ifndef __FHIaims
         GlobalV::ofs_error << "FHI-aims has not been installed!!!  ";
@@ -81,6 +86,10 @@ namespace DMFT
         std::exit(EXIT_FAILURE);
       #endif
     }
+
+    GlobalV::ofs_running << "dft_solver  ";
+    if(this->flag_DFT_solver==1) GlobalV::ofs_running << "aims" << std::endl;
+    else if(this->flag_DFT_solver==2) GlobalV::ofs_running << "abacus" << std::endl;
 
     //temperature
     try {
@@ -94,9 +103,11 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: temperature is not given and set default value 300 Kelven" << std::endl;
+      // GlobalV::ofs_running << "Warning: temperature is not given and set default value 300 Kelven" << std::endl;
       this->temperature = 300.0;
     }
+    GlobalV::ofs_running << "temperature  " << this->temperature << std::endl;
+
     this->beta = GlobalC::Hartree_to_eV/(this->temperature*GlobalC::K_BOLTZMAN_EV);
     // this->n_tau = 25/(this->temperature*K_BOLTZMAN_EV) > 500 ? 25/(this->temperature*K_BOLTZMAN_EV) : 500;
     this->n_tau = 25/(this->temperature*GlobalC::K_BOLTZMAN_EV);
@@ -131,6 +142,11 @@ namespace DMFT
       // GlobalV::ofs_error << "Error: parameter magnetism must be given!!!" << std::endl;
       // std::exit(EXIT_FAILURE);
     }
+    GlobalV::ofs_running << "magnetism  ";
+    if(this->flag_magnetism==1) GlobalV::ofs_running << "afm" << std::endl;
+    else if(this->flag_magnetism==2) GlobalV::ofs_running << "fm" << std::endl;
+    else if(this->flag_magnetism==3) GlobalV::ofs_running << "para" << std::endl;
+    else if(this->flag_magnetism==4) GlobalV::ofs_running << "none" << std::endl;
 
     //impurity_solver
     try {
@@ -169,6 +185,12 @@ namespace DMFT
       GlobalV::ofs_running << "Warning: impurity_solver is not given and set default value Rutgers" << std::endl;
       this->flag_impurity_solver = 4;
     }
+    GlobalV::ofs_running << "impurity_solver  ";
+    if(this->flag_impurity_solver==1) GlobalV::ofs_running << "alps-cthyb" << std::endl;
+    else if(this->flag_impurity_solver==2) GlobalV::ofs_running << "alps-cthyb-segment" << std::endl;
+    else if(this->flag_impurity_solver==3) GlobalV::ofs_running << "pacs" << std::endl;
+    else if(this->flag_impurity_solver==4) GlobalV::ofs_running << "rutgers-cthyb" << std::endl;
+    else if(this->flag_impurity_solver==4) GlobalV::ofs_running << "iqist" << std::endl;
 
     //double_counting
     try {
@@ -204,9 +226,10 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., one-shoot DFT+DMFT." << std::endl;
+      // GlobalV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., one-shoot DFT+DMFT." << std::endl;
       this->charge_step_max = 1;
     }
+    GlobalV::ofs_running << "max_charge_step  " << this->charge_step_max << std::endl;
 
     //delta_sigma
     try {
@@ -223,6 +246,9 @@ namespace DMFT
       // GlobalV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
       this->delta_sigma = 0.1;
     }
+    GlobalV::ofs_running << "delta_sigma  " 
+            << std::setprecision(3) << std::setiosflags(std::ios::scientific)
+            << this->delta_sigma << std::endl;
 
     //charge_mix_beta
     try {
@@ -236,7 +262,7 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: charge mixing parameter is not given and set default value 0.05" << std::endl;
+      // GlobalV::ofs_running << "Warning: charge mixing parameter is not given and set default value 0.05" << std::endl;
       this->charge_mix_beta = 0.05;
     }
 
@@ -252,9 +278,10 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
+      // GlobalV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
       this->DMFT_step_max = 1;
     }
+    GlobalV::ofs_running << "max_dmft_step  " << this->DMFT_step_max << std::endl;
 
     //max_dft_step
     try {
@@ -268,9 +295,10 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
+      // GlobalV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
       this->DFT_step_max = 1;
     }
+    GlobalV::ofs_running << "max_dft_step  " << this->DFT_step_max << std::endl;
 
     //mc_step
     try {
@@ -284,9 +312,10 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: mc_step is not given and set default value 5000000" << std::endl;
+      // GlobalV::ofs_running << "Warning: mc_step is not given and set default value 5000000" << std::endl;
       this->MC_step = 5000000;
     }
+    GlobalV::ofs_running << "mc_step  " << this->MC_step << std::endl;
 
     //energy_window
     try {
@@ -301,10 +330,14 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      GlobalV::ofs_running << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
+      // GlobalV::ofs_running << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
       this->E_window[0] = -5.0;
       this->E_window[1] = 5.0;
     }
+    GlobalV::ofs_running << "energy_window  " 
+            << std::setprecision(3) << this->E_window[0] 
+            << "  "
+            << std::setprecision(3) << this->E_window[1] << std::endl;
 
     //restart
     try {
@@ -349,6 +382,12 @@ namespace DMFT
       this->flag_restart = false;
     }
 
+    GlobalV::ofs_running << "restart  " 
+            << this->start_charge_step << " "
+            << this->start_DMFT_step << " "
+            << this->last_charge_step << " "
+            << this->last_DMFT_step << std::endl;
+
     //dft_xc
     try {
       std::vector<std::string> str_val;
@@ -382,6 +421,24 @@ namespace DMFT
     catch (const bool not_given){
       this->hyf_xc_alpha = 0.25;
     }
+
+    int local_symmetry_tmp;
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("local_symmetry", str_val);
+      local_symmetry_tmp = atoi(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      GlobalV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // GlobalV::ofs_running << "Warning: local_symmetry is not given and set default value 0" << std::endl;
+      local_symmetry_tmp = 0;
+    }
+    GlobalV::ofs_running << "local_symmetry  " << local_symmetry_tmp << std::endl;
+
+    GlobalV::ofs_running << "===============================================================\n" << std::endl;
 
     return true;
   }

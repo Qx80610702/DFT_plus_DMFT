@@ -583,6 +583,22 @@ EOF
 fi
 cd $root_dir/build
 
+
+cd $root_dir/bin
+#========Gw_AC.py=======
+sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/bin/maxent\""" Gw_AC.py
+if [ ! -x Gw_AC.py ];then
+  chmod +x Gw_AC.py
+fi
+
+#========Sigma_AC.py=======
+sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/bin/maxent\""" Sigma_AC.py
+if [ ! -x Sigma_AC.py ];then
+  chmod +x Sigma_AC.py
+fi
+cd $root_dir/build
+
+
 # #====================================
 # #    PART 1: libraries
 # #====================================
@@ -1334,18 +1350,6 @@ cd $root_dir/build
 
 # chmod +x run_dmft
 # chmod +x cal_spectrum
-
-# #========Gw_AC.py=======
-# sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/maxent/maxent\""" Gw_AC.py
-# if [ ! -x Gw_AC.py ];then
-#   chmod +x Gw_AC.py
-# fi
-
-# #========Sigma_AC.py=======
-# sed -i "/^maxent_exe=/c"maxent_exe=\"$root_dir/build/maxent/maxent\""" Sigma_AC.py
-# if [ ! -x Sigma_AC.py ];then
-#   chmod +x Sigma_AC.py
-# fi
 
 # #echo -e "\n" | cat >> ~/.bashrc
 # #echo "#################DFT+DMFT#################" | cat >> ~/.bashrc
