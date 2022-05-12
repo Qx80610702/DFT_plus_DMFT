@@ -60,8 +60,9 @@ namespace DFT_plus_DMFT
 
     void run_nscf_dft(const int dft_solver);
 
-    public:  //static member function
-    static void set_ios(std::ofstream& ofs_running, std::ofstream& ofs_error);
+    public:  
+    void set_ios(std::ofstream& ofs_running, std::ofstream& ofs_error);
+    void unset_ios(std::ofstream& ofs_running, std::ofstream& ofs_error);
 
     //==================================
     //     interfaces

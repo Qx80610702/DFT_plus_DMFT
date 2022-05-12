@@ -8,7 +8,6 @@
 
 #include <mpi.h>
 #include <iostream>
-#include <map>
 #include <complex>
 #include <vector>
 #include <iomanip>
@@ -44,6 +43,8 @@ namespace DFT_plus_DMFT
       std::exit(EXIT_FAILURE);
     }
 
+    this->unset_ios(GlobalV::ofs_running, GlobalV::ofs_error);
+
     return;
   }
 
@@ -58,7 +59,9 @@ namespace DFT_plus_DMFT
     timer::timestamp(time);
     timer::get_date_time(start_date);
 
-    int loop_count = 1, charge_loop_count = 1;
+    int loop_count = 1;
+    int charge_loop_count = 1;
+    int DFT_DMFT_loop_count = 1;
     bool charge_convergency = false;
     bool sigma_convergency = false;
     int last_char_step = *(int*)this->pars.in.parameter("last_charge_step");
@@ -144,28 +147,29 @@ namespace DFT_plus_DMFT
       if( *(int*)this->pars.in.parameter("max_charge_step") > 1 && 
           char_step < *(int*)this->pars.in.parameter("max_charge_step") )
       {
-        this->DMFT_charge_updating();
+        if(charge_loop_count==1){
+          this->Char_scf.init(*(int*)pars.in.parameter("dft_solver"));
+          this->Char_scf.read_charge_density(DFT_DMFT_loop_count, false);
+        }
 
+        this->DMFT_charge_updating();
+        
         //=========================================
         //            DFT loop
         //=========================================
+        if(charge_loop_count==1) this->Char_scf.prepare_nscf_dft();
+
         for(int dft_step=1; dft_step <= *(int*)this->pars.in.parameter("max_dft_step"); dft_step++)
-        {
+        { 
           this->Char_scf.mix_char_dense(
               *(double*)this->pars.in.parameter("charge_mix_beta") );
 
           this->Char_scf.output_char_dense(
-            *(int*)pars.in.parameter("dft_solver"),
-            this->pars.bands.nk() );
+              this->pars.bands.nk() );
 
-          if(charge_loop_count==1){
-            this->Char_scf.prepare_nscf_dft(
-                  *(int*)pars.in.parameter("dft_solver"),
-                  *(int*)pars.in.parameter("max_dft_step") );
-          }
+          this->run_nscf_dft(*(int*)pars.in.parameter("impurity_solver"));
 
-          this->run_nscf_dft(
-              *(int*)this->pars.in.parameter("dft_solver") );
+          DFT_DMFT_loop_count++;
         }//DFT loop
       }
 
@@ -465,13 +469,13 @@ namespace DFT_plus_DMFT
     GlobalV::ofs_running << "\nSelf-consistency of self-energy in charge step " 
               << charge_step 
               << " DMFT step " << DMFT_step 
-              << " : false\n";
+              << " : false" << std::endl;
       
-    GlobalV::ofs_running << "    impuritys            Delta_Sigma (eV)\n";
+    GlobalV::ofs_running << "    impuritys            Delta_Sigma (eV)" << std::endl;
     for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
-      GlobalV::ofs_running << "    impurity" << ineq << "              " 
-                << std::setprecision(3) << std::setiosflags(std::ios::scientific)
-                << this->imp.delta_scf()[ineq] << std::endl;
+      GlobalV::ofs_running << "    impurity" << ineq << "              "
+                // << std::setprecision(3) << std::setiosflags(std::ios::scientific)
+                << std::setprecision(3) << this->imp.delta_scf()[ineq] << std::endl;
     }
 
     return convergency;
@@ -531,6 +535,16 @@ namespace DFT_plus_DMFT
     if(mpi_rank()==0){
       ofs_running.open("DMFT_running.log", std::ios_base::app);
       ofs_error.open("DMFT_running.error", std::ios_base::out);
+    }
+  }
+
+  void solver::unset_ios(
+    std::ofstream& ofs_running, 
+    std::ofstream& ofs_error )
+  {
+    if(mpi_rank()==0){
+      ofs_running.close();
+      ofs_error.close();
     }
   }
 

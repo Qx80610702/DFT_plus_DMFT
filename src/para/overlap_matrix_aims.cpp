@@ -80,8 +80,8 @@ namespace DFT_output
       std::ifstream if_kphase(file.c_str(), std::ios::in);
 
       if (!if_kphase) 
-	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      {
+      	GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

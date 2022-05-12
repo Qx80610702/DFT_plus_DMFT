@@ -29,6 +29,8 @@ namespace DFT_plus_DMFT
     #endif
 
     public:
+    void init(const int DFT_solver);
+
     void update_char_dens(
         const int axis_flag,
         DFT_plus_DMFT::chemical_potential& Mu,
@@ -78,23 +80,21 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& dense_cmplx );
 
-    void read_char_dense(
-        const int dft_solver,
-        const int nks );
+    void read_charge_density(const int step, const bool DMFT_charge);
+
+    void read_charge_density_matrix(const int nks);
 
     void mix_char_dense(const double mix_beta);
 
-    void output_char_dense(
-        const int dft_solver,
-        const int nks );
+    void output_char_dense(const int nks);
 
-    void prepare_nscf_dft(
-        const int dft_solver,
-        const int max_DFT_step );
+    void prepare_nscf_dft();
 
     private:
+    int flag_DFT_solver;
+
     std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;       //dens_mat[ik][ispin][nbasis*nbasis]
-    std::vector<std::vector<std::vector<double>>> fik_DMFT;       //fik_DMFT[is][ik][iband]
+    std::vector<std::vector<std::vector<double>>> fik_DMFT;                     //fik_DMFT[is][ik][iband]
 
     std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_last;  //dens_mat_last[ik][ispin][nbasis*nbasis]
     

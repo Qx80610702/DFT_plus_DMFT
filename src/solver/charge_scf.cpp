@@ -15,6 +15,13 @@
 
 namespace DFT_plus_DMFT
 {
+  void Charge_SCF::init(
+      const int DFT_solver)
+  {
+    this->flag_DFT_solver = DFT_solver;
+    return;
+  }
+
   void Charge_SCF::update_char_dens(
       const int axis_flag,
       DFT_plus_DMFT::chemical_potential& Mu,
@@ -34,8 +41,7 @@ namespace DFT_plus_DMFT
     // this->output_char_dense(
     //       *(int*)in.parameter("dft_solver"), band.nk() );
 
-    this->read_char_dense(
-        *(int*)in.parameter("dft_solver"), band.nk() );
+    // this->read_char_dense(band.nk());
 
     // //TEST
     // double delta_tmp=0.0, delta=0.0;
@@ -463,11 +469,47 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::read_char_dense(
-      const int dft_solver,
-      const int nks )
+  void Charge_SCF::read_charge_density(
+        const int step, 
+        const bool DMFT_charge )
   {
     debug::codestamp("Charge_SCF::read_char_dense");
+
+
+    switch(this->flag_DFT_solver)
+    {
+      case 1: //aims
+        #ifdef __FHIaims
+        this->char_scf_aims.read_charge_density(step, DMFT_charge);
+        #else
+        GlobalV::ofs_error << "FHI-aims has not been installed!!!  ";
+        GlobalV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+        #endif   
+        break;
+      case 2: //ABACUS
+        #ifdef __ABACUS
+        // this->char_scf_aims.output_charge_density(file, dens_cmplx);
+        GlobalV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
+        std::exit(EXIT_FAILURE);
+        #else
+        GlobalV::ofs_error << "ABACUS has not been installed!!!  ";
+        GlobalV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+        std::exit(EXIT_FAILURE);
+        #endif
+        break;
+      default:
+        GlobalV::ofs_error << "Not supported DFT_solver" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    return;
+  }
+
+  void Charge_SCF::read_charge_density_matrix(
+      const int nks )
+  {
+    debug::codestamp("Charge_SCF::read_charge_density_matrix");
 
     const std::complex<double> zero(0.0,0.0);
     
@@ -480,11 +522,11 @@ namespace DFT_plus_DMFT
       }
     }
 
-    switch(dft_solver)
+    switch(this->flag_DFT_solver)
     {
       case 1: //aims
         #ifdef __FHIaims
-        this->char_scf_aims.read_charge_density(nks, this->dens_mat_last);
+        this->char_scf_aims.read_charge_density_matrix(nks, this->dens_mat_last);
         #else
         GlobalV::ofs_error << "FHI-aims has not been installed!!!  ";
         GlobalV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
@@ -529,12 +571,11 @@ namespace DFT_plus_DMFT
   }
 
   void Charge_SCF::output_char_dense(
-      const int dft_solver,
-      const int nks )
+        const int nks )
   {
     debug::codestamp("Charge_SCF::output_char_dense");
 
-    switch(dft_solver)
+    switch(this->flag_DFT_solver)
     {
       case 1: //aims
         #ifdef __FHIaims
@@ -564,17 +605,15 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::prepare_nscf_dft(
-      const int dft_solver, 
-      const int max_DFT_step )
+  void Charge_SCF::prepare_nscf_dft()
   {
     debug::codestamp("Charge_SCF::prepare_nscf_dft");
 
-    switch(dft_solver)
+    switch(this->flag_DFT_solver)
     {
       case 1: //aims
         #ifdef __FHIaims
-        this->char_scf_aims.prepare_nscf_dft(max_DFT_step);
+        this->char_scf_aims.prepare_nscf_dft();
         #else
         GlobalV::ofs_error << "FHI-aims has not been installed!!!  ";
         GlobalV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
