@@ -98,7 +98,7 @@ namespace DMFT
       }//is
     }//ineq
 
-    GlobalV::ofs_running << "\n================Impurity level(eV)===============\n";
+    GLV::ofs_running << "\n================Impurity level(eV)===============\n";
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
     {
       const int iatom=atom.ineq_iatom(ineq);
@@ -106,13 +106,13 @@ namespace DMFT
 
       for(int is=0; is<nspin; is++)
       {
-        GlobalV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
+        GLV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
 
         for(int m=0; m<m_tot; m++)
-          GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << 
-            GlobalC::Hartree_to_eV*this->impurity_level[ineq][is][m*m_tot+m].real();
+          GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << 
+            GLC::Hartree_to_eV*this->impurity_level[ineq][is][m*m_tot+m].real();
 
-        GlobalV::ofs_running << std::endl;
+        GLV::ofs_running << std::endl;
       }
     }
 
@@ -314,22 +314,22 @@ namespace DMFT
                   ofs_gf << std::setw(5) << iomega
                   << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(15) << std::fixed << std::setprecision(9)
-                  << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV
+                  << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GLC::Hartree_to_eV
                   << std::setw(15) << std::fixed << std::setprecision(9) 
-                  << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV
+                  << this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GLC::Hartree_to_eV
                   << std::setw(15) << std::fixed << std::setprecision(9) 
-                  << std::sqrt(std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV,2) +
-                      std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV,2))<< '\n';
+                  << std::sqrt(std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].imag()/GLC::Hartree_to_eV,2) +
+                      std::pow(this->Green_fun_omega[ineq][0][iomega][m1*m_tot+m2].real()/GLC::Hartree_to_eV,2))<< '\n';
                 else
                   ofs_gf << std::setw(5) << iomega 
                   << std::setw(2) << is << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(15) << std::fixed << std::setprecision(9)
-                  << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV
+                  << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GLC::Hartree_to_eV
                   << std::setw(15) << std::fixed << std::setprecision(9) 
-                  << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV 
+                  << this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GLC::Hartree_to_eV 
                   << std::setw(15) << std::fixed << std::setprecision(9) 
-                  << std::sqrt(std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GlobalC::Hartree_to_eV,2) +
-                      std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GlobalC::Hartree_to_eV,2))<< '\n';  
+                  << std::sqrt(std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].imag()/GLC::Hartree_to_eV,2) +
+                      std::pow(this->Green_fun_omega[ineq][is][iomega][m1*m_tot+m2].real()/GLC::Hartree_to_eV,2))<< '\n';  
           }
         }
         ofs_gf.close();
@@ -593,16 +593,16 @@ namespace DMFT
 //       if(nspin==2)
 //       {
 //         ofs << std::setw(22) << std::fixed << std::setprecision(15) << 
-//         std::pow(GlobalC::Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
+//         std::pow(GLC::Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
 //         << std::setw(22) << std::fixed << std::setprecision(15)
-//         << std::pow(GlobalC::Hartree_to_eV,2)*hyb[ineq][1][itau][m*m_tot+m].real();
+//         << std::pow(GLC::Hartree_to_eV,2)*hyb[ineq][1][itau][m*m_tot+m].real();
 //       }
 //       else
 //       {
 //         ofs << std::setw(22) << std::fixed << std::setprecision(15) << 
-//         std::pow(GlobalC::Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
+//         std::pow(GLC::Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real()
 //         << std::setw(22) << std::fixed << std::setprecision(15)
-//         << std::pow(GlobalC::Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real();
+//         << std::pow(GLC::Hartree_to_eV,2)*hyb[ineq][0][itau][m*m_tot+m].real();
 //       }
 //     }//m_index
 //     ofs << '\n';
@@ -651,7 +651,7 @@ namespace DMFT
               this->impurity_level, this->hyb_omega, Umat );
         break;
       default:
-        GlobalV::ofs_error << "Not supported impurity solver" << std::endl;
+        GLV::ofs_error << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
     return;
@@ -669,7 +669,7 @@ namespace DMFT
     debug::codestamp("impurity::read_last_step");
 
     // if(mpi_rank()==0){
-    //   GlobalV::ofs_running << "Reading the last loop: charge step " << char_step << "  DMFT step " << DMFT_step << std::endl;
+    //   GLV::ofs_running << "Reading the last loop: charge step " << char_step << "  DMFT step " << DMFT_step << std::endl;
     // }
     int axis_flag;
 
@@ -764,7 +764,7 @@ namespace DMFT
                 band, in, atom, sigma_new);
         break;
       default:
-        GlobalV::ofs_error << "Not supported impurity solver" << std::endl;
+        GLV::ofs_error << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -798,16 +798,16 @@ namespace DMFT
                   ofs << std::left << std::setw(5) << iomega << std::setw(2) << is 
                       << std::setw(3) << m1 << std::setw(3) << m2
                       << std::setw(20) << std::fixed << std::setprecision(12) 
-                      << this->Green_fun_omega[ineq][0][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
+                      << this->Green_fun_omega[ineq][0][iomega][m_index].real()/GLC::Hartree_to_eV << " "
                       << std::setw(20) << std::fixed << std::setprecision(12) 
-                      << this->Green_fun_omega[ineq][0][iomega][m_index].imag()/GlobalC::Hartree_to_eV << '\n';
+                      << this->Green_fun_omega[ineq][0][iomega][m_index].imag()/GLC::Hartree_to_eV << '\n';
                 else
                   ofs << std::left << std::setw(5) << iomega << std::setw(2) << is 
                       << std::setw(3) << m1 << std::setw(3) << m2
                       << std::setw(20) << std::fixed << std::setprecision(12) 
-                      << this->Green_fun_omega[ineq][is][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
+                      << this->Green_fun_omega[ineq][is][iomega][m_index].real()/GLC::Hartree_to_eV << " "
                       << std::setw(20) << std::fixed << std::setprecision(12) 
-                      << this->Green_fun_omega[ineq][is][iomega][m_index].imag()/GlobalC::Hartree_to_eV << '\n';
+                      << this->Green_fun_omega[ineq][is][iomega][m_index].imag()/GLC::Hartree_to_eV << '\n';
             }
           }
         }//is
@@ -865,7 +865,7 @@ namespace DMFT
           }//m_index
         }//iomega
       }//is
-      this->scf_delta[ineq] *= GlobalC::Hartree_to_eV;
+      this->scf_delta[ineq] *= GLC::Hartree_to_eV;
       // this->scf_delta[ineq] = this->scf_delta[ineq]/(nspin*nomega*m_tot);
       // std::cout << "scf_delta : " << this->scf_delta[ineq] << std::endl;
       // std::cout << "sc_criteria : " << sc_criteria << std::endl;
@@ -991,7 +991,7 @@ namespace DMFT
     
     std::vector<double> freq(nomega);
     for(int iomega=0; iomega<nomega; iomega++)
-      freq[iomega] = (2*iomega+1)*GlobalC::PI/beta;
+      freq[iomega] = (2*iomega+1)*GLC::PI/beta;
 
     //Allocation and set zero
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>
@@ -1023,7 +1023,7 @@ namespace DMFT
       for(auto& iter2 : iter1)
         iter2=0.0;
 
-    GlobalV::ofs_running << "\n===========Local occupation number========" << std::endl;
+    GLV::ofs_running << "\n===========Local occupation number========" << std::endl;
 
     //==========evaluation========
     /*
@@ -1096,13 +1096,13 @@ namespace DMFT
       {
         for(int is=0; is<nspin; is++)
         {
-          GlobalV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
+          GLV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
           for(int m=0; m<m_tot; m++)
             if(nspin==1)
-              GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
+              GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
             else
-              GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
-          GlobalV::ofs_running << std::endl;
+              GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
+          GLV::ofs_running << std::endl;
         }
       }
 
@@ -1180,13 +1180,13 @@ namespace DMFT
       {
         for(int is=0; is<nspin; is++)
         {
-          GlobalV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
+          GLV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
           for(int m=0; m<m_tot; m++)
             if(nspin==1)
-              GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
+              GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
             else
-              GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
-          GlobalV::ofs_running << std::endl;
+              GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
+          GLV::ofs_running << std::endl;
         }
       }
 
@@ -1293,13 +1293,13 @@ namespace DMFT
 
       for(int is=0; is<nspin; is++)
       {
-        GlobalV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
+        GLV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
         for(int m=0; m<m_tot; m++)
           if(nspin==1)
-            GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
+            GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][0][m];
           else
-            GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
-        GlobalV::ofs_running << std::endl;
+            GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << local_occ[iatom][is][m]; 
+        GLV::ofs_running << std::endl;
       }
 
     }//ineq
@@ -1329,7 +1329,7 @@ namespace DMFT
         return this->iQIST_narcissus.hybridization_func_tau();
         break;
       default:
-        GlobalV::ofs_error << "Not supported impurity solver" << std::endl;
+        GLV::ofs_error << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
   }

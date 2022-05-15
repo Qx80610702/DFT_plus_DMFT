@@ -22,7 +22,7 @@ namespace DFT_output
       if(icell<0 || icell>=this->n_cells_in_hamiltonian
         || ik<0 || ik>=this->n_k_points)
       {
-        GlobalV::ofs_error << "Array kphase is out of range" << std::endl;
+        GLV::ofs_error << "Array kphase is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -35,7 +35,7 @@ namespace DFT_output
         || icell<0 || icell>=this->n_cells_in_hamiltonian
         || i_basis<0 || i_basis>=this->n_basis)
       {
-        GlobalV::ofs_error << "Array index_hamiltonian is out of range" << std::endl;
+        GLV::ofs_error << "Array index_hamiltonian is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -46,7 +46,7 @@ namespace DFT_output
     {
       if(index<0 || index>=size_colum_index_hamiltonian)
       {
-        GlobalV::ofs_error << "Array colum_index_hamiltonian is out of range" << std::endl;
+        GLV::ofs_error << "Array colum_index_hamiltonian is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -57,7 +57,7 @@ namespace DFT_output
     {
       if(index<0 || index>=this->size_overlap_matrix)
       {
-        GlobalV::ofs_error << "Array ovlp_matrix_real is out of range" << std::endl;
+        GLV::ofs_error << "Array ovlp_matrix_real is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -81,7 +81,7 @@ namespace DFT_output
 
       if (!if_kphase) 
       {
-      	GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      	GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -291,7 +291,7 @@ namespace DFT_output
       std::ofstream ofs(file.c_str(), std::ios::out);
       if(!ofs)
       {
-        GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
       
@@ -314,7 +314,7 @@ namespace DFT_output
       ofs.open(file.c_str(),std::ios::out);
       if(!ofs)
       {
-        GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
       
@@ -342,7 +342,7 @@ namespace DFT_output
       ofs.open(file.c_str(),std::ios::out);
       if(!ofs)
       {
-        GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -361,7 +361,7 @@ namespace DFT_output
       ofs.open(file.c_str(),std::ios::out);
       if(!ofs)
       {
-        GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

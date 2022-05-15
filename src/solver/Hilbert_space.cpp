@@ -24,8 +24,8 @@ namespace DFT_plus_DMFT
     this->n_k_points = band.nk();
     const std::vector<std::vector<std::vector<double>>>& KS_eigenvalues = band.enk();
 
-    // GlobalV::ofs_running << "Up energy   : " << this->energy_up_down[1] << " Hartree\n";
-    // GlobalV::ofs_running << "Down energy : " << this->energy_up_down[0] << " Hartree\n";
+    // GLV::ofs_running << "Up energy   : " << this->energy_up_down[1] << " Hartree\n";
+    // GLV::ofs_running << "Down energy : " << this->energy_up_down[0] << " Hartree\n";
 
     this->n_valence = band.n_electrons();
 
@@ -65,8 +65,8 @@ namespace DFT_plus_DMFT
     const auto& Ewindow = in.window();
 
     this->energy_up_down.resize(2);
-    this->energy_up_down[1] = band.Fermi_level()+Ewindow[1]/GlobalC::Hartree_to_eV;
-    this->energy_up_down[0] = band.Fermi_level()+Ewindow[0]/GlobalC::Hartree_to_eV;
+    this->energy_up_down[1] = band.Fermi_level()+Ewindow[1]/GLC::Hartree_to_eV;
+    this->energy_up_down[0] = band.Fermi_level()+Ewindow[0]/GLC::Hartree_to_eV;
 
     double max_en, min_en;
 
@@ -81,7 +81,7 @@ namespace DFT_plus_DMFT
       {
         if(iband>=this->n_KS_bands)
         {
-          GlobalV::ofs_error << "Error in finding lower band" <<std::endl;
+          GLV::ofs_error << "Error in finding lower band" <<std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -103,7 +103,7 @@ namespace DFT_plus_DMFT
       {
         if(iband<0)
         {
-          GlobalV::ofs_error << "Error in finding upper band" <<std::endl;
+          GLV::ofs_error << "Error in finding upper band" <<std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -131,16 +131,16 @@ namespace DFT_plus_DMFT
       }
 
       
-      GlobalV::ofs_running << "\n==============Correlated Kohn-Sham bands subset==============\n";
+      GLV::ofs_running << "\n==============Correlated Kohn-Sham bands subset==============\n";
       if(this->nspin==1)
       {
-        GlobalV::ofs_running << "Bands number of spin up:   " << lower_band_index << " ~ " << upper_band_index << std::endl;
-        GlobalV::ofs_running << "Bands number of spin down: " << lower_band_index << " ~ " << upper_band_index << std::endl;
+        GLV::ofs_running << "Bands number of spin up:   " << lower_band_index << " ~ " << upper_band_index << std::endl;
+        GLV::ofs_running << "Bands number of spin down: " << lower_band_index << " ~ " << upper_band_index << std::endl;
       }
       else if(this->nspin==2)
       {
-        if(is==0) GlobalV::ofs_running << "Bands number of spin up:   " << lower_band_index << " ~ " << upper_band_index << std::endl;
-        else GlobalV::ofs_running << "Bands number of spin down: " << lower_band_index << " ~ " << upper_band_index << std::endl;
+        if(is==0) GLV::ofs_running << "Bands number of spin up:   " << lower_band_index << " ~ " << upper_band_index << std::endl;
+        else GLV::ofs_running << "Bands number of spin down: " << lower_band_index << " ~ " << upper_band_index << std::endl;
       }
       
 
@@ -179,7 +179,7 @@ namespace DFT_plus_DMFT
 
     std::ifstream ifs("DMFT_running.log", std::ios::in);
     if(!ifs){
-      GlobalV::ofs_error << "Fail to oepn DMFT_running.log" << std::endl;
+      GLV::ofs_error << "Fail to oepn DMFT_running.log" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);      //set the position at the beginning of the file
@@ -267,14 +267,14 @@ namespace DFT_plus_DMFT
     }//is
 
     for(int is=0; is<this->nspin; is++){
-      GlobalV::ofs_running << "\n==============Correlated Kohn-Sham bands subset==============\n";
+      GLV::ofs_running << "\n==============Correlated Kohn-Sham bands subset==============\n";
       if(this->nspin==1){
-        GlobalV::ofs_running << "Bands number of spin up:   " << lower_band_index[0] << " ~ " << upper_band_index[0] << std::endl;
-        GlobalV::ofs_running << "Bands number of spin down: " << lower_band_index[0] << " ~ " << upper_band_index[0] << std::endl;
+        GLV::ofs_running << "Bands number of spin up:   " << lower_band_index[0] << " ~ " << upper_band_index[0] << std::endl;
+        GLV::ofs_running << "Bands number of spin down: " << lower_band_index[0] << " ~ " << upper_band_index[0] << std::endl;
       }
       else if(this->nspin==2){
-        if(is==0) GlobalV::ofs_running << "Bands number of spin up:   " << lower_band_index[0] << " ~ " << upper_band_index[0] << std::endl;
-        else GlobalV::ofs_running << "Bands number of spin down: " << lower_band_index[1] << " ~ " << upper_band_index[1] << std::endl;
+        if(is==0) GLV::ofs_running << "Bands number of spin up:   " << lower_band_index[0] << " ~ " << upper_band_index[0] << std::endl;
+        else GLV::ofs_running << "Bands number of spin down: " << lower_band_index[1] << " ~ " << upper_band_index[1] << std::endl;
       }  
     }
 

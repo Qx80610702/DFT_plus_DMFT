@@ -1,8 +1,10 @@
 #include "global_variables.h"
 
-namespace GlobalV
+namespace DFT_plus_DMFT
 {
-  std::ofstream ofs_running;
-  std::ofstream ofs_error;
-
+  namespace GlobalV
+  {
+    std::ofstream ofs_running;
+    std::ofstream ofs_error;
+  }
 }

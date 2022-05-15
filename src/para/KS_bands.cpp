@@ -14,7 +14,7 @@ namespace DFT_output
   {
     debug::codestamp("KS_bands::read");
     
-    GlobalV::ofs_running << "Reading bands information ......" << std::endl;
+    GLV::ofs_running << "Reading bands information ......" << std::endl;
 
     int val;
     int spin_index,bands_index,k_index;
@@ -23,7 +23,7 @@ namespace DFT_output
 
     if (!if_bands)  
 	  {
-	  	GlobalV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
+	  	GLV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -78,7 +78,7 @@ namespace DFT_output
 
     if (!ifs)  
 	  {
-	  	GlobalV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/k_weight.dat" << std::endl;
+	  	GLV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/k_weight.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -114,7 +114,7 @@ namespace DFT_output
     std::ofstream ofs(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

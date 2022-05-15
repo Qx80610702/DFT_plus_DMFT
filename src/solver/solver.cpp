@@ -21,10 +21,10 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::sovle");
     
-    this->set_ios(GlobalV::ofs_running, GlobalV::ofs_error);
+    this->set_ios(GLV::ofs_running, GLV::ofs_error);
 
-    GlobalV::ofs_running << "Welcome to DFT+DMFT calculation" << std::endl;
-    GlobalV::ofs_running << "Number of processes of the job: " << mpi_ntasks() << "\n" << std::endl;
+    GLV::ofs_running << "Welcome to DFT+DMFT calculation" << std::endl;
+    GLV::ofs_running << "Number of processes of the job: " << mpi_ntasks() << "\n" << std::endl;
 
     this->reading_inputs();
 
@@ -39,11 +39,11 @@ namespace DFT_plus_DMFT
       return this->cal_spectrum_func();
       break;
     default:
-      GlobalV::ofs_error << "Unknown calculation type" << std::endl;
+      GLV::ofs_error << "Unknown calculation type" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
-    this->unset_ios(GlobalV::ofs_running, GlobalV::ofs_error);
+    this->unset_ios(GLV::ofs_running, GLV::ofs_error);
 
     return;
   }
@@ -60,10 +60,10 @@ namespace DFT_plus_DMFT
     timer::get_date_time(start_date);
 
     int loop_count = 1;
-    int charge_loop_count = 1;
-    int DFT_DMFT_loop_count = 1;
+    int mix_step = 0, Rstep = 0;
     bool charge_convergency = false;
     bool sigma_convergency = false;
+    double charge_change = 0.0;
     int last_char_step = *(int*)this->pars.in.parameter("last_charge_step");
     int last_DMFT_step = *(int*)this->pars.in.parameter("last_dmft_step");
 
@@ -74,10 +74,10 @@ namespace DFT_plus_DMFT
         char_step <= *(int*)this->pars.in.parameter("max_charge_step") && 
         (!charge_convergency || !sigma_convergency); char_step++)
     {
-      GlobalV::ofs_running << "\n================ Begin DFT+DMFT scf loop ================" << std::endl;
-      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
-      GlobalV::ofs_running << "<><><><><><><><><> Charge step " << char_step << " <><><><><><><><><><><><><>\n"; 
-      GlobalV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
+      GLV::ofs_running << "\n================ Begin DFT+DMFT scf loop ================" << std::endl;
+      GLV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
+      GLV::ofs_running << "<><><><><><><><><> Charge step " << char_step << " <><><><><><><><><><><><><>\n"; 
+      GLV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>" << std::endl;
 
       this->space.KS_bands_window(
           char_step,
@@ -114,7 +114,7 @@ namespace DFT_plus_DMFT
           dmft_step <= *(int*)this->pars.in.parameter("max_dmft_step") &&
           !sigma_convergency; dmft_step++)
       {
-        GlobalV::ofs_running << "\n<><><><><><><><><><><>  DMFT step "  << dmft_step << " <><><><><><><><><><><>\n";
+        GLV::ofs_running << "\n<><><><><><><><><><><>  DMFT step "  << dmft_step << " <><><><><><><><><><><>\n";
 
         if(dmft_step>1) last_char_step = char_step;
 
@@ -147,42 +147,64 @@ namespace DFT_plus_DMFT
       if( *(int*)this->pars.in.parameter("max_charge_step") > 1 && 
           char_step < *(int*)this->pars.in.parameter("max_charge_step") )
       {
-        if(charge_loop_count==1){
-          this->Char_scf.init(*(int*)pars.in.parameter("dft_solver"));
-          this->Char_scf.read_charge_density(DFT_DMFT_loop_count, false);
+        this->DMFT_charge_updating();
+
+        if(mix_step==0){
+          this->Char_scf.prepare_nscf_dft();
+
+          this->Char_scf.init(*(int*)this->pars.in.parameter("dft_solver"),
+                *(double*)this->pars.in.parameter("charge_mix_beta"),
+                this->pars.bands.nk(), this->pars.bands.nspins() );
+
+          //Reading initial input charge density 
+          this->Char_scf.read_charge(true, false);
         }
 
-        this->DMFT_charge_updating();
+        this->Char_scf.output_charge_density_matrix(
+              this->pars.bands.nk() );
+        
+        //Call DFT solver to compute the charge density corresponding to 
+        //the DMFT corrected density matrix
+        this->run_nscf_dft(*(int*)pars.in.parameter("impurity_solver"));  
+        
+        //Read the charge density corresponding to 
+        //the DMFT corrected density matrix
+        this->Char_scf.read_charge(false, true);
+
+        this->Char_scf.charge_mixing(mix_step, charge_change);
+
+        this->Char_scf.output_charge_density_matrix(
+              this->pars.bands.nk() );
+
+        mix_step++;
         
         //=========================================
         //            DFT loop
         //=========================================
-        if(charge_loop_count==1) this->Char_scf.prepare_nscf_dft();
-
         for(int dft_step=1; dft_step <= *(int*)this->pars.in.parameter("max_dft_step"); dft_step++)
-        { 
-          this->Char_scf.mix_char_dense(
-              *(double*)this->pars.in.parameter("charge_mix_beta") );
-
-          this->Char_scf.output_char_dense(
-              this->pars.bands.nk() );
-
+        {
           this->run_nscf_dft(*(int*)pars.in.parameter("impurity_solver"));
 
-          DFT_DMFT_loop_count++;
+          this->Char_scf.read_charge_density_matrix(
+              this->pars.bands.nk() );       
+
+          this->Char_scf.charge_mixing(mix_step, charge_change);
+
+          this->Char_scf.output_charge_density_matrix(
+              this->pars.bands.nk() );
+
+          mix_step++;
         }//DFT loop
       }
-
-      charge_loop_count++;
     }//charge loop
 
     timer::get_time(time, seconds, minutes, hours, days);
     timer::get_date_time(end_date);
 
-    GlobalV::ofs_running << "\nCongratulations!!! The DFT+DMFT calculation finished" << std::endl;
-    GlobalV::ofs_running << "========================== The full time records ==========================" << std::endl;
-    GlobalV::ofs_running << "       starting time              ending time              time-consumption" << std::endl;
-    GlobalV::ofs_running << "      " << start_date
+    GLV::ofs_running << "\nCongratulations!!! The DFT+DMFT calculation finished" << std::endl;
+    GLV::ofs_running << "========================== The full time records ==========================" << std::endl;
+    GLV::ofs_running << "       starting time              ending time              time-consumption" << std::endl;
+    GLV::ofs_running << "      " << start_date
                          << "       " << end_date 
                          << "           " 
                          << days << "d "
@@ -259,8 +281,8 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::impurity_solving");
 
-    GlobalV::ofs_running << "\nImpurity solver starts working......" << std::endl;
-    GlobalV::ofs_running << "  Impurities       starting time              ending time              time-consumption" << std::endl;
+    GLV::ofs_running << "\nImpurity solver starts working......" << std::endl;
+    GLV::ofs_running << "  Impurities       starting time              ending time              time-consumption" << std::endl;
 
     switch(impurity_solver)
     {
@@ -284,7 +306,7 @@ namespace DFT_plus_DMFT
         this->imp.iQIST_narcissus.impurities_solving(char_step, DMFT_step, atom);
         break;
       default:
-        GlobalV::ofs_error << "Not supported impurity solver" << std::endl;
+        GLV::ofs_error << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -317,7 +339,7 @@ namespace DFT_plus_DMFT
         this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
         auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
         for(int iomega=0; iomega<nomega; iomega++)
-            freq[iomega] = (2*iomega+1)*GlobalC::PI/beta;
+            freq[iomega] = (2*iomega+1)*GLC::PI/beta;
       }
     }
 
@@ -328,7 +350,7 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::cal_spectrum_func");
 
-    GlobalV::ofs_running << "\n================ Begin calculating DFT+DMFT spectra ================" << std::endl;
+    GLV::ofs_running << "\n================ Begin calculating DFT+DMFT spectra ================" << std::endl;
 
     this->space.KS_bands_window(
           2, this->pars.bands, 
@@ -380,7 +402,7 @@ namespace DFT_plus_DMFT
 
     if(mpi_rank()==0) this->Aw.out_spectrum();
 
-    GlobalV::ofs_running << "DFT+DMFT spectra calculation stop successfuly!!!" << std::endl;
+    GLV::ofs_running << "DFT+DMFT spectra calculation stop successfuly!!!" << std::endl;
 
     return;
   }
@@ -408,7 +430,7 @@ namespace DFT_plus_DMFT
       this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
       auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
       for(int iomega=0; iomega<nomega; iomega++)
-          freq[iomega] = (2*iomega+1)*GlobalC::PI/beta;
+          freq[iomega] = (2*iomega+1)*GLC::PI/beta;
     }
 
     this->imp.read_last_step( 
@@ -418,7 +440,7 @@ namespace DFT_plus_DMFT
             this->pars.bands, this->pars.in, this->pars.atom );
     */
 
-    GlobalV::ofs_running << "\nStarting update DMFT corrected charge density" << std::endl;
+    GLV::ofs_running << "\nStarting update DMFT corrected charge density" << std::endl;
 
     this->imp.sigma.subtract_double_counting(this->flag_axis);
 
@@ -427,7 +449,7 @@ namespace DFT_plus_DMFT
             this->pars.atom, this->proj, 
             this->imp.sigma, this->pars.in, this->space );
 
-    this->Char_scf.update_char_dens(
+    this->Char_scf.update_charge_density_matrix(
             this->flag_axis, this->Mu,
             this->pars.bands, this->pars.atom, 
             this->proj, this->imp.sigma, 
@@ -466,14 +488,14 @@ namespace DFT_plus_DMFT
           this->flag_axis, this->pars.bands, 
           this->pars.atom, this->pars.in );
 
-    GlobalV::ofs_running << "\nSelf-consistency of self-energy in charge step " 
+    GLV::ofs_running << "\nSelf-consistency of self-energy in charge step " 
               << charge_step 
               << " DMFT step " << DMFT_step 
               << " : false" << std::endl;
       
-    GlobalV::ofs_running << "    impuritys            Delta_Sigma (eV)" << std::endl;
+    GLV::ofs_running << "    impuritys            Delta_Sigma (eV)" << std::endl;
     for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
-      GlobalV::ofs_running << "    impurity" << ineq << "              "
+      GLV::ofs_running << "    impurity" << ineq << "              "
                 // << std::setprecision(3) << std::setiosflags(std::ios::scientific)
                 << std::setprecision(3) << this->imp.delta_scf()[ineq] << std::endl;
     }
@@ -508,7 +530,7 @@ namespace DFT_plus_DMFT
     }
 
 // timer::get_time(time,seconds);
-// GlobalV::ofs_running << "evaluate_hybridization_function_imag time consuming " << seconds << '\n';
+// GLV::ofs_running << "evaluate_hybridization_function_imag time consuming " << seconds << '\n';
 
     return;
   }
@@ -557,7 +579,7 @@ namespace DFT_plus_DMFT
     int minutes;
     timer::timestamp(time);
 
-    GlobalV::ofs_running << "\nStart non-self-consistent DFT..." << std::endl;
+    GLV::ofs_running << "\nStart non-self-consistent DFT..." << std::endl;
 
     int ierr = chdir("./dft");
     if(ierr != 0){
@@ -575,24 +597,24 @@ namespace DFT_plus_DMFT
 
           aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
         #else
-          GlobalV::ofs_error << "FHI-aims has not been installed!!!  ";
-          GlobalV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+          GLV::ofs_error << "FHI-aims has not been installed!!!  ";
+          GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
           std::exit(EXIT_FAILURE);
         #endif   
         break;
       case 2: //ABACUS
         #ifdef __ABACUS
           // this->char_scf_aims.output_charge_density(file, dens_cmplx);
-          GlobalV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
+          GLV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
           std::exit(EXIT_FAILURE);
         #else
-          GlobalV::ofs_error << "ABACUS has not been installed!!!  ";
-          GlobalV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+          GLV::ofs_error << "ABACUS has not been installed!!!  ";
+          GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
           std::exit(EXIT_FAILURE);
         #endif
         break;
       default:
-        GlobalV::ofs_error << "Not supported DFT_solver" << std::endl;
+        GLV::ofs_error << "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -603,7 +625,7 @@ namespace DFT_plus_DMFT
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
     timer::get_time(time, seconds, minutes);
-    GlobalV::ofs_running << "End non-self-consistent DFT. The time consumption of this DFT step : " 
+    GLV::ofs_running << "End non-self-consistent DFT. The time consumption of this DFT step : " 
                          << minutes << "m "
                          << (int)seconds << "s" << std::endl;
 

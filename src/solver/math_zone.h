@@ -17,16 +17,32 @@ inline void general_complex_matrix_inverse(
 {
   lapack_int info=LAPACKE_zgetrf(LAPACK_ROW_MAJOR, dim, dim, a, dim, ipiv);
   if(info != 0 ){
-    GlobalV::ofs_error << "Error in LAPACKE_zgetrf!!!" << std::endl;
+    GLV::ofs_error << "Error in LAPACKE_zgetrf!!!" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
   info=LAPACKE_zgetri(LAPACK_ROW_MAJOR, dim, a, dim, ipiv);
   if(info != 0 ){
-    GlobalV::ofs_error << "Error in LAPACKE_zgetri!!!" << std::endl;
+    GLV::ofs_error << "Error in LAPACKE_zgetri!!!" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
+}
+
+inline void general_real_matrix_inverse(
+        double* a, const int dim, int* ipiv )
+{
+  lapack_int info=LAPACKE_dgetrf(LAPACK_ROW_MAJOR, dim, dim, a, dim, ipiv);
+  if(info != 0 ){
+    GLV::ofs_error << "Error in LAPACKE_zgetrf!!!" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+  info=LAPACKE_dgetri(LAPACK_ROW_MAJOR, dim, a, dim, ipiv);
+  if(info != 0 ){
+    GLV::ofs_error << "Error in LAPACKE_zgetri!!!" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
 }
 
 inline void Hermitian_matrix_sqrt_inver(
@@ -49,7 +65,7 @@ inline void Hermitian_matrix_sqrt_inver(
 
   for(int i=0; i<dim; i++){
     if(std::fabs(eigen_val[i])<1.0e-12){
-      GlobalV::ofs_error << "Error in Hermitian_matrix_sqrt_inver : zero eigenvalues!!!" << std::endl;
+      GLV::ofs_error << "Error in Hermitian_matrix_sqrt_inver : zero eigenvalues!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }

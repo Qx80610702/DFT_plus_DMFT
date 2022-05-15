@@ -103,7 +103,7 @@ namespace DMFT
         ofs_param << "FLAVORS=" << 2*m_tot << '\n';
         ofs_param << "N_TAU=" << *(int*)in.parameter("n_tau") << '\n';        
         ofs_param << "BETA=" << std::fixed << std::setprecision(9) 
-        << *(double*)in.parameter("beta")/GlobalC::Hartree_to_eV << '\n';  //Hartree to eV
+        << *(double*)in.parameter("beta")/GLC::Hartree_to_eV << '\n';  //Hartree to eV
         ofs_param << "THERMALIZATION=100000\n";
         ofs_param << "N_MEAS=20\n";
         ofs_param << "SWEEPS=" << sweeps << '\n';
@@ -131,10 +131,10 @@ namespace DMFT
           {
             if(nspin==2)
               ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) << 
-              std::pow(GlobalC::Hartree_to_eV,2)*hyb_taua[is][itau][m*m_tot+m].real();
+              std::pow(GLC::Hartree_to_eV,2)*hyb_taua[is][itau][m*m_tot+m].real();
             else
               ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) << 
-              std::pow(GlobalC::Hartree_to_eV,2)*hyb_taua[0][itau][m*m_tot+m].real();
+              std::pow(GLC::Hartree_to_eV,2)*hyb_taua[0][itau][m*m_tot+m].real();
           }//m_index
         }
 
@@ -154,10 +154,10 @@ namespace DMFT
         {
           if(nspin==2)
             ofs_hopping << std::left << std::fixed << std::setprecision(15) 
-            << GlobalC::Hartree_to_eV*(mu-hoppinga[is][m*m_tot+m].real()) << ' ';
+            << GLC::Hartree_to_eV*(mu-hoppinga[is][m*m_tot+m].real()) << ' ';
           else
             ofs_hopping << std::left << std::fixed << std::setprecision(15) 
-            << GlobalC::Hartree_to_eV*(mu-hoppinga[0][m*m_tot+m].real()) << ' ';
+            << GLC::Hartree_to_eV*(mu-hoppinga[0][m*m_tot+m].real()) << ' ';
         }
       }
       ofs_hopping << '\n';
@@ -178,15 +178,15 @@ namespace DMFT
       //       if(nspin==1)
       //         ofs_G0 << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
       //                << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Weissa[0][iomega][m*m_tot+m].real()/GlobalC::Hartree_to_eV << " "
+      //                << Weissa[0][iomega][m*m_tot+m].real()/GLC::Hartree_to_eV << " "
       //                << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Weissa[0][iomega][m*m_tot+m].imag()/GlobalC::Hartree_to_eV << '\n' ;
+      //                << Weissa[0][iomega][m*m_tot+m].imag()/GLC::Hartree_to_eV << '\n' ;
       //       else
       //         ofs_G0 << std::setw(5) << iomega << std::setw(3) << is << std::setw(3) << m
       //                << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Weissa[is][iomega][m*m_tot+m].real()/GlobalC::Hartree_to_eV << " "
+      //                << Weissa[is][iomega][m*m_tot+m].real()/GLC::Hartree_to_eV << " "
       //                << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Weissa[is][iomega][m*m_tot+m].imag()/GlobalC::Hartree_to_eV << '\n' ;   
+      //                << Weissa[is][iomega][m*m_tot+m].imag()/GLC::Hartree_to_eV << '\n' ;   
       //     }//m
       //   }//is
       // }//iomega
@@ -210,14 +210,14 @@ namespace DMFT
           {
             if(nspin==1)
               ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Sigma_ina[0][iomega][m*m_tot+m].real()*GlobalC::Hartree_to_eV
+                     << Sigma_ina[0][iomega][m*m_tot+m].real()*GLC::Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Sigma_ina[0][iomega][m*m_tot+m].imag()*GlobalC::Hartree_to_eV;
+                     << Sigma_ina[0][iomega][m*m_tot+m].imag()*GLC::Hartree_to_eV;
             else
               ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Sigma_ina[is][iomega][m*m_tot+m].real()*GlobalC::Hartree_to_eV
+                     << Sigma_ina[is][iomega][m*m_tot+m].real()*GLC::Hartree_to_eV
                      << std::setw(22) << std::fixed << std::setprecision(15) 
-                     << Sigma_ina[is][iomega][m*m_tot+m].imag()*GlobalC::Hartree_to_eV ;      
+                     << Sigma_ina[is][iomega][m*m_tot+m].imag()*GLC::Hartree_to_eV ;      
           }//m
         }//is
         ofs_Sig << std::endl;
@@ -324,7 +324,7 @@ namespace DMFT
 
         if (!ifs_Tij)  
 	      {
-	      	GlobalV::ofs_error << "Fail to oepn " << hopping_file.c_str() << std::endl;
+	      	GLV::ofs_error << "Fail to oepn " << hopping_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -340,7 +340,7 @@ namespace DMFT
 
           hoppingb[m1*m_tot+m2] = std::complex<double>(real,imag);
 
-          hoppingb[m1*m_tot+m2] /= GlobalC::Hartree_to_eV;   //eV to Hartree
+          hoppingb[m1*m_tot+m2] /= GLC::Hartree_to_eV;   //eV to Hartree
 
           if(ifs_Tij.eof()) break;//Check whether end of file is reached       
         }
@@ -357,7 +357,7 @@ namespace DMFT
 
         if (!ifs_gf)  
 	      {
-	      	GlobalV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
+	      	GLV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -375,7 +375,7 @@ namespace DMFT
           ifs_gf >> imag;
           ifs_gf.ignore(150,'\n');
 
-          Gf_qmcb[iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+          Gf_qmcb[iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
 
           if(ifs_gf.eof()) break;//Check whether end of file is reached       
         }
@@ -392,7 +392,7 @@ namespace DMFT
 
         if (!ifs_gfsave)  
 	      {
-	      	GlobalV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
+	      	GLV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -424,7 +424,7 @@ namespace DMFT
 
         if (!ifs_hybsave)  
 	      {
-	      	GlobalV::ofs_error << "Fail to oepn " << hyb_save_file.c_str() << std::endl;
+	      	GLV::ofs_error << "Fail to oepn " << hyb_save_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 

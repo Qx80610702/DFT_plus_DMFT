@@ -110,9 +110,9 @@ namespace DMFT
       ofs_input << "&Model_Parameter\n";
       ofs_input << "      nOrbit = " << m_tot << '\n';
       ofs_input << "        Beta = " << std::fixed << std::setprecision(9) 
-                << *(double*)in.parameter("beta")/GlobalC::Hartree_to_eV  << '\n';
-      ofs_input << "          xU = " << atom.Uval(iatom)*GlobalC::Hartree_to_eV  << '\n';
-      ofs_input << "          xJ = " << atom.Jval(iatom)*GlobalC::Hartree_to_eV  << '\n';
+                << *(double*)in.parameter("beta")/GLC::Hartree_to_eV  << '\n';
+      ofs_input << "          xU = " << atom.Uval(iatom)*GLC::Hartree_to_eV  << '\n';
+      ofs_input << "          xJ = " << atom.Jval(iatom)*GLC::Hartree_to_eV  << '\n';
       ofs_input << "      nOmega = " << nomega << '\n';
       ofs_input << "        nTau = " << ntau << '\n';
       ofs_input << "/\n\n";
@@ -134,21 +134,21 @@ namespace DMFT
       for(int iomega=0; iomega<nomega; iomega++)
       {
         ofs_delta << std::setw(22) << std::fixed << std::setprecision(15)
-          << GlobalC::Hartree_to_eV*freq[iomega];
+          << GLC::Hartree_to_eV*freq[iomega];
         for(int is=0; is<2; is++)
         {
           for(int m=0; m<m_tot; m++)
           {
             if(nspin==1)
               ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) 
-              << GlobalC::Hartree_to_eV*hyb[0][iomega][m*m_tot+m].real() 
+              << GLC::Hartree_to_eV*hyb[0][iomega][m*m_tot+m].real() 
               << std::setw(22) << std::fixed << std::setprecision(15) 
-              << GlobalC::Hartree_to_eV*hyb[0][iomega][m*m_tot+m].imag();
+              << GLC::Hartree_to_eV*hyb[0][iomega][m*m_tot+m].imag();
             else
               ofs_delta << std::setw(22) << std::fixed << std::setprecision(15) 
-              << GlobalC::Hartree_to_eV*hyb[is][iomega][m*m_tot+m].real() 
+              << GLC::Hartree_to_eV*hyb[is][iomega][m*m_tot+m].real() 
               << std::setw(22) << std::fixed << std::setprecision(15) 
-              << GlobalC::Hartree_to_eV*hyb[is][iomega][m*m_tot+m].imag();       
+              << GLC::Hartree_to_eV*hyb[is][iomega][m*m_tot+m].imag();       
           }//m
         }//is
         ofs_delta << '\n';
@@ -171,12 +171,12 @@ namespace DMFT
       //         ofs_deltat << std::left << std::setw(5) << itau
       //         << std::setw(4) << m+1 << std::setw(4) << is+1
       //         << std::setw(22) << std::fixed << std::setprecision(15) 
-      //         << std::pow(GlobalC::Hartree_to_eV,2)*hybt[0][itau][m*m_tot+m].real() << '\n';
+      //         << std::pow(GLC::Hartree_to_eV,2)*hybt[0][itau][m*m_tot+m].real() << '\n';
       //       else
       //         ofs_deltat << std::left << std::setw(5) << itau
       //         << std::setw(4) << m+1 << std::setw(4) << is+1
       //         << std::setw(22) << std::fixed << std::setprecision(15) 
-      //         << std::pow(GlobalC::Hartree_to_eV,2)*hybt[is][itau][m*m_tot+m].real() << '\n';      
+      //         << std::pow(GLC::Hartree_to_eV,2)*hybt[is][itau][m*m_tot+m].real() << '\n';      
       //     }//m
       //   }//is
       // }//iomega
@@ -195,10 +195,10 @@ namespace DMFT
         {
           if(nspin==1)
             ofs_hopping << std::setw(22) << std::fixed << std::setprecision(15) 
-              << GlobalC::Hartree_to_eV*(mu - hoppinga[0][m*m_tot+m].real());
+              << GLC::Hartree_to_eV*(mu - hoppinga[0][m*m_tot+m].real());
           else
             ofs_hopping << std::setw(22) << std::fixed << std::setprecision(15) 
-              << GlobalC::Hartree_to_eV*(mu - hoppinga[is][m*m_tot+m].real());
+              << GLC::Hartree_to_eV*(mu - hoppinga[is][m*m_tot+m].real());
         }//is
       }//m
       ofs_hopping.close();
@@ -221,14 +221,14 @@ namespace DMFT
       //     {
       //       if(nspin==1)
       //         ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Sigma_ina[0][iomega][m*m_tot+m].real()*GlobalC::Hartree_to_eV
+      //                << Sigma_ina[0][iomega][m*m_tot+m].real()*GLC::Hartree_to_eV
       //                << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Sigma_ina[0][iomega][m*m_tot+m].imag()*GlobalC::Hartree_to_eV;
+      //                << Sigma_ina[0][iomega][m*m_tot+m].imag()*GLC::Hartree_to_eV;
       //       else
       //         ofs_Sig << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Sigma_ina[is][iomega][m*m_tot+m].real()*GlobalC::Hartree_to_eV
+      //                << Sigma_ina[is][iomega][m*m_tot+m].real()*GLC::Hartree_to_eV
       //                << std::setw(22) << std::fixed << std::setprecision(15) 
-      //                << Sigma_ina[is][iomega][m*m_tot+m].imag()*GlobalC::Hartree_to_eV ;      
+      //                << Sigma_ina[is][iomega][m*m_tot+m].imag()*GLC::Hartree_to_eV ;      
       //     }//m
       //   }//is
       //   ofs_Sig << std::endl;
@@ -301,7 +301,7 @@ namespace DMFT
 
       // if (!ifs_gf)  
 	    // {
-	    // 	GlobalV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
+	    // 	GLV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -364,7 +364,7 @@ namespace DMFT
 
       //   for(int is=0; is<nspin; is++)
       //     for(int m=0; m<m_tot; m++)
-      //       Gw_qmca[is][count][m*m_tot+m] = GlobalC::Hartree_to_eV*
+      //       Gw_qmca[is][count][m*m_tot+m] = GLC::Hartree_to_eV*
       //       std::complex<double>(Gw_real[is][m],Gw_im[is][m]);
 
       //   count++;
@@ -374,7 +374,7 @@ namespace DMFT
 
       // if(count<nomega)
       // {
-      //   GlobalV::ofs_error << "The number of Matsubara points of Gw.dat is less than nomega\n";
+      //   GLV::ofs_error << "The number of Matsubara points of Gw.dat is less than nomega\n";
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -394,7 +394,7 @@ namespace DMFT
 
       // if (!ifs_sigsave)  
 	    // {
-	    // 	GlobalV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
+	    // 	GLV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -417,7 +417,7 @@ namespace DMFT
       //   for(int is=0; is<nspin; is++)
       //     for(int m=0; m<m_tot; m++)
       //       Sw_savea[is][count][m*m_tot+m] = 
-      //         std::complex<double>(Gw_real[is][m],Gw_im[is][m])/GlobalC::Hartree_to_eV;
+      //         std::complex<double>(Gw_real[is][m],Gw_im[is][m])/GLC::Hartree_to_eV;
 
       //   count++;
       //   if(ifs_sigsave.eof()) break;//Check whether end of file is reached       
@@ -440,7 +440,7 @@ namespace DMFT
 
       if (!ifSw)  
 	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << Gw_file.c_str() << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << Gw_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -492,7 +492,7 @@ namespace DMFT
         for(int is=0; is<nspin; is++)
           for(int m=0; m<m_tot; m++)
             Swa[is][count][m*m_tot+m] = 
-            std::complex<double>(Gw_real[is][m],Gw_im[is][m])/GlobalC::Hartree_to_eV;
+            std::complex<double>(Gw_real[is][m],Gw_im[is][m])/GLC::Hartree_to_eV;
 
         count++;
         if(ifSw.eof()) break;  //Check whether end of file is reached       
@@ -501,7 +501,7 @@ namespace DMFT
 
       if(count<nomega)
       {
-        GlobalV::ofs_error << "The number of Matsubara points of Sigma.dat is less than nomega" << std::endl;
+        GLV::ofs_error << "The number of Matsubara points of Sigma.dat is less than nomega" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -552,8 +552,8 @@ namespace DMFT
 
       std::string date;
       timer::get_date_time(date);
-      GlobalV::ofs_running << "  impurity" << ineq << "     " << date;
-      GlobalV::ofs_running.flush();
+      GLV::ofs_running << "  impurity" << ineq << "     " << date;
+      GLV::ofs_running.flush();
       
       double time, seconds;
       int hours, minutes;
@@ -562,11 +562,11 @@ namespace DMFT
       pacs_run_();
 
       timer::get_date_time(date);
-      GlobalV::ofs_running << "       " << date;
+      GLV::ofs_running << "       " << date;
 
       timer::get_time(time, seconds, minutes, hours);
 
-      GlobalV::ofs_running << "             " << hours << "h " 
+      GLV::ofs_running << "             " << hours << "h " 
                            << minutes << "m "
                            << (int)seconds << "s" << std::endl;
 

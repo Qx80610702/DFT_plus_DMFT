@@ -258,7 +258,7 @@ namespace DMFT
       return this->sigma_real.nomega();
       break;
     default:
-      GlobalV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -275,7 +275,7 @@ namespace DMFT
       return this->sigma_real.sigma_new_access();
       break;
     default:
-      GlobalV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -292,7 +292,7 @@ namespace DMFT
       return this->sigma_real.sigma_save_access();
       break;
     default:
-      GlobalV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -309,7 +309,7 @@ namespace DMFT
       return this->sigma_real.correlated_sigma_access();
       break;
     default:
-      GlobalV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -326,7 +326,7 @@ namespace DMFT
       return this->sigma_real.lattice_sigma_access();
       break;
     default:
-      GlobalV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }

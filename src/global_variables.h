@@ -3,8 +3,13 @@
 #include <fstream>
 #include <iostream>
 
-namespace GlobalV
+namespace DFT_plus_DMFT
 {
-  extern std::ofstream ofs_running;
-  extern std::ofstream ofs_error;
+  namespace GlobalV
+  {
+    extern std::ofstream ofs_running;
+    extern std::ofstream ofs_error;
+  }
 }
+
+namespace GLV = DFT_plus_DMFT::GlobalV;

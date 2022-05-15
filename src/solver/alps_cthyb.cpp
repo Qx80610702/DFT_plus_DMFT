@@ -122,7 +122,7 @@ namespace DMFT
       ofs_input << "model.hopping_matrix_input_file=\"hopping.txt\"\n";
       ofs_input << "model.delta_input_file=\"delta.txt\"\n";
       ofs_input << "model.beta=" << std::fixed << std::setprecision(9) 
-      << *(double*)in.parameter("beta")/GlobalC::Hartree_to_eV << '\n';  //Hartree to eV
+      << *(double*)in.parameter("beta")/GLC::Hartree_to_eV << '\n';  //Hartree to eV
       ofs_input << "model.n_tau_hyb=" << *(int*)in.parameter("n_tau") << '\n';
       ofs_input << "measurement.G1.n_tau=" << *(int*)in.parameter("n_tau") << '\n';
       ofs_input << "measurement.G1.n_matsubara=" << *(int*)in.parameter("n_omega") << '\n';
@@ -158,16 +158,16 @@ namespace DMFT
                     ofs_delta << std::left << std::setw(5) << itau 
                     << std::setw(4) << count1 << std::setw(4) << count2
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << std::pow(GlobalC::Hartree_to_eV,2)*hyb_taua[0][itau][m1*m_tot+m2].real() << " "
+                    << std::pow(GLC::Hartree_to_eV,2)*hyb_taua[0][itau][m1*m_tot+m2].real() << " "
                     << std::setw(20) << std::fixed << std::setprecision(15) 
-                    << std::pow(GlobalC::Hartree_to_eV,2)*hyb_taua[0][itau][m1*m_tot+m2].imag() << '\n';
+                    << std::pow(GLC::Hartree_to_eV,2)*hyb_taua[0][itau][m1*m_tot+m2].imag() << '\n';
                   else
                     ofs_delta << std::left << std::setw(5) << itau 
                     << std::setw(4) << count1 << std::setw(4) << count2
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << std::pow(GlobalC::Hartree_to_eV,2)*hyb_taua[is1][itau][m1*m_tot+m2].real() << " "
+                    << std::pow(GLC::Hartree_to_eV,2)*hyb_taua[is1][itau][m1*m_tot+m2].real() << " "
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << std::pow(GlobalC::Hartree_to_eV,2)*hyb_taua[is1][itau][m1*m_tot+m2].imag() << '\n';
+                    << std::pow(GLC::Hartree_to_eV,2)*hyb_taua[is1][itau][m1*m_tot+m2].imag() << '\n';
 
                 count2++;
               }//is2
@@ -205,9 +205,9 @@ namespace DMFT
                   if(count1==count2)
                     ofs_hopping << std::setw(4) << count1 << std::setw(4) << count2
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << GlobalC::Hartree_to_eV*(hoppinga[0][m1*m_tot+m2].real() - mu) << " "
+                    << GLC::Hartree_to_eV*(hoppinga[0][m1*m_tot+m2].real() - mu) << " "
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << GlobalC::Hartree_to_eV*hoppinga[0][m1*m_tot+m2].imag() << '\n';
+                    << GLC::Hartree_to_eV*hoppinga[0][m1*m_tot+m2].imag() << '\n';
                   else
                     ofs_hopping << std::setw(4) << count1 << std::setw(4) << count2
                     << std::setw(22) << std::fixed << std::setprecision(15) 
@@ -218,9 +218,9 @@ namespace DMFT
                   if(count1==count2)
                     ofs_hopping << std::setw(4) << count1 << std::setw(4) << count2
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << GlobalC::Hartree_to_eV*(hoppinga[is1][m1*m_tot+m2].real() - mu) << " "
+                    << GLC::Hartree_to_eV*(hoppinga[is1][m1*m_tot+m2].real() - mu) << " "
                     << std::setw(22) << std::fixed << std::setprecision(15) 
-                    << GlobalC::Hartree_to_eV*hoppinga[is1][m1*m_tot+m2].imag() << '\n';
+                    << GLC::Hartree_to_eV*hoppinga[is1][m1*m_tot+m2].imag() << '\n';
                   else
                     ofs_hopping << std::setw(4) << count1 << std::setw(4) << count2
                     << std::setw(22) << std::fixed << std::setprecision(15) 
@@ -258,16 +258,16 @@ namespace DMFT
               ofs_Sig << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Sigma_ina[0][iomega][m_index].real()*GlobalC::Hartree_to_eV << " "
+                  << Sigma_ina[0][iomega][m_index].real()*GLC::Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Sigma_ina[0][iomega][m_index].imag()*GlobalC::Hartree_to_eV << '\n';
+                  << Sigma_ina[0][iomega][m_index].imag()*GLC::Hartree_to_eV << '\n';
             else
               ofs_Sig << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Sigma_ina[is][iomega][m_index].real()*GlobalC::Hartree_to_eV << " "
+                  << Sigma_ina[is][iomega][m_index].real()*GLC::Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Sigma_ina[is][iomega][m_index].imag()*GlobalC::Hartree_to_eV << '\n';
+                  << Sigma_ina[is][iomega][m_index].imag()*GLC::Hartree_to_eV << '\n';
           }//m_index
         }//iomega
       }
@@ -292,16 +292,16 @@ namespace DMFT
               ofs_Weiss << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Weissa[0][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
+                  << Weissa[0][iomega][m_index].real()/GLC::Hartree_to_eV << " "
                   << std::setw(20) << std::fixed << std::setprecision(15) 
-                  << Weissa[0][iomega][m_index].imag()/GlobalC::Hartree_to_eV << " " << '\n';
+                  << Weissa[0][iomega][m_index].imag()/GLC::Hartree_to_eV << " " << '\n';
             else
               ofs_Weiss << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Weissa[is][iomega][m_index].real()/GlobalC::Hartree_to_eV << " "
+                  << Weissa[is][iomega][m_index].real()/GLC::Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << Weissa[is][iomega][m_index].imag()/GlobalC::Hartree_to_eV << " " << '\n';
+                  << Weissa[is][iomega][m_index].imag()/GLC::Hartree_to_eV << " " << '\n';
 
           }//m_index
         }//iomega
@@ -327,16 +327,16 @@ namespace DMFT
               ofs_hyb << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << hyb_omegaa[0][iomega][m_index].real()*GlobalC::Hartree_to_eV << " "
+                  << hyb_omegaa[0][iomega][m_index].real()*GLC::Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << hyb_omegaa[0][iomega][m_index].imag()*GlobalC::Hartree_to_eV << '\n';
+                  << hyb_omegaa[0][iomega][m_index].imag()*GLC::Hartree_to_eV << '\n';
             else
               ofs_hyb << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << hyb_omegaa[is][iomega][m_index].real()*GlobalC::Hartree_to_eV << " "
+                  << hyb_omegaa[is][iomega][m_index].real()*GLC::Hartree_to_eV << " "
                   << std::setw(22) << std::fixed << std::setprecision(15) 
-                  << hyb_omegaa[is][iomega][m_index].imag()*GlobalC::Hartree_to_eV << '\n';
+                  << hyb_omegaa[is][iomega][m_index].imag()*GLC::Hartree_to_eV << '\n';
           }//m_index
         }//iomega
       }//is
@@ -414,7 +414,7 @@ namespace DMFT
 
       if (!ifs_gf)  
 	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -436,9 +436,9 @@ namespace DMFT
 
         if(ispin1==ispin2)
           if(nspin==2)
-            Gf_qmca[ispin1][iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+            Gf_qmca[ispin1][iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
           else if(nspin==1 && ispin1==0)
-            Gf_qmca[ispin1][iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+            Gf_qmca[ispin1][iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
 
         if(ifs_gf.eof()) break;//Check whether end of file is reached       
       }
@@ -452,7 +452,7 @@ namespace DMFT
 
       if (!ifs_gfsave)  
 	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -470,9 +470,9 @@ namespace DMFT
         ifs_gfsave.ignore(150,'\n');
 
         if(nspin==2)
-          Gf_savea[ispin1][iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+          Gf_savea[ispin1][iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
         else if(nspin==1 && ispin1==0)
-          Gf_savea[ispin1][iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+          Gf_savea[ispin1][iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
 
         if(ifs_gfsave.eof()) break; //Check whether end of file is reached
       }
@@ -486,7 +486,7 @@ namespace DMFT
 
       if (!ifs_Weiss)  
 	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << Weiss_file.c_str() << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << Weiss_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -505,9 +505,9 @@ namespace DMFT
         if(m1==m2)
         {
           if(nspin==2)
-            Weissa[ispin1][iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+            Weissa[ispin1][iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
           else if(nspin==1 && ispin1==0)
-            Weissa[ispin1][iomega][m1*m_tot+m2] = GlobalC::Hartree_to_eV*std::complex<double>(real,imag);
+            Weissa[ispin1][iomega][m1*m_tot+m2] = GLC::Hartree_to_eV*std::complex<double>(real,imag);
         }
 
         if(ifs_Weiss.eof()) break; //Check whether end of file is reached       
@@ -571,16 +571,16 @@ namespace DMFT
               ofs_sig << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(20) << std::fixed << std::setprecision(12) 
-                  << sigma_a[0][iomega][m_index].real()*GlobalC::Hartree_to_eV << " "
+                  << sigma_a[0][iomega][m_index].real()*GLC::Hartree_to_eV << " "
                   << std::setw(20) << std::fixed << std::setprecision(12) 
-                  << sigma_a[0][iomega][m_index].imag()*GlobalC::Hartree_to_eV << '\n';
+                  << sigma_a[0][iomega][m_index].imag()*GLC::Hartree_to_eV << '\n';
             else
               ofs_sig << std::left << std::setw(5) << iomega << std::setw(2) << is 
                   << std::setw(3) << m1 << std::setw(3) << m2
                   << std::setw(20) << std::fixed << std::setprecision(12) 
-                  << sigma_a[is][iomega][m_index].real()*GlobalC::Hartree_to_eV << " "
+                  << sigma_a[is][iomega][m_index].real()*GLC::Hartree_to_eV << " "
                   << std::setw(20) << std::fixed << std::setprecision(12) 
-                  << sigma_a[is][iomega][m_index].imag()*GlobalC::Hartree_to_eV << '\n';
+                  << sigma_a[is][iomega][m_index].imag()*GLC::Hartree_to_eV << '\n';
           }//m_index
         }//iomega
       }//is

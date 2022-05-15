@@ -44,12 +44,12 @@ namespace DFT_plus_DMFT
       // ;
       break;
     default:
-      GlobalV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
     timer::get_time(time, seconds);
-    GlobalV::ofs_running << "Time consuming for evaluate chemical potention: " 
+    GLV::ofs_running << "Time consuming for evaluate chemical potention: " 
                 << (int)seconds << "s" << std::endl;
 
     return;
@@ -113,20 +113,20 @@ namespace DFT_plus_DMFT
       else
         eup = this->sigma_corrected_mu;
 
-// GlobalV::ofs_error << "mu        " << std::setw(14) << std::fixed << std::setprecision(9) << this->sigma_corrected_mu << '\n';
-// GlobalV::ofs_error << "electrons " << std::setw(12) << std::fixed << std::setprecision(6) << mid_n_elec << '\n';
-// GlobalV::ofs_error << "step " << istep << '\n';
+// GLV::ofs_error << "mu        " << std::setw(14) << std::fixed << std::setprecision(9) << this->sigma_corrected_mu << '\n';
+// GLV::ofs_error << "electrons " << std::setw(12) << std::fixed << std::setprecision(6) << mid_n_elec << '\n';
+// GLV::ofs_error << "step " << istep << '\n';
 
       if(converged) break;
     }
 
     if(!converged){
-      GlobalV::ofs_error << "Error in calculating chemical potential!!!!" << std::endl;
+      GLV::ofs_error << "Error in calculating chemical potential!!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
-    GlobalV::ofs_running << "\nChemical potential: " << std::setw(15) << std::fixed << std::setprecision(9) 
-                << this->sigma_corrected_mu*GlobalC::Hartree_to_eV << " eV" << std::endl;
+    GLV::ofs_running << "\nChemical potential: " << std::setw(15) << std::fixed << std::setprecision(9) 
+                << this->sigma_corrected_mu*GLC::Hartree_to_eV << " eV" << std::endl;
 
     return;
   }
@@ -330,7 +330,7 @@ namespace DFT_plus_DMFT
 
     std::ifstream ifs("DMFT_running.log", std::ios::in);
     if (!ifs)  {
-      GlobalV::ofs_error << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
+      GLV::ofs_error << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);   //set the position at the beginning of the file
@@ -361,7 +361,7 @@ namespace DFT_plus_DMFT
         line.erase(0, line.find_first_not_of(" "));
         line.erase(line.find_last_not_of(" ") + 1);
 
-        this->sigma_corrected_mu = atof(line.c_str())/GlobalC::Hartree_to_eV;
+        this->sigma_corrected_mu = atof(line.c_str())/GLC::Hartree_to_eV;
       }
     }
     ifs.close();

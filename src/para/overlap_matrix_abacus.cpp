@@ -37,7 +37,7 @@ namespace DFT_output
 
       if (!ifk) 
 	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << kfile.c_str() << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << kfile.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -70,7 +70,7 @@ namespace DFT_output
 
       if (!ifSr) 
 	    {
-	    	GlobalV::ofs_error << "Fail to oepn " << Srf.c_str() << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << Srf.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -143,7 +143,7 @@ std::vector<std::complex<double>> Sk(this->nbasis*this->nbasis, zero);
 
       for(int icell=0; icell<this->ncells; icell++)
       {
-        double arg = 2.0*GlobalC::PI*( this->kvector[ik][0]*this->R_vector[icell][0] +
+        double arg = 2.0*GLC::PI*( this->kvector[ik][0]*this->R_vector[icell][0] +
                               this->kvector[ik][1]*this->R_vector[icell][1] +
                               this->kvector[ik][2]*this->R_vector[icell][2] );
         std::complex<double> kphase = std::complex<double>(std::cos(arg), -std::sin(arg));

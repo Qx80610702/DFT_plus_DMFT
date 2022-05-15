@@ -71,7 +71,7 @@ namespace DMFT
 
       std::ifstream ifs(file.c_str(), std::ios::in);
       if (!ifs){
-	    	GlobalV::ofs_error << "Fail to oepn " << file << std::endl;
+	    	GLV::ofs_error << "Fail to oepn " << file << std::endl;
         std::exit(EXIT_FAILURE);}
       ifs.seekg(0);    //set the position at the beginning of the file
 
@@ -80,7 +80,7 @@ namespace DMFT
       {
         ifs >> omega;
         if(ifs.eof()) break; //Check whether end of file is reached
-        this->real_frequency[count] = omega/GlobalC::Hartree_to_eV;
+        this->real_frequency[count] = omega/GLC::Hartree_to_eV;
 
         for(int is=0; is<2; is++)
           for(int m=0; m<m_tot; m++)
@@ -120,7 +120,7 @@ namespace DMFT
         for(int is=0; is<nspin; is++)
           for(int m=0; m<m_tot; m++)
             this->local_sigma_new[ineq][is][count][m*m_tot+m] = 
-              std::complex<double>(Gw_real[is][m], Gw_im[is][m])/GlobalC::Hartree_to_eV;
+              std::complex<double>(Gw_real[is][m], Gw_im[is][m])/GLC::Hartree_to_eV;
 
         count++;
         if(ifs.eof()) break;  //Check whether end of file is reached       
@@ -129,7 +129,7 @@ namespace DMFT
 
       if(count!=this->n_omega)
       {
-        GlobalV::ofs_error << "The number of frequency points of Sigma_omega.dat is not equal to nomega" << std::endl;
+        GLV::ofs_error << "The number of frequency points of Sigma_omega.dat is not equal to nomega" << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
@@ -146,7 +146,7 @@ namespace DMFT
     std::ifstream ifs("maxent_params.dat", std::ios::in);
     if (!ifs)  
 	  {
-	  	GlobalV::ofs_error << "Error: fail to oepn maxent_params.dat!!!" << std::endl;
+	  	GLV::ofs_error << "Error: fail to oepn maxent_params.dat!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);   //set the position at the beginning of the file

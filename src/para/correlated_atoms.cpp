@@ -18,7 +18,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GlobalV::ofs_error << "Array equivalent_atom is out of range" << std::endl;
+      GLV::ofs_error << "Array equivalent_atom is out of range" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -29,7 +29,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GlobalV::ofs_error << "Array angular_momment is out of range" << std::endl;
+      GLV::ofs_error << "Array angular_momment is out of range" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -40,7 +40,7 @@ namespace DFT_output
   {
     if(iorb<0 || iorb>=this->n_DMFT_orb)
     {
-      GlobalV::ofs_error << "Array iorb_ibasis is out of range" <<std::endl;
+      GLV::ofs_error << "Array iorb_ibasis is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     
@@ -51,7 +51,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GlobalV::ofs_error << "Array Hubbard_U is out of range" <<std::endl;
+      GLV::ofs_error << "Array Hubbard_U is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->Hubbard_U[iatom];
@@ -61,7 +61,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GlobalV::ofs_error << "Array Hund_J is out of range" <<std::endl;
+      GLV::ofs_error << "Array Hund_J is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->Hund_J[iatom];
@@ -72,7 +72,7 @@ namespace DFT_output
     if(iatom<0 || iatom>=this->n_DMFT_atoms
       || ispin<0 || ispin>=2)
     {
-      GlobalV::ofs_error << "Array Hund_J is out of range" <<std::endl;
+      GLV::ofs_error << "Array Hund_J is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->occ_number[iatom][ispin];
@@ -82,7 +82,7 @@ namespace DFT_output
   {
     if(ineq<0 || ineq>=this->n_inequivalent_atoms)
     {
-      GlobalV::ofs_error << "Array ineq_atom_to_iatom is out of range" <<std::endl;
+      GLV::ofs_error << "Array ineq_atom_to_iatom is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->ineq_atom_to_iatom[ineq];
@@ -92,7 +92,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GlobalV::ofs_error << "Array mag_moment is out of range" <<std::endl;
+      GLV::ofs_error << "Array mag_moment is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->mag_moment[iatom];
@@ -100,7 +100,7 @@ namespace DFT_output
 
   void atoms_info::read(DMFT::input_info& in)
   {
-    GlobalV::ofs_running << "Reading correlated atoms information ......" << std::endl;
+    GLV::ofs_running << "Reading correlated atoms information ......" << std::endl;
 
     this->read_structure_symmetry();
     this->read_local_symmetry(in);
@@ -118,7 +118,7 @@ namespace DFT_output
 
     if (!if_symmetry) 
 	  {
-	  	GlobalV::ofs_error << "Fail to oepn file dft/outputs_to_DMFT/symmetry.dat" << std::endl;
+	  	GLV::ofs_error << "Fail to oepn file dft/outputs_to_DMFT/symmetry.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -184,12 +184,12 @@ namespace DFT_output
 
     tmp = std::make_unique<std::unique_ptr<int[]>[]>(this->n_DMFT_atoms);
 
-    // if(mpi_rank()==0) GlobalV::ofs_error << "Reading correlated_atoms.info ......" << std::endl;
+    // if(mpi_rank()==0) GLV::ofs_error << "Reading correlated_atoms.info ......" << std::endl;
 
     std::ifstream ifs("dft/outputs_to_DMFT/correlated_atoms.info", std::ios::in);
     if (!ifs) 
 	  {
-	  	GlobalV::ofs_error << "Fail to oepn file dft/outputs_to_DMFT/correlated_atoms.info" << std::endl;
+	  	GLV::ofs_error << "Fail to oepn file dft/outputs_to_DMFT/correlated_atoms.info" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -210,8 +210,8 @@ namespace DFT_output
 
       ifs >> this->Hubbard_U[iatom];    
       ifs >> this->Hund_J[iatom];
-      this->Hubbard_U[iatom] /= GlobalC::Hartree_to_eV;   //eV to Hartree
-      this->Hund_J[iatom] /= GlobalC::Hartree_to_eV;      //eV to Hartree
+      this->Hubbard_U[iatom] /= GLC::Hartree_to_eV;   //eV to Hartree
+      this->Hund_J[iatom] /= GLC::Hartree_to_eV;      //eV to Hartree
 
       ifs >> this->mag_moment[iatom];
       
@@ -233,7 +233,7 @@ namespace DFT_output
       }
       else
       {
-        GlobalV::ofs_error << "Unsupported local symmetry!!!" << std::endl;
+        GLV::ofs_error << "Unsupported local symmetry!!!" << std::endl;
         std::exit(EXIT_FAILURE); 
       }
       
@@ -314,11 +314,11 @@ namespace DFT_output
       this->local_symmetry = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GlobalV::ofs_error << messg << std::endl;
+      GLV::ofs_error << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
-      // GlobalV::ofs_running << "Warning: local_symmetry is not given and set default value 0" << std::endl;
+      // GLV::ofs_running << "Warning: local_symmetry is not given and set default value 0" << std::endl;
       this->local_symmetry = 0;
     }
 
@@ -339,7 +339,7 @@ namespace DFT_output
 
     if(!ofs)
     {
-      GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -358,7 +358,7 @@ namespace DFT_output
     ofs.open(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
     
@@ -366,8 +366,8 @@ namespace DFT_output
     {
       ofs << "atom  " << iatom << std::endl;
       ofs << "angular_moment  " << this->angular_momment[iatom] << std::endl;
-      ofs << std::setw(6) << std::fixed << std::setprecision(2) << this->Hubbard_U[iatom]*GlobalC::Hartree_to_eV
-      << std::setw(6) << std::fixed << std::setprecision(2) << this->Hund_J[iatom]*GlobalC::Hartree_to_eV
+      ofs << std::setw(6) << std::fixed << std::setprecision(2) << this->Hubbard_U[iatom]*GLC::Hartree_to_eV
+      << std::setw(6) << std::fixed << std::setprecision(2) << this->Hund_J[iatom]*GLC::Hartree_to_eV
       << std::setw(4) << this->mag_moment[iatom]
       << std::setw(10) << std::fixed << std::setprecision(5) << this->occ_number[iatom][0]
       << std::setw(10) << std::fixed << std::setprecision(5) << this->occ_number[iatom][1] << std::endl;

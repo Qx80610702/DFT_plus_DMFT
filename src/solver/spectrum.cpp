@@ -113,7 +113,7 @@ void spectrum::eva_spectrum(
           general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
           
           for(int iband=0; iband<wbands[is]; iband++)
-            this->Awk[is][iomega][i_k_point] -= KS_Gw[iomega][iband*wbands[is]+iband].imag()/GlobalC::PI;
+            this->Awk[is][iomega][i_k_point] -= KS_Gw[iomega][iband*wbands[is]+iband].imag()/GLC::PI;
 
           for(int ineq=0; ineq<ineq_num; ineq++)
           {
@@ -134,7 +134,7 @@ void spectrum::eva_spectrum(
                   this->Aw_loc[ineq][is][iomega][m] -= 
                       ( std::conj(projector[index1])*
                       KS_Gw[iomega][iband1*wbands[is]+iband2]
-                      *projector[index2]*fk[i_k_point] ).imag()/GlobalC::PI;
+                      *projector[index2]*fk[i_k_point] ).imag()/GLC::PI;
                 }//iband2
               }//iband1
             }//m
@@ -209,7 +209,7 @@ void spectrum::eva_spectrum_normalization(
   const std::vector<double>& fk = band.kweight();
 
   this->freq = sigma.sigma_real.frequency();
-  const double dw = (this->freq[1]-this->freq[0])*GlobalC::Hartree_to_eV;
+  const double dw = (this->freq[1]-this->freq[0])*GLC::Hartree_to_eV;
 
   std::vector<int> k_map;
   for(int ik=0; ik<nks; ik++)
@@ -416,7 +416,7 @@ void spectrum::out_spectrum()
 
     for(int iomega=0; iomega<this->DOS[is].size(); iomega++)
     {
-      double omega=this->freq[iomega]*GlobalC::Hartree_to_eV;
+      double omega=this->freq[iomega]*GLC::Hartree_to_eV;
       
       ofs << std::fixed << std::setprecision(6) << omega << " "
           << std::fixed << std::setprecision(6) << this->DOS[is][iomega] << std::endl ;
@@ -435,7 +435,7 @@ void spectrum::out_spectrum()
 
       for(int iomega=0; iomega<this->Aw_loc[ineq][is].size(); iomega++)
       {
-        double omega=this->freq[iomega]*GlobalC::Hartree_to_eV;
+        double omega=this->freq[iomega]*GLC::Hartree_to_eV;
         
         ofs << std::fixed << std::setprecision(6) << omega << " ";
         for(double iter : this->Aw_loc[ineq][is][iomega])

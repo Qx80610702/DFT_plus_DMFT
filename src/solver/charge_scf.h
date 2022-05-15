@@ -14,6 +14,7 @@
 #include <vector>
 #include <complex>
 #include <string>
+#include <deque>
 
 namespace DFT_plus_DMFT
 {
@@ -28,10 +29,14 @@ namespace DFT_plus_DMFT
     Charge_SCF_aims char_scf_aims;
     #endif
 
-    public:
-    void init(const int DFT_solver);
+    auto& char_ref();
 
-    void update_char_dens(
+    public:
+    void init(const int DFT_solver,
+        const double mixing_parameter,
+        const int nks, const int n_spin );
+
+    void update_charge_density_matrix(
         const int axis_flag,
         DFT_plus_DMFT::chemical_potential& Mu,
         DFT_output::KS_bands& band, 
@@ -80,24 +85,45 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& dense_cmplx );
 
-    void read_charge_density(const int step, const bool DMFT_charge);
+    void read_charge(
+      const bool initial_charge,
+      const bool DMFT_charge );
 
     void read_charge_density_matrix(const int nks);
 
-    void mix_char_dense(const double mix_beta);
+    void charge_mixing(const int mix_step, double& charge_change);
 
-    void output_char_dense(const int nks);
+    void update_data(const int mix_step);
+
+    void update_alpha(const int mix_step, std::vector<double>& alpha);
+
+    void update_density(
+      const int mix_step, 
+      std::vector<double>& alpha,
+      double& charge_change );
+
+    void output_charge_density_matrix(const int nks);
 
     void prepare_nscf_dft();
 
     private:
     int flag_DFT_solver;
+    double mixing_beta;
+    int nkpoints;
+    int nspin;
 
-    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;       //dens_mat[ik][ispin][nbasis*nbasis]
+    //DM_mat_pulay[istep][ik][ispin][nbasis*nbasis]
+    std::deque<std::vector<std::vector<std::vector<std::complex<double>>>>> DM_mat_pulay;
+
     std::vector<std::vector<std::vector<double>>> fik_DMFT;                     //fik_DMFT[is][ik][iband]
 
+    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;  //dens_mat_last[ik][ispin][nbasis*nbasis]
     std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_last;  //dens_mat_last[ik][ispin][nbasis*nbasis]
     
     // std::vector<std::vector<std::vector<double>>> fik_test;       //fik_test[is][ik][iband]
+
+    // Rstep: iteration step for Rrho
+    // dRstep: iteration step for dRrho
+
   };
 }

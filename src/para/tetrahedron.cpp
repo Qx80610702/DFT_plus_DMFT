@@ -13,7 +13,7 @@ namespace DFT_output
   bool tretrahedron::read()
   {
     debug::codestamp("tretrahedron::read");
-    // if(mpi_rank()==0) GlobalV::ofs_running << "Reading tetrahedron.dat ......" << std::endl;
+    // if(mpi_rank()==0) GLV::ofs_running << "Reading tetrahedron.dat ......" << std::endl;
 
     int i_x, i_y, i_z;
 
@@ -21,7 +21,7 @@ namespace DFT_output
 
     if (!ifs)  
 	  {
-	  	GlobalV::ofs_error << "Fail to oepn dft/outputs/tetrahedron.dat" << std::endl;
+	  	GLV::ofs_error << "Fail to oepn dft/outputs/tetrahedron.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -91,7 +91,7 @@ namespace DFT_output
     std::ofstream ofs(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GlobalV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

@@ -135,7 +135,7 @@ namespace DMFT
                   << std::setw(3) << count1 << std::setw(3) << count2
                   << std::setw(3) << count2 << std::setw(3) << count1
                   << std::setw(20) << std::fixed << std::setprecision(12) 
-                  << GlobalC::Hartree_to_eV*atom.Uval(iatom)
+                  << GLC::Hartree_to_eV*atom.Uval(iatom)
                   << std::setw(20) << std::fixed << std::setprecision(12) << zero << '\n';
                   count++;
                 }
@@ -145,7 +145,7 @@ namespace DMFT
                     << std::setw(3) << count1 << std::setw(3) << count2
                     << std::setw(3) << count2 << std::setw(3) << count1
                     << std::setw(20) << std::fixed << std::setprecision(12) 
-                    << GlobalC::Hartree_to_eV*(atom.Uval(iatom)-2*atom.Jval(iatom))
+                    << GLC::Hartree_to_eV*(atom.Uval(iatom)-2*atom.Jval(iatom))
                     << std::setw(20) << std::fixed << std::setprecision(12) << zero << '\n';
                   count++;
                 }
@@ -156,7 +156,7 @@ namespace DMFT
                     << std::setw(3) << count1 << std::setw(3) << count2
                     << std::setw(3) << count2 << std::setw(3) << count1
                     << std::setw(20) << std::fixed << std::setprecision(12) 
-                    << GlobalC::Hartree_to_eV*(atom.Uval(iatom)-3*atom.Jval(iatom))
+                    << GLC::Hartree_to_eV*(atom.Uval(iatom)-3*atom.Jval(iatom))
                     << std::setw(20) << std::fixed << std::setprecision(12) << zero << '\n';
                     count++;
                 }
@@ -227,17 +227,17 @@ namespace DMFT
                       << std::setprecision(6) << zero;
                 else
                   ofs << std::left << std::setw(10) << std::fixed 
-                      << std::setprecision(6) << GlobalC::Hartree_to_eV*
+                      << std::setprecision(6) << GLC::Hartree_to_eV*
                         (atom.Uval(iatom) - 3*atom.Jval(iatom));
               }//is==is2
               else
               {
                 if(m1==m2)
                   ofs << std::left << std::setw(10) << std::fixed 
-                      << std::setprecision(6) << GlobalC::Hartree_to_eV*atom.Uval(iatom);
+                      << std::setprecision(6) << GLC::Hartree_to_eV*atom.Uval(iatom);
                 else
                   ofs << std::left << std::setw(10) << std::fixed 
-                      << std::setprecision(6) << GlobalC::Hartree_to_eV*
+                      << std::setprecision(6) << GLC::Hartree_to_eV*
                           (atom.Uval(iatom) - 2*atom.Jval(iatom));
               }//is1!=is2
             }//is2

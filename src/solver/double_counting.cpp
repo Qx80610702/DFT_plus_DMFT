@@ -25,7 +25,7 @@ namespace DMFT
 
     if(type==1)
     {
-      GlobalV::ofs_running << "\n=============Double counting(FLL)============" << std::endl;
+      GLV::ofs_running << "\n=============Double counting(FLL)============" << std::endl;
 
       this->V_dc.resize(atom.inequ_atoms());
 
@@ -68,13 +68,13 @@ namespace DMFT
               this->V_dc[ineq][is][m*m_tot+m] = std::complex<double>(FLL_nominal, 0.0);  //*atom.occ_num_m()[iatom][is][m];
           }
         
-         GlobalV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
+         GLV::ofs_running << "===========impurity:" << ineq << " spin:" << is << "========\n";
          
          for(int m=0; m<m_tot; m++)
-           GlobalV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << 
-             GlobalC::Hartree_to_eV*this->V_dc[ineq][is][m*m_tot+m].real();
+           GLV::ofs_running << std::setw(12) << std::fixed << std::setprecision(6) << 
+             GLC::Hartree_to_eV*this->V_dc[ineq][is][m*m_tot+m].real();
 
-         GlobalV::ofs_running << std::endl;
+         GLV::ofs_running << std::endl;
         
         }
       }//ineq

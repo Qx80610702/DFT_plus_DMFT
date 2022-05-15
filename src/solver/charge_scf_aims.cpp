@@ -5,6 +5,7 @@
 #include "../mpi_environment.h"
 #include "../para/input.h"
 #include "../global_variables.h"
+#include "math_zone.h"
 
 #include <cmath>
 #include <sstream>
@@ -19,7 +20,23 @@
 
 namespace DFT_plus_DMFT
 {
-  void Charge_SCF_aims::output_charge_density(
+  void Charge_SCF_aims::read_charge(
+          const bool initial_charge,
+          const bool DMFT_charge,
+          const int nks,
+          std::vector<std::vector<std::vector<
+          std::complex<double>>>>& dens_mat_cmplx )
+  {
+    debug::codestamp("Charge_SCF_aims::read_charge");
+
+    this->read_charge_density(initial_charge, DMFT_charge);
+
+    this->read_charge_density_matrix(nks, dens_mat_cmplx);
+
+    return;
+  }
+
+  void Charge_SCF_aims::output_charge_density_matrix(
         const int nks, 
         std::vector<std::vector<std::vector<
         std::complex<double>>>>& dens_mat_cmplx)
@@ -71,25 +88,34 @@ namespace DFT_plus_DMFT
     return;
   }
 
-    void Charge_SCF_aims::read_charge_density(
-        const int istep, const bool DMFT_charge)
+  void Charge_SCF_aims::read_charge_density(
+        const bool initial_charge,
+        const bool DMFT_charge )
   {
     debug::codestamp("Charge_SCF_aims::read_charge_density");
+
+    if(initial_charge && DMFT_charge){
+      GLV::ofs_error << "There some logical errors in read the charge density" <<std::endl;
+      std::exit(EXIT_FAILURE);
+    }
     
     std::stringstream rho_file, part_file;
 
     part_file << "dft/outputs_to_DMFT/charge_density/partition_tab" << mpi_rank() << ".dat";
-
     if(DMFT_charge)
-      rho_file << "dft/outputs_to_DMFT/charge_density/rho" << mpi_rank() << ".read";
+      rho_file << "dft/outputs_to_DMFT/charge_density/rho" 
+               << std::setfill('0') << std::setw(6) 
+               << mpi_rank() << ".read";
     else
-      rho_file << "dft/outputs_to_DMFT/charge_density/rho" << mpi_rank() << ".out";
+      rho_file << "dft/outputs_to_DMFT/charge_density/rho" 
+               << std::setfill('0') << std::setw(6) 
+               << mpi_rank() << ".out";
 
     //partition table
     if(this->partition_tab.empty()){
       std::ifstream ifsp(part_file.str().c_str(), std::ios::in);
       if (!ifsp){
-      	GlobalV::ofs_error << "Fail to oepn " << part_file.str().c_str() << std::endl;
+      	GLV::ofs_error << "Fail to oepn " << part_file.str().c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
       ifsp.seekg(0); //set the position at the beginning of the file
@@ -113,7 +139,7 @@ namespace DFT_plus_DMFT
     std::vector<std::vector<double>> rho_tmp;
     std::ifstream ifsr(rho_file.str().c_str(), std::ios::in);
     if (!ifsr){
-    	GlobalV::ofs_error << "Fail to oepn " << rho_file.str().c_str() << std::endl;
+    	GLV::ofs_error << "Fail to oepn " << rho_file.str().c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifsr.seekg(0); //set the position at the beginning of the file
@@ -134,26 +160,23 @@ namespace DFT_plus_DMFT
     }
     ifsr.close();
 
-    if(istep<=8)
-    {
-      this->rho.push_back(rho_tmp);
-      
-      if(istep==1) this->istep2index.push_back(1);
+    if(DMFT_charge){
+      if(this->rho_out.empty()) this->rho_out = rho_tmp;
       else{
-        for(auto& iter : this->istep2index) iter++;
-        this->istep2index.push_back(1);
+        for(int ispin=0; ispin<rho_tmp.size(); ispin++)
+          for(int igrid=0; igrid<rho_tmp[ispin].size(); igrid++)
+            this->rho_out[ispin][igrid] = rho_tmp[ispin][igrid];
       }
     }
     else{
-      for(int index = 0; index<8; index++){
-        if(this->istep2index[index]==8){
-          this->istep2index[index] = 1;
-
+      if(initial_charge) this->rho_in = rho_tmp;
+      else{
+        if(this->rho_out.empty()) this->rho_out = rho_tmp;
+        else{
           for(int ispin=0; ispin<rho_tmp.size(); ispin++)
             for(int igrid=0; igrid<rho_tmp[ispin].size(); igrid++)
-              this->rho[index][ispin][igrid] = rho_tmp[ispin][igrid];
+              this->rho_out[ispin][igrid] = rho_tmp[ispin][igrid];
         }
-        else this->istep2index[index] += 1;
       }
     }
 
@@ -177,7 +200,7 @@ namespace DFT_plus_DMFT
     }
 
     elsi_rw_handle rwh;
-    c_elsi_init_rw(&rwh,0,0,nbasis,0.0);
+    c_elsi_init_rw(&rwh, 0, 0, nbasis, 0.0);
 
     for(int ik=0; ik<task_nks; ik++){
       for(int ispin=0; ispin<dens_mat_cmplx[0].size(); ispin++){
@@ -209,6 +232,153 @@ namespace DFT_plus_DMFT
     return;
   }
 
+  void Charge_SCF_aims::update_data(
+        const int mix_step )
+  {
+    debug::codestamp("Charge_SCF_aims::update_data");
+
+    //Residual vector
+    std::vector<std::vector<double>> vector_tmp;
+    vector_tmp.resize(this->rho_in.size());
+    for(int is=0; is<this->rho_in.size(); is++)
+      vector_tmp[is].resize(this->rho_in[is].size(),0.0);
+
+    for(int is=0; is<this->rho_in.size(); is++)
+        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
+          vector_tmp[is][igrid] = this->rho_out[is][igrid] - this->rho_in[is][igrid];
+
+    if(mix_step<8) this->Rrho.push_front(vector_tmp);
+    else{
+      this->Rrho.pop_back();
+      this->Rrho.push_front(vector_tmp);
+    }
+
+    //drho
+    if(mix_step>0){
+      for(int is=0; is<this->rho_in.size(); is++)
+        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
+          vector_tmp[is][igrid] = this->rho_in[is][igrid] - this->rho_in_save[is][igrid];
+
+      if(mix_step<8) this->drho.push_front(vector_tmp);
+      else{
+        this->drho.pop_back();
+        this->drho.push_front(vector_tmp);
+      }
+    }
+
+    //dRrho
+    if(mix_step>0){
+      for(int is=0; is<this->Rrho[0].size(); is++)
+        for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
+          vector_tmp[is][igrid] = this->Rrho[1][is][igrid] - this->Rrho[0][is][igrid];
+
+      if(mix_step<8) this->dRrho.push_front(vector_tmp);
+      else{
+        this->dRrho.pop_back();
+        this->dRrho.push_front(vector_tmp);
+      }
+    }
+
+    return;
+  }
+
+  void Charge_SCF_aims::update_alpha(
+      const int mix_step,
+      std::vector<double>& alpha)
+  {
+    debug::codestamp("Charge_SCF_aims::update_alpha");
+
+    if(mix_step<1) return;
+
+    //Calculate Abar
+    std::vector<double> Abar(this->dRrho.size()*this->dRrho.size(), 0.0);
+
+    for(int is=0; is<this->dRrho[0].size();is++)
+      for(int i=0; i<this->dRrho.size(); i++)
+        for(int j=0; j<this->dRrho.size(); j++){
+          for(int igrid=0; igrid<this->dRrho[i][is].size(); igrid++)
+            Abar[i*this->dRrho.size()+j] += std::pow(this->partition_tab[igrid],2)*
+              this->dRrho[i][is][igrid]*this->dRrho[j][is][igrid];
+        }
+
+    std::vector<int> ipiv(this->dRrho.size());
+    general_real_matrix_inverse(&Abar[0], this->dRrho.size(), &ipiv[0]);
+
+    //dRR
+    std::vector<double> dRR(this->dRrho.size(), 0.0);
+    for(int is=0; is<this->dRrho[0].size();is++)
+      for(int i=0; i<this->dRrho.size(); i++)
+        for(int igrid=0; igrid<this->dRrho[i][is].size(); igrid++)
+          dRR[i] += std::pow(this->partition_tab[igrid],2)*
+           this->dRrho[i][is][igrid]*this->Rrho[0][is][igrid];
+
+    //alpha
+    alpha.resize(this->dRrho.size(), 0.0);
+    for(int i=0; i<this->dRrho.size(); i++)
+      for(int j=0; j<this->dRrho.size(); j++)
+        alpha[i] -= Abar[j*this->dRrho.size()+i]*dRR[j];
+
+    return;
+  }
+
+  void Charge_SCF_aims::update_density(
+    const int mix_step,
+    const double mixing_beta,
+    std::vector<double>& alpha,
+    double& charge_change)
+  {
+    debug::codestamp("Charge_SCF_aims::update_density");
+
+    //change of charge density
+    charge_change = 0.0;
+    for(int is=0; is<this->Rrho[0].size(); is++)
+      for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
+        charge_change += this->partition_tab[igrid]*
+            std::pow(this->Rrho[0][is][igrid],2);
+
+    charge_change = std::sqrt(charge_change);
+
+    if(mix_step<1){//plain mixing
+      if(this->rho_in_save.empty()) this->rho_in_save = this->rho_in;
+      else{
+        for(int is=0; is<this->rho_in.size(); is++)
+          for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
+            this->rho_in_save[is][igrid] = this->rho_in[is][igrid];
+      }
+
+      for(int is=0; is<this->rho_in.size(); is++)
+        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++){
+          this->rho_in[is][igrid] = this->rho_out[is][igrid]*mixing_beta +
+              (1.0-mixing_beta)*this->rho_in[is][igrid];
+        }
+    }
+    else{//Pulay mixing
+      if(this->rho_in_save.empty()) this->rho_in_save = this->rho_in;
+      else{
+        for(int is=0; is<this->rho_in.size(); is++)
+          for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
+            this->rho_in_save[is][igrid] = this->rho_in[is][igrid];
+      }
+          
+      // for(auto& iter1 : this->rho_in)
+      //   for(auto& iter2 : iter1)
+      //     iter2 = 0.0;
+
+      for(int is=0; is<this->rho_in.size(); is++)
+        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
+          this->rho_in[is][igrid] += mixing_beta*this->Rrho[0][is][igrid];
+
+      for(int i=0; i<this->drho.size(); i++)
+        for(int is=0; is<this->drho[i].size(); is++)
+          for(int igrid=0; igrid<this->drho[i][is].size(); igrid++){
+            this->rho_in[is][igrid] += alpha[i]*( this->drho[i][is][igrid] + 
+                mixing_beta*this->dRrho[i][is][igrid] );
+          }
+    }
+
+    return;
+  }
+
   void Charge_SCF_aims::prepare_nscf_dft()
   {
     debug::codestamp("Charge_SCF_aims::prepare_nscf_dft");
@@ -224,7 +394,7 @@ namespace DFT_plus_DMFT
     //=========Read control.in==========
     std::ifstream ifs("dft/control.in", std::ios::in);
     if(!ifs){
-      GlobalV::ofs_error << "Fail to oepn file control.in" << std::endl;
+      GLV::ofs_error << "Fail to oepn file control.in" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

@@ -223,7 +223,7 @@ namespace DFT_plus_DMFT
     mkl_set_num_threads(mkl_threads);
 
     timer::get_time(time, seconds);
-    GlobalV::ofs_running << "Time consuming for contruction of the projector: " 
+    GLV::ofs_running << "Time consuming for contruction of the projector: " 
                 << (int)seconds << "s" << std::endl;
 
     //=========TEST orthonormality========================

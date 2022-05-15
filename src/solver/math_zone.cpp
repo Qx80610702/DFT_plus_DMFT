@@ -75,7 +75,7 @@ void Simpson_Integral(
   //  routine assumes that mesh is an odd number so run check
 
   if(mesh%2!=1){
-    GlobalV::ofs_error << "The number of mesh must be odd in Simpson integral" << std::endl;
+    GLV::ofs_error << "The number of mesh must be odd in Simpson integral" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
@@ -116,7 +116,7 @@ void Simpson_Integral(
   //  routine assumes that mesh is an odd number so run check
 
   if(mesh%2!=1){
-    GlobalV::ofs_error << "The number of mesh must be odd in Simpson integral" << std::endl;
+    GLV::ofs_error << "The number of mesh must be odd in Simpson integral" << std::endl;
     std::exit(EXIT_FAILURE);
   }
   
