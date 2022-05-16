@@ -34,6 +34,7 @@ namespace DFT_plus_DMFT
     public:
     void init(const int DFT_solver,
         const double mixing_parameter,
+        const double delta_rho,
         const int nks, const int n_spin );
 
     void update_charge_density_matrix(
@@ -85,40 +86,42 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& dense_cmplx );
 
-    void read_charge(
+    void read_charge_density(
       const bool initial_charge,
       const bool DMFT_charge );
 
-    void read_charge_density_matrix(const int nks);
+    void read_initial_charge_density_matrix();
 
-    void charge_mixing(const int mix_step, double& charge_change);
+    bool charge_mixing(const int mix_step);
 
     void update_data(const int mix_step);
 
     void update_alpha(const int mix_step, std::vector<double>& alpha);
 
-    void update_density(
+    void mixing_density_matrix(
       const int mix_step, 
-      std::vector<double>& alpha,
-      double& charge_change );
+      const std::vector<double>& alpha);
 
-    void output_charge_density_matrix(const int nks);
+    void output_charge_density_matrix();
 
     void prepare_nscf_dft();
 
     private:
     int flag_DFT_solver;
+    double sc_delta_rho;
     double mixing_beta;
     int nkpoints;
     int nspin;
 
-    //DM_mat_pulay[istep][ik][ispin][nbasis*nbasis]
-    std::deque<std::vector<std::vector<std::vector<std::complex<double>>>>> DM_mat_pulay;
+    //Opt_DM_mat[istep][ik][ispin][nbasis*nbasis]
+    std::deque<std::vector<std::vector<std::vector<std::complex<double>>>>> Opt_DM_mat;
+
+    //Res_DM_mat[istep][ik][ispin][nbasis*nbasis]
+    std::deque<std::vector<std::vector<std::vector<std::complex<double>>>>> Res_DM_mat;
 
     std::vector<std::vector<std::vector<double>>> fik_DMFT;                     //fik_DMFT[is][ik][iband]
 
-    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;  //dens_mat_last[ik][ispin][nbasis*nbasis]
-    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_last;  //dens_mat_last[ik][ispin][nbasis*nbasis]
+    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_out;       //dens_mat_ouy[ik][ispin][nbasis*nbasis]
     
     // std::vector<std::vector<std::vector<double>>> fik_test;       //fik_test[is][ik][iband]
 

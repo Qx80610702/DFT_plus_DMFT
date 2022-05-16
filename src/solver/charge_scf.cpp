@@ -4,6 +4,7 @@
 #include "math_zone.h"
 #include "../para/KS_eigenvectors.h"
 #include "../global_variables.h"
+#include "../timer.h"
 
 #include <omp.h>
 #include <mpi.h>
@@ -18,10 +19,12 @@ namespace DFT_plus_DMFT
   void Charge_SCF::init(
       const int DFT_solver,
       const double mixing_parameter,
+      const double delta_rho,
       const int nks, const int n_spin )
   {
     this->flag_DFT_solver = DFT_solver;
     this->mixing_beta = mixing_parameter;
+    this->sc_delta_rho = delta_rho;
     this->nkpoints = nks;
     this->nspin = n_spin;
     return;
@@ -127,10 +130,10 @@ namespace DFT_plus_DMFT
     }
 
     //Allocation
-    if(this->dens_mat.empty()){
-      this->dens_mat.resize(task_nks);
+    if(this->dens_mat_out.empty()){
+      this->dens_mat_out.resize(task_nks);
       for(int ik=0; ik<task_nks; ik++)
-          this->dens_mat[ik].resize(nspin);
+          this->dens_mat_out[ik].resize(nspin);
     }
 
     if( this->fik_DMFT.empty()){
@@ -254,7 +257,7 @@ namespace DFT_plus_DMFT
         this->eva_k_densmat( 
             dft_solver, nspin, 
             ik, k_map[ik], space, 
-            eigenvector, this->dens_mat[ik] );
+            eigenvector, this->dens_mat_out[ik] );
 
         /*
         //========Test==========
@@ -510,127 +513,172 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::read_charge(
+  void Charge_SCF::read_charge_density(
         const bool initial_charge,
         const bool DMFT_charge )
   {
     debug::codestamp("Charge_SCF::read_char_dense");
 
-    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat;
-
-    this->char_ref().read_charge(
-          initial_charge, DMFT_charge, 
-          this->nkpoints, dens_mat );
+    this->char_ref().read_charge_density(initial_charge, DMFT_charge);
 
     return;
   }
 
-  void Charge_SCF::read_charge_density_matrix(
-      const int nks )
+  void Charge_SCF::read_initial_charge_density_matrix()
+  {
+    debug::codestamp("Charge_SCF::read_initial_charge_density_matrix");
+
+    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
+    dens_mat_tmp = this->dens_mat_out;
+
+    this->char_ref().read_charge_density_matrix(nkpoints, dens_mat_tmp);
+
+    if(this->Opt_DM_mat.empty()) 
+      this->Opt_DM_mat.push_back(dens_mat_tmp);
+    else{
+      this->Opt_DM_mat.clear();
+      this->Opt_DM_mat.push_back(dens_mat_tmp);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+    
+    return;
+  }
+
+  void Charge_SCF::output_charge_density_matrix()
   {
     debug::codestamp("Charge_SCF::read_charge_density_matrix");
-
-    const std::complex<double> zero(0.0,0.0);
     
-    //Allocation
-    this->dens_mat_last.resize(this->dens_mat.size());
-    for(int ik=0; ik<this->dens_mat.size(); ik++){
-      this->dens_mat_last[ik].resize( this->dens_mat[ik].size() );
-      for(int is=0; is<this->dens_mat[ik].size(); is++){
-        this->dens_mat_last[ik][is].resize( this->dens_mat[ik][is].size(), zero);
-      }
-    }
-
-    switch(this->flag_DFT_solver)
-    {
-      case 1: //aims
-        #ifdef __FHIaims
-        this->char_scf_aims.read_charge_density_matrix(nks, this->dens_mat_last);
-        #else
-        GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
-        std::exit(EXIT_FAILURE);
-        #endif   
-        break;
-      case 2: //ABACUS
-        #ifdef __ABACUS
-        // this->char_scf_aims.output_charge_density(file, dens_cmplx);
-        GLV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
-        std::exit(EXIT_FAILURE);
-        #else
-        GLV::ofs_error << "ABACUS has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
-        std::exit(EXIT_FAILURE);
-        #endif
-        break;
-      default:
-        GLV::ofs_error << "Not supported DFT_solver" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
+    this->char_ref().output_charge_density_matrix(
+          this->nkpoints, this->Opt_DM_mat.back() );
 
     return;
   }
 
-  void Charge_SCF::charge_mixing(
-        const int mix_step,
-        double& charge_change )
+  bool Charge_SCF::charge_mixing(
+        const int mix_step )
   {
     debug::codestamp("Charge_SCF::charge_mixing");
 
+    double time, seconds;
+    int minutes;
+    timer::timestamp(time);
+
+    GLV::ofs_running << "\nStart charge mixing..." << std::endl;
+
     std::vector<double> alpha;
-    charge_change = 0.0;
+    double charge_change = 0.0;
 
     this->char_ref().update_data(mix_step);
 
     this->char_ref().update_alpha(mix_step, alpha);
 
-    this->char_ref().update_density(
+    this->char_ref().mixing_density(
         mix_step, this->mixing_beta, 
         alpha, charge_change );
 
-    // for(int ik=0; ik<this->dens_mat.size(); ik++){
-    //   for(int is=0; is<this->dens_mat[ik].size(); is++){
-    //     for(int i=0; i<this->dens_mat[ik][is].size(); i++){
-    //       this->dens_mat[ik][is][i] = 
-    //         (1.0-mix_beta)*this->dens_mat[ik][is][i] +
-    //         mix_beta*this->dens_mat_last[ik][is][i];
-    //     }
-    //   }
-    // }
+    GLV::ofs_running << "\nChange of the charge density: "
+                     << std::setprecision(3) << charge_change
+                     << std::endl;
+    
+    if(charge_change<this->sc_delta_rho) return true;
 
-    return;
+    this->mixing_density_matrix(mix_step, alpha);
+
+    timer::get_time(time, seconds, minutes);
+    GLV::ofs_running << "End charge mixing. The time consumption: " 
+                         << minutes << "m "
+                         << (int)seconds << "s" << std::endl;
+
+    return false;
   }
-  
-  void Charge_SCF::output_charge_density_matrix(
-        const int nks )
-  {
-    debug::codestamp("Charge_SCF::output_char_dense");
 
-    switch(this->flag_DFT_solver)
-    {
-      case 1: //aims
-        #ifdef __FHIaims
-        this->char_scf_aims.output_charge_density_matrix(nks, this->dens_mat);
-        #else
-        GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
-        std::exit(EXIT_FAILURE);
-        #endif   
-        break;
-      case 2: //ABACUS
-        #ifdef __ABACUS
-        // this->char_scf_aims.output_charge_density(file, dens_cmplx);
-        GLV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
-        std::exit(EXIT_FAILURE);
-        #else
-        GLV::ofs_error << "ABACUS has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
-        std::exit(EXIT_FAILURE);
-        #endif
-        break;
-      default:
-        GLV::ofs_error << "Not supported DFT_solver" << std::endl;
-        std::exit(EXIT_FAILURE);
+  void Charge_SCF::mixing_density_matrix(
+      const int mix_step, 
+      const std::vector<double>& alpha)
+  {
+    debug::codestamp("Charge_SCF::mixing_density_matrix");
+
+    //mixing density matrix
+    if(mix_step==0){//Plain mixing
+      std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
+      std::swap(dens_mat_tmp, this->dens_mat_out);
+      
+      //Residual DM_mat
+      for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
+        for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
+          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+            dens_mat_tmp[ik][is][i] -= this->Opt_DM_mat.back()[ik][is][i];
+      
+      if(this->Res_DM_mat.empty()) this->Res_DM_mat.push_back(dens_mat_tmp);
+      else{
+        this->Res_DM_mat.clear();
+        this->Res_DM_mat.push_back(dens_mat_tmp);
+      }
+
+      //Density matrix mixing
+      for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
+        for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
+          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+            dens_mat_tmp[ik][is][i] = 
+              (1.0-this->mixing_beta)*this->Opt_DM_mat.back()[ik][is][i] +
+              this->mixing_beta*( this->Res_DM_mat.back()[ik][is][i] + 
+              this->Opt_DM_mat.back()[ik][is][i] );
+
+      this->Opt_DM_mat.push_back(dens_mat_tmp);
+    }
+    else{
+      std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
+      dens_mat_tmp = this->Opt_DM_mat.back();
+
+      this->char_ref().read_charge_density_matrix(this->nkpoints, dens_mat_tmp);
+
+      //Residual DM_mat
+      for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
+        for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
+          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+            dens_mat_tmp[ik][is][i] -= this->Opt_DM_mat.back()[ik][is][i];
+      
+      if(this->Res_DM_mat.size()<8) this->Res_DM_mat.push_back(dens_mat_tmp);
+      else{
+        this->Res_DM_mat.pop_front();
+        this->Res_DM_mat.push_back(dens_mat_tmp);
+      }
+
+      //Mixing charge density matrix
+      //First part: \rho^{opt}
+      dens_mat_tmp = this->Opt_DM_mat.back();
+
+      for(int istep=0; istep<this->Opt_DM_mat.size()-1; istep++){
+        for(int ik=0; ik<this->Opt_DM_mat[istep].size(); ik++)
+          for(int is=0; is<this->Opt_DM_mat[istep][ik].size(); is++)
+            for(int i=0; i<this->Opt_DM_mat[istep][ik][is].size(); i++)
+              dens_mat_tmp[ik][is][i] += alpha[istep]*
+                ( this->Opt_DM_mat[istep+1][ik][is][i] - 
+                  this->Opt_DM_mat[istep][ik][is][i] );
+      }
+
+      //Second part: \Rrho^{opt}
+      for(int ik=0; ik<this->Res_DM_mat.back().size(); ik++)
+          for(int is=0; is<this->Res_DM_mat.back()[ik].size(); is++)
+            for(int i=0; i<this->Res_DM_mat.back()[ik][is].size(); i++)
+              dens_mat_tmp[ik][is][i] += this->mixing_beta*
+                  this->Res_DM_mat.back()[ik][is][i];
+
+      for(int istep=0; istep<this->Res_DM_mat.size()-1; istep++){
+        for(int ik=0; ik<this->Res_DM_mat[istep].size(); ik++)
+          for(int is=0; is<this->Res_DM_mat[istep][ik].size(); is++)
+            for(int i=0; i<this->Res_DM_mat[istep][ik][is].size(); i++)
+              dens_mat_tmp[ik][is][i] += this->mixing_beta*alpha[istep]*
+                ( this->Res_DM_mat[istep+1][ik][is][i] - 
+                  this->Res_DM_mat[istep][ik][is][i] );
+      }
+
+      if(this->Opt_DM_mat.size()<8) this->Opt_DM_mat.push_back(dens_mat_tmp);
+      else{
+        this->Opt_DM_mat.pop_front();
+        this->Opt_DM_mat.push_back(dens_mat_tmp);
+      }
     }
 
     return;
@@ -640,32 +688,7 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("Charge_SCF::prepare_nscf_dft");
 
-    switch(this->flag_DFT_solver)
-    {
-      case 1: //aims
-        #ifdef __FHIaims
-        this->char_scf_aims.prepare_nscf_dft();
-        #else
-        GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
-        std::exit(EXIT_FAILURE);
-        #endif
-        break;
-      case 2: //ABACUS
-        #ifdef __ABACUS
-        // this->char_scf_aims.output_charge_density(file, dens_cmplx);
-        GLV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
-        std::exit(EXIT_FAILURE);
-        #else
-        GLV::ofs_error << "ABACUS has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
-        std::exit(EXIT_FAILURE);
-        #endif
-        break;
-      default:
-        GLV::ofs_error << "Not supported DFT_solver" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
+    this->char_ref().prepare_nscf_dft();
 
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 

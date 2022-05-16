@@ -20,22 +20,6 @@
 
 namespace DFT_plus_DMFT
 {
-  void Charge_SCF_aims::read_charge(
-          const bool initial_charge,
-          const bool DMFT_charge,
-          const int nks,
-          std::vector<std::vector<std::vector<
-          std::complex<double>>>>& dens_mat_cmplx )
-  {
-    debug::codestamp("Charge_SCF_aims::read_charge");
-
-    this->read_charge_density(initial_charge, DMFT_charge);
-
-    this->read_charge_density_matrix(nks, dens_mat_cmplx);
-
-    return;
-  }
-
   void Charge_SCF_aims::output_charge_density_matrix(
         const int nks, 
         std::vector<std::vector<std::vector<
@@ -169,7 +153,11 @@ namespace DFT_plus_DMFT
       }
     }
     else{
-      if(initial_charge) this->rho_in = rho_tmp;
+      if(initial_charge){
+        if(!this->Opt_rho.empty()) this->Opt_rho.clear();
+
+        this->Opt_rho.push_back(rho_tmp);
+      }
       else{
         if(this->rho_out.empty()) this->rho_out = rho_tmp;
         else{
@@ -239,43 +227,29 @@ namespace DFT_plus_DMFT
 
     //Residual vector
     std::vector<std::vector<double>> vector_tmp;
-    vector_tmp.resize(this->rho_in.size());
-    for(int is=0; is<this->rho_in.size(); is++)
-      vector_tmp[is].resize(this->rho_in[is].size(),0.0);
+    vector_tmp = this->Opt_rho.back();
 
-    for(int is=0; is<this->rho_in.size(); is++)
-        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
-          vector_tmp[is][igrid] = this->rho_out[is][igrid] - this->rho_in[is][igrid];
+    for(int is=0; is<vector_tmp.size(); is++)
+        for(int igrid=0; igrid<vector_tmp[is].size(); igrid++)
+          vector_tmp[is][igrid] = this->rho_out[is][igrid] - vector_tmp[is][igrid];
 
-    if(mix_step<8) this->Rrho.push_front(vector_tmp);
+    if(this->Rrho.size()<=8) this->Rrho.push_back(vector_tmp);
     else{
-      this->Rrho.pop_back();
-      this->Rrho.push_front(vector_tmp);
-    }
-
-    //drho
-    if(mix_step>0){
-      for(int is=0; is<this->rho_in.size(); is++)
-        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
-          vector_tmp[is][igrid] = this->rho_in[is][igrid] - this->rho_in_save[is][igrid];
-
-      if(mix_step<8) this->drho.push_front(vector_tmp);
-      else{
-        this->drho.pop_back();
-        this->drho.push_front(vector_tmp);
-      }
+      this->Rrho.pop_front();
+      this->Rrho.push_back(vector_tmp);
     }
 
     //dRrho
     if(mix_step>0){
       for(int is=0; is<this->Rrho[0].size(); is++)
         for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
-          vector_tmp[is][igrid] = this->Rrho[1][is][igrid] - this->Rrho[0][is][igrid];
+          vector_tmp[is][igrid] = this->Rrho.back()[is][igrid] - 
+                        this->Rrho[this->Rrho.size()-2][is][igrid];
 
-      if(mix_step<8) this->dRrho.push_front(vector_tmp);
+      if(this->dRrho.size()<8) this->dRrho.push_back(vector_tmp);
       else{
-        this->dRrho.pop_back();
-        this->dRrho.push_front(vector_tmp);
+        this->dRrho.pop_front();
+        this->dRrho.push_back(vector_tmp);
       }
     }
 
@@ -288,7 +262,7 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("Charge_SCF_aims::update_alpha");
 
-    if(mix_step<1) return;
+    if(mix_step==0) return;
 
     //Calculate Abar
     std::vector<double> Abar(this->dRrho.size()*this->dRrho.size(), 0.0);
@@ -310,7 +284,7 @@ namespace DFT_plus_DMFT
       for(int i=0; i<this->dRrho.size(); i++)
         for(int igrid=0; igrid<this->dRrho[i][is].size(); igrid++)
           dRR[i] += std::pow(this->partition_tab[igrid],2)*
-           this->dRrho[i][is][igrid]*this->Rrho[0][is][igrid];
+           this->dRrho[i][is][igrid]*this->Rrho.back()[is][igrid];
 
     //alpha
     alpha.resize(this->dRrho.size(), 0.0);
@@ -321,7 +295,7 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF_aims::update_density(
+  void Charge_SCF_aims::mixing_density(
     const int mix_step,
     const double mixing_beta,
     std::vector<double>& alpha,
@@ -334,46 +308,54 @@ namespace DFT_plus_DMFT
     for(int is=0; is<this->Rrho[0].size(); is++)
       for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
         charge_change += this->partition_tab[igrid]*
-            std::pow(this->Rrho[0][is][igrid],2);
+            std::pow(this->Rrho.back()[is][igrid],2);
 
     charge_change = std::sqrt(charge_change);
 
-    if(mix_step<1){//plain mixing
-      if(this->rho_in_save.empty()) this->rho_in_save = this->rho_in;
-      else{
-        for(int is=0; is<this->rho_in.size(); is++)
-          for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
-            this->rho_in_save[is][igrid] = this->rho_in[is][igrid];
-      }
+    if(mix_step==0){//plain mixing
+      std::vector<std::vector<double>> rho_tmp;
+      rho_tmp = this->Opt_rho.back();
 
-      for(int is=0; is<this->rho_in.size(); is++)
-        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++){
-          this->rho_in[is][igrid] = this->rho_out[is][igrid]*mixing_beta +
-              (1.0-mixing_beta)*this->rho_in[is][igrid];
+      for(int is=0; is<this->Opt_rho.back().size(); is++)
+        for(int igrid=0; igrid<this->Opt_rho.back()[is].size(); igrid++){
+          rho_tmp[is][igrid] = this->rho_out[is][igrid]*mixing_beta +
+              (1.0-mixing_beta)*rho_tmp[is][igrid];
         }
+
+      this->Opt_rho.push_back(rho_tmp);
     }
     else{//Pulay mixing
-      if(this->rho_in_save.empty()) this->rho_in_save = this->rho_in;
-      else{
-        for(int is=0; is<this->rho_in.size(); is++)
-          for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
-            this->rho_in_save[is][igrid] = this->rho_in[is][igrid];
+      std::vector<std::vector<double>> rho_tmp;
+
+      //First part: \rho^{opt}
+      rho_tmp = this->Opt_rho.back();
+
+      for(int istep=0; istep<this->Opt_rho.size()-1; istep++){
+        for(int is=0; is<this->Opt_rho[istep].size(); is++)
+          for(int igrid=0; igrid<this->Opt_rho[istep][is].size(); igrid++)
+            rho_tmp[is][igrid] += alpha[istep]*
+              ( this->Opt_rho[istep+1][is][igrid] - 
+              this->Opt_rho[istep][is][igrid] );
       }
-          
-      // for(auto& iter1 : this->rho_in)
-      //   for(auto& iter2 : iter1)
-      //     iter2 = 0.0;
 
-      for(int is=0; is<this->rho_in.size(); is++)
-        for(int igrid=0; igrid<this->rho_in[is].size(); igrid++)
-          this->rho_in[is][igrid] += mixing_beta*this->Rrho[0][is][igrid];
+      //Second part: \Rrho^{opt}
+      for(int is=0; is<this->Rrho.back().size(); is++)
+          for(int igrid=0; igrid<this->Rrho.back()[is].size(); igrid++)
+            rho_tmp[is][igrid] += mixing_beta*this->Rrho.back()[is][igrid];
 
-      for(int i=0; i<this->drho.size(); i++)
-        for(int is=0; is<this->drho[i].size(); is++)
-          for(int igrid=0; igrid<this->drho[i][is].size(); igrid++){
-            this->rho_in[is][igrid] += alpha[i]*( this->drho[i][is][igrid] + 
-                mixing_beta*this->dRrho[i][is][igrid] );
-          }
+      for(int istep=0; istep<this->Rrho.size()-1; istep++){
+        for(int is=0; is<this->Rrho[istep].size(); is++)
+          for(int igrid=0; igrid<this->Rrho[istep][is].size(); igrid++)
+            rho_tmp[is][igrid] += mixing_beta*alpha[istep]*
+              ( this->Rrho[istep+1][is][igrid] - 
+              this->Rrho[istep][is][igrid] );
+      }
+
+      if(this->Opt_rho.size()<8) this->Opt_rho.push_back(rho_tmp);
+      else{
+        this->Opt_rho.pop_front();
+        this->Opt_rho.push_back(rho_tmp);
+      }
     }
 
     return;
