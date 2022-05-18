@@ -82,12 +82,20 @@ namespace DFT_plus_DMFT
       task_nks +=1;
     }
 
-    this->fik_wind.resize(nspin);
-    for(int is=0; is<nspin; is++){
-      this->fik_wind[is].resize(task_nks);
-      for(int ik=0; ik<task_nks; ik++){
-        this->fik_wind[is][ik].resize(wbands[is], 0.0);
+    if(this->fik_wind.empty()){
+      this->fik_wind.resize(nspin);
+      for(int is=0; is<nspin; is++){
+        this->fik_wind[is].resize(task_nks);
+        for(int ik=0; ik<task_nks; ik++){
+          this->fik_wind[is][ik].resize(wbands[is], 0.0);
+        }
       }
+    }
+    else{
+      for(auto& iter1 : this->fik_wind)
+        for(auto& iter2 : iter1)
+          for(auto& iter3 : iter2)
+            iter3 = 0.0;
     }
 
     double max_U=0.0;
@@ -340,9 +348,7 @@ namespace DFT_plus_DMFT
       ifs.getline(word, 100);   
       if(ifs.eof()) break;
       
-      DMFT::input_info::strtolower(word, word_low);
-
-      std::string line(word_low);
+      std::string line = DMFT::input_info::strtolower(word);
 
       if(!line.empty())
       {

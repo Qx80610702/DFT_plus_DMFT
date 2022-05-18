@@ -15,7 +15,8 @@ namespace DMFT
 
     bool read_parameter(char* keyword, std::vector<std::string>& val, int count=1);
 
-    static void strtolower(char *in_str, char *out_str);
+    static std::string strtolower(char *in_str);
+    static std::string strtolower(std::string in_str);
 
     void test();    //test whether input parameter is correct
                     
@@ -47,6 +48,8 @@ namespace DMFT
     double delta_sigma;             //The convergency criteria of self-energy (unit eV); default:0.1
     double delta_rho;               //The convergency criteria of the charge density; default: 1.0e-4
     int calculation_type;           //DFT+DMFT scf:0; spectra:1; default:0
+
+    std::string dft_solver_exe;     //the executable of DFT solver
 
     //restart
     bool flag_restart;              

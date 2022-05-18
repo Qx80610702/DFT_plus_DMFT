@@ -44,11 +44,8 @@ namespace DFT_plus_DMFT
     std::deque<std::vector<std::vector<double>>> dRrho;       //dRrho[istep][ispin][igrid]; dRrho(istep)= Rrho(istep+1) - Rrho(istep)
     std::deque<std::vector<std::vector<double>>> Opt_rho;     //Opt_rho[istep][ispin][igrid];
     std::vector<std::vector<double>> rho_out;                 //Output Kohn-Sham or DFT+DMFT rho: rho_out[ispin][igrid]   
-    // std::vector<std::vector<double>> rho_in;                  //Input rho of current step: rho_in[ispin][igrid] 
-    // std::vector<std::vector<double>> rho_in_save;             //Input rho of last step: rho_in_save[ispin][igrid] 
     std::vector<double> partition_tab;                        //partition_tab][igrid]
-    std::vector<int> istep2index;
-
+    
   };
 }
 

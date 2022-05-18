@@ -44,7 +44,6 @@ namespace DFT_plus_DMFT
         DFT_output::atoms_info& atom, 
         DFT_plus_DMFT::projector& proj,
         DMFT::self_energy& sigma,
-        DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
     void eva_new_char_dens(
@@ -66,18 +65,8 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
-    void eva_fik_DMFT_real_axis(
-        const double mu,
-        DFT_output::KS_bands& band, 
-        DFT_output::atoms_info& atom, 
-        DFT_plus_DMFT::projector& proj,
-        DMFT::self_energy& sigma,
-        DMFT::input_info& in,
-        DFT_plus_DMFT::Hilbert_space& space );
-
     void eva_k_densmat(
         const int dft_solver,
-        const int nspin,
         const int ik,
         const int i_k_point,
         DFT_plus_DMFT::Hilbert_space& space,
@@ -121,12 +110,7 @@ namespace DFT_plus_DMFT
 
     std::vector<std::vector<std::vector<double>>> fik_DMFT;                     //fik_DMFT[is][ik][iband]
 
-    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_out;       //dens_mat_ouy[ik][ispin][nbasis*nbasis]
-    
-    // std::vector<std::vector<std::vector<double>>> fik_test;       //fik_test[is][ik][iband]
-
-    // Rstep: iteration step for Rrho
-    // dRstep: iteration step for dRrho
+    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_out;   //dens_mat_ouy[ik][ispin][nbasis*nbasis]
 
   };
 }

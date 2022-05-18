@@ -175,7 +175,7 @@ namespace DFT_plus_DMFT
     std::vector<int> upper_band_index(this->nspin);
     std::vector<int> lower_band_index(this->nspin);
 
-    char word[200], word_low[200];
+    char word[200];
 
     std::ifstream ifs("DMFT_running.log", std::ios::in);
     if(!ifs){
@@ -189,9 +189,7 @@ namespace DFT_plus_DMFT
       ifs.getline(word, 200);   
       if(ifs.eof()) break;
       
-      DMFT::input_info::strtolower(word, word_low);
-
-      std::string line(word_low);
+      std::string line = DMFT::input_info::strtolower(word);
 
       if(!line.empty()){
         line.erase(0, line.find_first_not_of(" "));

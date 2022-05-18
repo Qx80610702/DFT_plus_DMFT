@@ -85,7 +85,10 @@ namespace DFT_plus_DMFT
     
     std::stringstream rho_file, part_file;
 
-    part_file << "dft/outputs_to_DMFT/charge_density/partition_tab" << mpi_rank() << ".dat";
+    part_file << "dft/outputs_to_DMFT/charge_density/partition_tab" 
+              << std::setfill('0') << std::setw(6) 
+              << mpi_rank() << ".dat";
+
     if(DMFT_charge)
       rho_file << "dft/outputs_to_DMFT/charge_density/rho" 
                << std::setfill('0') << std::setw(6) 
@@ -395,53 +398,53 @@ namespace DFT_plus_DMFT
     ifs.close();
 
     //============Cpoy control.in as control.in-original==================
-    std::ofstream ofs_copy("dft/control.in-original", std::ios::out);
-    for(int i=0; i<lines.size(); i++){
-      std::string line_str = lines[i];
-      ofs_copy << line_str << std::endl;
-    }
-    ofs_copy.close();
+    std::ifstream if_test("dft/control.in-original", std::ios::in);
+    if(!if_test){ //file dft/control.in-original not exist
+      std::ofstream ofs_copy("dft/control.in-original", std::ios::out);
+      for(int i=0; i<lines.size(); i++){
+        std::string line_str = lines[i];
+        ofs_copy << line_str << std::endl;
+      }
+      ofs_copy.close();
 
+      //============Renew control.in==================
+      std::ofstream ofs("dft/control.in", std::ios::out);
 
-    //============Renew control.in==================
-    std::ofstream ofs("dft/control.in", std::ios::out);
-    char word_low[200];
+      for(int i=0; i<lines.size(); i++){
+        std::string line_str = lines[i];
 
-    for(int i=0; i<lines.size(); i++){
-      std::string line_str = lines[i];
+        if( line_str.empty() ) ofs << std::endl;
+        else{
+          std::string line = DMFT::input_info::strtolower(&line_str[0]);
 
-      if( line_str.empty() ) ofs << std::endl;
-      else{
-        DMFT::input_info::strtolower(&line_str[0], word_low);
-        std::string line(word_low);
+          line.erase(0, line.find_first_not_of(" "));
+          line.erase(line.find_last_not_of(" ") + 1);
 
-        line.erase(0, line.find_first_not_of(" "));
-        line.erase(line.find_last_not_of(" ") + 1);
+          if(!line.empty() && line[0]!='#'){
+            std::string param = line.substr( 0, line.find_first_of(' ') );
 
-        if(!line.empty() && line[0]!='#'){
-          std::string param = line.substr( 0, line.find_first_of(' ') );
-          
-          if(std::strcmp(param.c_str(), "dft_plus_dmft")==0){
-            ofs << line_str << std::endl;
-            ofs << "  mixer               linear" << std::endl;
-            ofs << "  charge_mix_param     1.0" << std::endl;
-            ofs << "  sc_iter_limit         0"  << std::endl;
-            ofs << "  elsi_restart read 1" << std::endl;
+            if(std::strcmp(param.c_str(), "dft_plus_dmft")==0){
+              ofs << line_str << std::endl;
+              ofs << "  mixer               linear" << std::endl;
+              ofs << "  charge_mix_param     1.0" << std::endl;
+              ofs << "  sc_iter_limit         0"  << std::endl;
+              ofs << "  elsi_restart read 1" << std::endl;
+            }
+            else{
+              if(std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
+                std::strcmp(param.c_str(), "elsi_restart") !=0 &&
+                std::strcmp(param.c_str(), "sc_iter_limit") !=0 &&
+                std::strcmp(param.c_str(), "mixer") !=0 )
+                ofs << line_str << std::endl;
+            }
           }
           else{
-            if(std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
-              std::strcmp(param.c_str(), "elsi_restart") !=0 &&
-              std::strcmp(param.c_str(), "sc_iter_limit") !=0 &&
-              std::strcmp(param.c_str(), "mixer") !=0 )
-              ofs << line_str << std::endl;
-          } 
-        }
-        else{
-          ofs << line_str << std::endl;
+            ofs << line_str << std::endl;
+          }
         }
       }
+      ofs.close();
     }
-    ofs.close();
 
     return;
   }

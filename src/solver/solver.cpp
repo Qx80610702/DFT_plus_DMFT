@@ -106,6 +106,7 @@ namespace DFT_plus_DMFT
             *(bool*)this->pars.in.parameter("hyb_func"),
             *(double*)this->pars.in.parameter("hyf_xc_alpha") );
 
+      GLV::ofs_running << "\n================ Begin DMFT loop ================" << std::endl;
       //=========================================
       //            DMFT loop
       //=========================================
@@ -142,17 +143,19 @@ namespace DFT_plus_DMFT
 
         loop_count++;
       }//dmft loop
+      GLV::ofs_running << "\n================ End DMFT loop ================" << std::endl;
 
       if( *(int*)this->pars.in.parameter("max_charge_step") > 1 && 
           char_step < *(int*)this->pars.in.parameter("max_charge_step") )
       {
+        GLV::ofs_running << "\n================ Begin DMFT charge updating ================" << std::endl;
         if(mix_step==0){
-          this->Char_scf.prepare_nscf_dft();
-
           this->Char_scf.init(*(int*)this->pars.in.parameter("dft_solver"),
                 *(double*)this->pars.in.parameter("charge_mix_beta"),
                 *(double*)this->pars.in.parameter("delta_rho"),
                 this->pars.bands.nk(), this->pars.bands.nspins() );
+          
+          this->Char_scf.prepare_nscf_dft();
 
           //Reading initial input charge density 
           this->Char_scf.read_charge_density(true, false);
@@ -167,11 +170,14 @@ namespace DFT_plus_DMFT
         
         //Call DFT solver to compute the charge density corresponding to 
         //the DMFT corrected density matrix
-        this->run_nscf_dft(*(int*)pars.in.parameter("impurity_solver"));  
+        GLV::ofs_running << "Calculating DMFT corrected charge density..." << std::endl;
+        this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));  
         
         //Read the charge density corresponding to 
         //the DMFT corrected density matrix
         this->Char_scf.read_charge_density(false, true);
+        
+        GLV::ofs_running << "End the calculation of  DMFT corrected charge density" << std::endl;
 
         charge_convergency = this->Char_scf.charge_mixing(mix_step);
 
@@ -182,14 +188,18 @@ namespace DFT_plus_DMFT
 
         this->Char_scf.output_charge_density_matrix();
 
+        GLV::ofs_running << "\n================ End DMFT charge updating ================" << std::endl;
+
         mix_step++;
-        
+
+        GLV::ofs_running << "\n================ Begin DFT loop ================" << std::endl;
         //=========================================
         //            DFT loop
         //=========================================
         for(int dft_step=1; dft_step <= *(int*)this->pars.in.parameter("max_dft_step"); dft_step++)
         {
-          this->run_nscf_dft(*(int*)pars.in.parameter("impurity_solver"));
+          GLV::ofs_running << "<><><><><><><><><>  DFT step "  << dft_step << " <><><><><><><><><>\n";
+          this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));
 
           if(dft_step < *(int*)this->pars.in.parameter("max_dft_step")){
             this->Char_scf.read_charge_density(false, false);
@@ -203,6 +213,7 @@ namespace DFT_plus_DMFT
             mix_step++;
           }
         }//DFT loop
+        GLV::ofs_running << "\n================ End DFT loop ================" << std::endl;
       }
     }//charge loop
 
@@ -460,9 +471,8 @@ namespace DFT_plus_DMFT
     this->Char_scf.update_charge_density_matrix(
             this->flag_axis, this->Mu,
             this->pars.bands, this->pars.atom, 
-            this->proj, this->imp.sigma, 
-            this->pars.in, this->space );
-    
+            this->proj, this->imp.sigma, this->space );
+   
     return;
   }
 
@@ -592,6 +602,7 @@ namespace DFT_plus_DMFT
     int ierr = chdir("./dft");
     if(ierr != 0){
       std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
+      std::exit(EXIT_FAILURE);
     }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
@@ -603,7 +614,18 @@ namespace DFT_plus_DMFT
           bool use_mpi = true;
           int mpi_comm_global = MPI_COMM_WORLD;
 
-          aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
+          // aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
+          if(mpi_rank()==0){
+            std::string dft_exe = "mpirun " + *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
+            std::ofstream ofs("task.sh", std::ios::out);
+            ofs << "#!/bin/sh\n" << std:: endl;
+            ofs << dft_exe << std::endl;
+            ofs.close();
+
+            system("bash task.sh");
+            // system(dft_exe.c_str());
+          }
+
         #else
           GLV::ofs_error << "FHI-aims has not been installed!!!  ";
           GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
@@ -629,6 +651,7 @@ namespace DFT_plus_DMFT
     ierr = chdir("../");
     if(ierr != 0){
       std::cout << "Process " << mpi_rank() << " fails to return to root directory " << std::endl;
+      std::exit(EXIT_FAILURE);
     }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 

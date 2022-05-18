@@ -24,9 +24,9 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("calculation", str_val);
 
-      if(std::strcmp("scf", str_val[0].c_str())==0)
+      if(std::strcmp("scf", this->strtolower(str_val[0]).c_str())==0)
         this->calculation_type = 0;
-      else if(std::strcmp("spectra", str_val[0].c_str())==0)
+      else if(std::strcmp("spectra", this->strtolower(str_val[0]).c_str())==0)
         this->calculation_type = 1;
       else{
         GLV::ofs_error << "Unsupported paramater for the key calculationi" << std::endl;
@@ -51,7 +51,7 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("dft_solver", str_val);
 
-      if(std::strcmp("aims",str_val[0].c_str())==0){
+      if(std::strcmp("aims",this->strtolower(str_val[0]).c_str())==0){
         this->flag_DFT_solver = 1;
         #ifndef __FHIaims
           GLV::ofs_error << "FHI-aims has not been installed!!!  ";
@@ -59,7 +59,7 @@ namespace DMFT
           std::exit(EXIT_FAILURE);
         #endif
       }
-      else if(std::strcmp("abacus", str_val[0].c_str())==0){
+      else if(std::strcmp("abacus", this->strtolower(str_val[0]).c_str())==0){
         this->flag_DFT_solver = 2;
         #ifndef __ABACUS
           GLV::ofs_error << "ABACUS has not been installed!!!   ";
@@ -86,10 +86,26 @@ namespace DMFT
         std::exit(EXIT_FAILURE);
       #endif
     }
-
     GLV::ofs_running << "dft_solver  ";
     if(this->flag_DFT_solver==1) GLV::ofs_running << "aims" << std::endl;
     else if(this->flag_DFT_solver==2) GLV::ofs_running << "abacus" << std::endl;
+
+    //dft_solver_exe
+    try {
+      std::vector<std::string> str_val;
+      
+      this->read_parameter("dft_solver_exe", str_val);
+
+      this->dft_solver_exe = str_val[0];
+    }
+    catch (const std::string messg) {
+      GLV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      this->dft_solver_exe = "";
+    }
+    GLV::ofs_running << "dft_solver_exe  " << this->dft_solver_exe << std::endl;
 
     //temperature
     try {
@@ -123,10 +139,10 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("magnetism", str_val);
     
-      if(std::strcmp("afm",str_val[0].c_str())==0) this->flag_magnetism = 1;
-      else if(std::strcmp("fm",str_val[0].c_str())==0) this->flag_magnetism = 2;
-      else if(std::strcmp("para",str_val[0].c_str())==0) this->flag_magnetism = 3;
-      else if(std::strcmp("none",str_val[0].c_str())==0) this->flag_magnetism = 4;
+      if(std::strcmp("afm",this->strtolower(str_val[0]).c_str())==0) this->flag_magnetism = 1;
+      else if(std::strcmp("fm",this->strtolower(str_val[0]).c_str())==0) this->flag_magnetism = 2;
+      else if(std::strcmp("para",this->strtolower(str_val[0]).c_str())==0) this->flag_magnetism = 3;
+      else if(std::strcmp("none",this->strtolower(str_val[0]).c_str())==0) this->flag_magnetism = 4;
       else
       {
         GLV::ofs_error << "unsupported value of magnetism" << std::endl;
@@ -153,27 +169,27 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("impurity_solver", str_val);
 
-      if(std::strcmp("alps-cthyb",str_val[0].c_str())==0) 
+      if(std::strcmp("alps-cthyb",this->strtolower(str_val[0]).c_str())==0) 
       {
         this->flag_impurity_solver = 1;
         GLV::ofs_error << "ALPS-CTHYB is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      else if(std::strcmp("alps-cthyb-segment",str_val[0].c_str())==0)
+      else if(std::strcmp("alps-cthyb-segment",this->strtolower(str_val[0]).c_str())==0)
       {
         this->flag_impurity_solver = 2;
         GLV::ofs_error << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      else if(std::strcmp("pacs", str_val[0].c_str())==0) this->flag_impurity_solver = 3;
-      else if(std::strcmp("rutgers-cthyb",str_val[0].c_str())==0) this->flag_impurity_solver = 4;
-      else if(std::strcmp("iqist",str_val[0].c_str())==0)
+      else if(std::strcmp("pacs", this->strtolower(str_val[0]).c_str())==0) this->flag_impurity_solver = 3;
+      else if(std::strcmp("rutgers-cthyb",this->strtolower(str_val[0]).c_str())==0) this->flag_impurity_solver = 4;
+      else if(std::strcmp("iqist",this->strtolower(str_val[0]).c_str())==0)
       {
         this->flag_impurity_solver = 5;
       }
       else
       {
-        GLV::ofs_error << "unsupported value of impurity_solver " << str_val[0] << std::endl;
+        GLV::ofs_error << "unsupported value of impurity_solver " << this->strtolower(str_val[0]) << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
@@ -197,7 +213,7 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("double_counting", str_val);
 
-      if(std::strcmp("nominal",str_val[0].c_str())==0) this->flag_double_counting = 1;
+      if(std::strcmp("nominal",this->strtolower(str_val[0]).c_str())==0) this->flag_double_counting = 1;
       else
       {
         GLV::ofs_error << "unsupported value of double_counting" << std::endl;
@@ -412,7 +428,7 @@ namespace DMFT
       std::vector<std::string> str_val;
       this->read_parameter("dft_xc", str_val);
 
-      if(std::strcmp("hybrid", str_val[0].c_str())==0)
+      if(std::strcmp("hybrid", this->strtolower(str_val[0]).c_str())==0)
         this->hyb_func = true;
       else
         this->hyb_func = false;
@@ -467,8 +483,7 @@ namespace DMFT
     debug::codestamp("input_info::read_parameter");
 
     bool not_given=true;
-    std::string file;
-    char word[100], word_low[100];
+    char word[200];
 
     std::ifstream ifs("DMFT.in", std::ios::in);
 
@@ -482,12 +497,10 @@ namespace DMFT
 
     while(ifs.good())
     {
-      ifs.getline(word, 100);   
+      ifs.getline(word, 200);   
       if(ifs.eof()) break;
-      
-      DMFT::input_info::strtolower(word, word_low);
 
-      std::string line(word_low);
+      std::string line(word);
 
       if(!line.empty())
       {
@@ -508,7 +521,9 @@ namespace DMFT
           line.erase(0,line.find_first_not_of(' '));
         }
 
-        if(std::strcmp(key_val[0].c_str(), keyword)==0)
+        std::string key_str_lower = DMFT::input_info::strtolower(key_val[0]);
+
+        if(std::strcmp(key_str_lower.c_str(), keyword)==0)
         {
           if(key_val.size() != count+1){
             std::string messg(word);
@@ -522,28 +537,29 @@ namespace DMFT
           break;
         }
         else if(
-          std::strcmp("calculation", key_val[0].c_str())==0 || 
-          std::strcmp("dft_solver", key_val[0].c_str())==0 || 
-          std::strcmp("temperature", key_val[0].c_str())==0 ||
-          std::strcmp("magnetism", key_val[0].c_str())==0 ||
-          std::strcmp("impurity_solver", key_val[0].c_str())==0 ||
-          std::strcmp("double_counting", key_val[0].c_str())==0 ||
-          std::strcmp("max_charge_step", key_val[0].c_str())==0 ||
-          std::strcmp("max_dmft_step", key_val[0].c_str())==0 ||
-          std::strcmp("max_dft_step", key_val[0].c_str())==0 ||
-          std::strcmp("mc_step", key_val[0].c_str())==0 || 
-          std::strcmp("energy_window", key_val[0].c_str())==0 ||
-          std::strcmp("local_symmetry", key_val[0].c_str())==0 ||
-          std::strcmp("restart", key_val[0].c_str())==0 ||
-          std::strcmp("dft_xc", key_val[0].c_str())==0 ||
-          std::strcmp("charge_mix_beta", key_val[0].c_str())==0 ||
-          std::strcmp("delta_sigma", key_val[0].c_str())==0 ||
-          std::strcmp("delta_rho", key_val[0].c_str())==0 ||
-          std::strcmp("hybrid_xc_coeff", key_val[0].c_str())==0 )
+          std::strcmp("calculation", key_str_lower.c_str())==0 || 
+          std::strcmp("dft_solver", key_str_lower.c_str())==0 || 
+          std::strcmp("dft_solver_exe", key_str_lower.c_str())==0 ||
+          std::strcmp("temperature", key_str_lower.c_str())==0 ||
+          std::strcmp("magnetism", key_str_lower.c_str())==0 ||
+          std::strcmp("impurity_solver", key_str_lower.c_str())==0 ||
+          std::strcmp("double_counting", key_str_lower.c_str())==0 ||
+          std::strcmp("max_charge_step", key_str_lower.c_str())==0 ||
+          std::strcmp("max_dmft_step", key_str_lower.c_str())==0 ||
+          std::strcmp("max_dft_step", key_str_lower.c_str())==0 ||
+          std::strcmp("mc_step", key_str_lower.c_str())==0 || 
+          std::strcmp("energy_window", key_str_lower.c_str())==0 ||
+          std::strcmp("local_symmetry", key_str_lower.c_str())==0 ||
+          std::strcmp("restart", key_str_lower.c_str())==0 ||
+          std::strcmp("dft_xc", key_str_lower.c_str())==0 ||
+          std::strcmp("charge_mix_beta", key_str_lower.c_str())==0 ||
+          std::strcmp("delta_sigma", key_str_lower.c_str())==0 ||
+          std::strcmp("delta_rho", key_str_lower.c_str())==0 ||
+          std::strcmp("hybrid_xc_coeff", key_str_lower.c_str())==0 )
         {;}
         else
         {
-          std::string messg = "Unsupported parameter " + key_val[0];
+          std::string messg = "Unsupported parameter " + key_str_lower;
           throw messg;
         }
       }
@@ -557,46 +573,61 @@ namespace DMFT
     return true;
   }
 
-  void input_info::strtolower(char *in_str, char *out_str)
+  std::string input_info::strtolower(char *in_str)
   {
     char c;
+    std::string out_str;
     int len = std::strlen(in_str);
     for (int i = 0; i < len; i++)
     {
       c = in_str[i];
-      out_str[i] = std::tolower(c);
+      out_str.push_back(std::tolower(c));
     }
-    out_str[len] = '\0';
+    // out_str.push_back('\0');
+
+    return out_str;
+  }
+
+  std::string input_info::strtolower(std::string in_str)
+  {
+    std::string out_str;
+
+    for(char c : in_str)
+      out_str.push_back(std::tolower(c));
+
+    // out_str.push_back('\0');
+
+    return out_str;
   }
 
   const void* input_info::parameter(char* keyword)
   {
-    char word[40];
-    this->strtolower(keyword, word);
+    std::string word = this->strtolower(keyword);
 
-    if(std::strcmp("dft_solver", word)==0) return &flag_DFT_solver;
-    else if(std::strcmp("calculation", word)==0) return &calculation_type;
-    else if(std::strcmp("temperature", word)==0) return &temperature;
-    else if(std::strcmp("beta", word)==0) return &beta;
-    else if(std::strcmp("magnetism", word)==0) return &flag_magnetism;
-    else if(std::strcmp("n_tau", word)==0) return &n_tau;
-    else if(std::strcmp("n_omega", word)==0) return &n_omega;
-    else if(std::strcmp("impurity_solver", word)==0) return &flag_impurity_solver;
-    else if(std::strcmp("double_counting", word)==0) return &flag_double_counting;
-    else if(std::strcmp("max_charge_step", word)==0) return &charge_step_max;
-    else if(std::strcmp("max_dmft_step", word)==0) return &DMFT_step_max;
-    else if(std::strcmp("max_dft_step", word)==0) return &DFT_step_max;
-    else if(std::strcmp("mc_step", word)==0) return &MC_step;
-    else if(std::strcmp("hyb_func", word)==0) return &hyb_func;
-    else if(std::strcmp("hyf_xc_alpha", word)==0) return &hyf_xc_alpha;
-    else if(std::strcmp("charge_mix_beta", word)==0) return &charge_mix_beta;
-    else if(std::strcmp("delta_sigma", word)==0) return &delta_sigma;
-    else if(std::strcmp("delta_rho", word)==0) return &delta_rho;
-    else if(std::strcmp("start_charge_step", word)==0) return &start_charge_step;
-    else if(std::strcmp("start_dmft_step", word)==0) return &start_DMFT_step;
-    else if(std::strcmp("last_charge_step", word)==0) return &last_charge_step;
-    else if(std::strcmp("last_dmft_step", word)==0) return &last_DMFT_step;
-    else if(std::strcmp("restart", word)==0) return &flag_restart;
+    if(std::strcmp("dft_solver", word.c_str())==0) return &flag_DFT_solver;
+    else if(std::strcmp("dft_solver_exe", word.c_str())==0) return &dft_solver_exe;
+    else if(std::strcmp("calculation", word.c_str())==0) return &calculation_type;
+    else if(std::strcmp("temperature", word.c_str())==0) return &temperature;
+    else if(std::strcmp("beta", word.c_str())==0) return &beta;
+    else if(std::strcmp("magnetism", word.c_str())==0) return &flag_magnetism;
+    else if(std::strcmp("n_tau", word.c_str())==0) return &n_tau;
+    else if(std::strcmp("n_omega", word.c_str())==0) return &n_omega;
+    else if(std::strcmp("impurity_solver", word.c_str())==0) return &flag_impurity_solver;
+    else if(std::strcmp("double_counting", word.c_str())==0) return &flag_double_counting;
+    else if(std::strcmp("max_charge_step", word.c_str())==0) return &charge_step_max;
+    else if(std::strcmp("max_dmft_step", word.c_str())==0) return &DMFT_step_max;
+    else if(std::strcmp("max_dft_step", word.c_str())==0) return &DFT_step_max;
+    else if(std::strcmp("mc_step", word.c_str())==0) return &MC_step;
+    else if(std::strcmp("hyb_func", word.c_str())==0) return &hyb_func;
+    else if(std::strcmp("hyf_xc_alpha", word.c_str())==0) return &hyf_xc_alpha;
+    else if(std::strcmp("charge_mix_beta", word.c_str())==0) return &charge_mix_beta;
+    else if(std::strcmp("delta_sigma", word.c_str())==0) return &delta_sigma;
+    else if(std::strcmp("delta_rho", word.c_str())==0) return &delta_rho;
+    else if(std::strcmp("start_charge_step", word.c_str())==0) return &start_charge_step;
+    else if(std::strcmp("start_dmft_step", word.c_str())==0) return &start_DMFT_step;
+    else if(std::strcmp("last_charge_step", word.c_str())==0) return &last_charge_step;
+    else if(std::strcmp("last_dmft_step", word.c_str())==0) return &last_DMFT_step;
+    else if(std::strcmp("restart", word.c_str())==0) return &flag_restart;
     else
     {
       GLV::ofs_error << "No parameter " << keyword << std::endl;
