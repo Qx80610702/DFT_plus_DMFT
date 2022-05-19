@@ -19,11 +19,13 @@ namespace DFT_plus_DMFT
   void Charge_SCF::init(
       const int DFT_solver,
       const double mixing_parameter,
+      const int mixing_step,
       const double delta_rho,
       const int nks, const int n_spin )
   {
     this->flag_DFT_solver = DFT_solver;
     this->mixing_beta = mixing_parameter;
+    this->max_mixing_step = mixing_step;
     this->sc_delta_rho = delta_rho;
     this->nkpoints = nks;
     this->nspin = n_spin;
@@ -554,24 +556,23 @@ namespace DFT_plus_DMFT
     int minutes;
     timer::timestamp(time);
 
-    GLV::ofs_running << "\nStart charge mixing..." << std::endl;
+    GLV::ofs_running << "Start charge mixing..." << std::endl;
 
     std::vector<double> alpha;
     double charge_change = 0.0;
 
-    this->char_ref().update_data(mix_step);
+    this->char_ref().update_data(mix_step, this->max_mixing_step);
 
     this->char_ref().update_alpha(mix_step, alpha);
 
     this->char_ref().mixing_density(
         mix_step, this->mixing_beta, 
+        this->max_mixing_step,
         alpha, charge_change );
 
-    GLV::ofs_running << "\nChange of the charge density: "
+    GLV::ofs_running << "Change of the charge density: "
                      << std::setprecision(6) << charge_change
                      << std::endl;
-    
-    if(charge_change<this->sc_delta_rho) return true;
 
     this->mixing_density_matrix(mix_step, alpha);
 
@@ -580,7 +581,8 @@ namespace DFT_plus_DMFT
                          << minutes << "m "
                          << (int)seconds << "s" << std::endl;
 
-    return false;
+    if(charge_change<this->sc_delta_rho) return true;
+    else return false;
   }
 
   void Charge_SCF::mixing_density_matrix(
@@ -597,8 +599,8 @@ namespace DFT_plus_DMFT
       //Residual DM_mat
       for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
-          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
-            dens_mat_tmp[ik][is][i] -= this->Opt_DM_mat.back()[ik][is][i];
+          for(int igrid=0; igrid<this->Opt_DM_mat.back()[ik][is].size(); igrid++)
+            dens_mat_tmp[ik][is][igrid] -= this->Opt_DM_mat.back()[ik][is][igrid];
       
       if(this->Res_DM_mat.empty()) this->Res_DM_mat.push_back(dens_mat_tmp);
       else{
@@ -609,11 +611,11 @@ namespace DFT_plus_DMFT
       //Density matrix mixing
       for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
-          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
-            dens_mat_tmp[ik][is][i] = 
-              (1.0-this->mixing_beta)*this->Opt_DM_mat.back()[ik][is][i] +
-              this->mixing_beta*( this->Res_DM_mat.back()[ik][is][i] + 
-              this->Opt_DM_mat.back()[ik][is][i] );
+          for(int igrid=0; igrid<this->Opt_DM_mat.back()[ik][is].size(); igrid++)
+            dens_mat_tmp[ik][is][igrid] = 
+              (1.0-this->mixing_beta)*this->Opt_DM_mat.back()[ik][is][igrid] +
+              this->mixing_beta*( this->Res_DM_mat.back()[ik][is][igrid] + 
+              this->Opt_DM_mat.back()[ik][is][igrid] );
 
       this->Opt_DM_mat.push_back(dens_mat_tmp);
     }
@@ -626,10 +628,12 @@ namespace DFT_plus_DMFT
       //Residual DM_mat
       for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
-          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
-            dens_mat_tmp[ik][is][i] -= this->Opt_DM_mat.back()[ik][is][i];
+          for(int igrid=0; igrid<this->Opt_DM_mat.back()[ik][is].size(); igrid++)
+            dens_mat_tmp[ik][is][igrid] -= this->Opt_DM_mat.back()[ik][is][igrid];
       
-      if(this->Res_DM_mat.size()<8) this->Res_DM_mat.push_back(dens_mat_tmp);
+      //this->Res_DM_mat.size()<=this->max_mixing_step
+      if(this->Res_DM_mat.size()<this->max_mixing_step) 
+        this->Res_DM_mat.push_back(dens_mat_tmp);
       else{
         this->Res_DM_mat.pop_front();
         this->Res_DM_mat.push_back(dens_mat_tmp);
@@ -639,32 +643,33 @@ namespace DFT_plus_DMFT
       //First part: \rho^{opt}
       dens_mat_tmp = this->Opt_DM_mat.back();
 
-      for(int istep=0; istep<this->Opt_DM_mat.size()-1; istep++){
+      for(int istep=0; istep<alpha.size(); istep++){
         for(int ik=0; ik<this->Opt_DM_mat[istep].size(); ik++)
           for(int is=0; is<this->Opt_DM_mat[istep][ik].size(); is++)
-            for(int i=0; i<this->Opt_DM_mat[istep][ik][is].size(); i++)
-              dens_mat_tmp[ik][is][i] += alpha[istep]*
-                ( this->Opt_DM_mat[istep+1][ik][is][i] - 
-                  this->Opt_DM_mat[istep][ik][is][i] );
+            for(int igrid=0; igrid<this->Opt_DM_mat[istep][ik][is].size(); igrid++)
+              dens_mat_tmp[ik][is][igrid] += alpha[istep]*
+                ( this->Opt_DM_mat[istep+1][ik][is][igrid] - 
+                  this->Opt_DM_mat[istep][ik][is][igrid] );
       }
 
       //Second part: \Rrho^{opt}
       for(int ik=0; ik<this->Res_DM_mat.back().size(); ik++)
           for(int is=0; is<this->Res_DM_mat.back()[ik].size(); is++)
-            for(int i=0; i<this->Res_DM_mat.back()[ik][is].size(); i++)
-              dens_mat_tmp[ik][is][i] += this->mixing_beta*
-                  this->Res_DM_mat.back()[ik][is][i];
+            for(int igrid=0; igrid<this->Res_DM_mat.back()[ik][is].size(); igrid++)
+              dens_mat_tmp[ik][is][igrid] += this->mixing_beta*
+                  this->Res_DM_mat.back()[ik][is][igrid];
 
-      for(int istep=0; istep<this->Res_DM_mat.size()-1; istep++){
+      for(int istep=0; istep<alpha.size(); istep++){
         for(int ik=0; ik<this->Res_DM_mat[istep].size(); ik++)
           for(int is=0; is<this->Res_DM_mat[istep][ik].size(); is++)
-            for(int i=0; i<this->Res_DM_mat[istep][ik][is].size(); i++)
-              dens_mat_tmp[ik][is][i] += this->mixing_beta*alpha[istep]*
-                ( this->Res_DM_mat[istep+1][ik][is][i] - 
-                  this->Res_DM_mat[istep][ik][is][i] );
+            for(int igrid=0; igrid<this->Res_DM_mat[istep][ik][is].size(); igrid++)
+              dens_mat_tmp[ik][is][igrid] += this->mixing_beta*alpha[istep]*
+                ( this->Res_DM_mat[istep+1][ik][is][igrid] - 
+                  this->Res_DM_mat[istep][ik][is][igrid] );
       }
 
-      if(this->Opt_DM_mat.size()<8) this->Opt_DM_mat.push_back(dens_mat_tmp);
+      if(this->Opt_DM_mat.size()<this->max_mixing_step) 
+        this->Opt_DM_mat.push_back(dens_mat_tmp);
       else{
         this->Opt_DM_mat.pop_front();
         this->Opt_DM_mat.push_back(dens_mat_tmp);

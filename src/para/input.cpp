@@ -16,7 +16,7 @@ namespace DMFT
   {
     debug::codestamp("input_info::read");
 
-    GLV::ofs_running << "Reading DMFT.in ......" << std::endl;
+    // GLV::ofs_running << "Reading DMFT.in ......" << std::endl;
     GLV::ofs_running << "=========== All parameters used in the running time ===========" << std::endl;
 
     //calculation
@@ -285,6 +285,25 @@ namespace DMFT
             << std::setprecision(3) << std::setiosflags(std::ios::scientific)
             << this->delta_rho << std::endl;
 
+    //mixing_step
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("mixing_step", str_val);
+
+      this->mixing_step = atoi(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      GLV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // GLV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
+      this->mixing_step = 8;
+    }
+    GLV::ofs_running << "mixing_step  " 
+            << std::setprecision(3) << std::setiosflags(std::ios::scientific)
+            << this->mixing_step << std::endl;
+
     //charge_mix_beta
     try {
       std::vector<std::string> str_val;
@@ -298,7 +317,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       // GLV::ofs_running << "Warning: charge mixing parameter is not given and set default value 0.05" << std::endl;
-      this->charge_mix_beta = 0.4;
+      this->charge_mix_beta = 0.05;
     }
 
     //max_dmft_step
@@ -555,6 +574,7 @@ namespace DMFT
           std::strcmp("charge_mix_beta", key_str_lower.c_str())==0 ||
           std::strcmp("delta_sigma", key_str_lower.c_str())==0 ||
           std::strcmp("delta_rho", key_str_lower.c_str())==0 ||
+          std::strcmp("mixing_step", key_str_lower.c_str())==0 ||
           std::strcmp("hybrid_xc_coeff", key_str_lower.c_str())==0 )
         {;}
         else
@@ -628,6 +648,7 @@ namespace DMFT
     else if(std::strcmp("last_charge_step", word.c_str())==0) return &last_charge_step;
     else if(std::strcmp("last_dmft_step", word.c_str())==0) return &last_DMFT_step;
     else if(std::strcmp("restart", word.c_str())==0) return &flag_restart;
+    else if(std::strcmp("mixing_step", word.c_str())==0) return &mixing_step;
     else
     {
       GLV::ofs_error << "No parameter " << keyword << std::endl;

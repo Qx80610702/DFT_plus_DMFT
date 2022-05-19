@@ -1,4 +1,3 @@
-
 #ifdef __FHIaims
 #include "charge_scf_aims.h"
 #endif
@@ -16,6 +15,9 @@
 #include <string>
 #include <deque>
 
+// Pulay DIIS method. 
+//Refs.: P. Pulay. Chem. Phys. Lett. 73, 393(1980); G. Kress, J. Furthmuller. Phys. Rev. B 54, 11169(1996)
+//Mixing step 8.
 namespace DFT_plus_DMFT
 {
   class Charge_SCF
@@ -34,6 +36,7 @@ namespace DFT_plus_DMFT
     public:
     void init(const int DFT_solver,
         const double mixing_parameter,
+        const int mixing_step,
         const double delta_rho,
         const int nks, const int n_spin );
 
@@ -101,6 +104,7 @@ namespace DFT_plus_DMFT
     int flag_DFT_solver;
     double sc_delta_rho;
     double mixing_beta;
+    int max_mixing_step;
     int nkpoints;
     int nspin;
 

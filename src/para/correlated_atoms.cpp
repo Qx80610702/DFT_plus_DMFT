@@ -100,7 +100,7 @@ namespace DFT_output
 
   void atoms_info::read(DMFT::input_info& in)
   {
-    GLV::ofs_running << "Reading correlated atoms information ......" << std::endl;
+    // GLV::ofs_running << "Reading correlated atoms information ......" << std::endl;
 
     this->read_structure_symmetry();
     this->read_local_symmetry(in);

@@ -27,13 +27,14 @@ namespace DFT_plus_DMFT
           std::vector<std::vector<std::vector<
           std::complex<double>>>>& dens_mat_cmplx);
 
-    void update_data(const int mix_step);
+    void update_data(const int mix_step, const int max_mixing_step);
 
     void update_alpha(const int mix_step, std::vector<double>& alpha);
 
     void mixing_density(
           const int mix_step, 
           const double mixing_beta, 
+          const int max_mixing_step,
           std::vector<double>& alpha,
           double& charge_change);
 

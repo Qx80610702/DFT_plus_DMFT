@@ -224,7 +224,8 @@ namespace DFT_plus_DMFT
   }
 
   void Charge_SCF_aims::update_data(
-        const int mix_step )
+        const int mix_step,
+        const int max_mixing_step)
   {
     debug::codestamp("Charge_SCF_aims::update_data");
 
@@ -236,20 +237,22 @@ namespace DFT_plus_DMFT
         for(int igrid=0; igrid<vector_tmp[is].size(); igrid++)
           vector_tmp[is][igrid] = this->rho_out[is][igrid] - vector_tmp[is][igrid];
 
-    if(this->Rrho.size()<=8) this->Rrho.push_back(vector_tmp);
+    if(this->Rrho.size()<max_mixing_step) 
+      this->Rrho.push_back(vector_tmp);   //Rrho.size()<=max_mixing_step
     else{
       this->Rrho.pop_front();
       this->Rrho.push_back(vector_tmp);
     }
 
     //dRrho
-    if(mix_step>0){
+    if(mix_step>1){
       for(int is=0; is<this->Rrho[0].size(); is++)
         for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
           vector_tmp[is][igrid] = this->Rrho.back()[is][igrid] - 
                         this->Rrho[this->Rrho.size()-2][is][igrid];
 
-      if(this->dRrho.size()<8) this->dRrho.push_back(vector_tmp);
+      if(this->dRrho.size() < max_mixing_step-1) 
+        this->dRrho.push_back(vector_tmp); //dRrho.size()<=7
       else{
         this->dRrho.pop_front();
         this->dRrho.push_back(vector_tmp);
@@ -265,12 +268,12 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("Charge_SCF_aims::update_alpha");
 
-    if(mix_step==0) return;
+    if(mix_step==1) return;
 
     //Calculate Abar
     std::vector<double> Abar(this->dRrho.size()*this->dRrho.size(), 0.0);
 
-    for(int is=0; is<this->dRrho[0].size();is++)
+    for(int is=0; is<this->dRrho.back().size();is++)
       for(int i=0; i<this->dRrho.size(); i++)
         for(int j=0; j<this->dRrho.size(); j++){
           for(int igrid=0; igrid<this->dRrho[i][is].size(); igrid++)
@@ -283,7 +286,7 @@ namespace DFT_plus_DMFT
 
     //dRR
     std::vector<double> dRR(this->dRrho.size(), 0.0);
-    for(int is=0; is<this->dRrho[0].size();is++)
+    for(int is=0; is<this->dRrho.back().size();is++)
       for(int i=0; i<this->dRrho.size(); i++)
         for(int igrid=0; igrid<this->dRrho[i][is].size(); igrid++)
           dRR[i] += std::pow(this->partition_tab[igrid],2)*
@@ -301,6 +304,7 @@ namespace DFT_plus_DMFT
   void Charge_SCF_aims::mixing_density(
     const int mix_step,
     const double mixing_beta,
+    const int max_mixing_step,
     std::vector<double>& alpha,
     double& charge_change)
   {
@@ -311,11 +315,11 @@ namespace DFT_plus_DMFT
     for(int is=0; is<this->Rrho[0].size(); is++)
       for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
         charge_change += this->partition_tab[igrid]*
-            std::pow(this->Rrho.back()[is][igrid],2);
+            std::pow(this->Rrho.back()[is][igrid], 2);
 
     charge_change = std::sqrt(charge_change);
 
-    if(mix_step==0){//plain mixing
+    if(mix_step==1){//plain mixing
       std::vector<std::vector<double>> rho_tmp;
       rho_tmp = this->Opt_rho.back();
 
@@ -333,7 +337,7 @@ namespace DFT_plus_DMFT
       //First part: \rho^{opt}
       rho_tmp = this->Opt_rho.back();
 
-      for(int istep=0; istep<this->Opt_rho.size()-1; istep++){
+      for(int istep=0; istep<alpha.size(); istep++){
         for(int is=0; is<this->Opt_rho[istep].size(); is++)
           for(int igrid=0; igrid<this->Opt_rho[istep][is].size(); igrid++)
             rho_tmp[is][igrid] += alpha[istep]*
@@ -346,7 +350,7 @@ namespace DFT_plus_DMFT
           for(int igrid=0; igrid<this->Rrho.back()[is].size(); igrid++)
             rho_tmp[is][igrid] += mixing_beta*this->Rrho.back()[is][igrid];
 
-      for(int istep=0; istep<this->Rrho.size()-1; istep++){
+      for(int istep=0; istep<alpha.size(); istep++){
         for(int is=0; is<this->Rrho[istep].size(); is++)
           for(int igrid=0; igrid<this->Rrho[istep][is].size(); igrid++)
             rho_tmp[is][igrid] += mixing_beta*alpha[istep]*
@@ -354,7 +358,8 @@ namespace DFT_plus_DMFT
               this->Rrho[istep][is][igrid] );
       }
 
-      if(this->Opt_rho.size()<8) this->Opt_rho.push_back(rho_tmp);
+      if(this->Opt_rho.size()<max_mixing_step) 
+        this->Opt_rho.push_back(rho_tmp);   //this->Opt_rho.seize()<=max_mixing_step
       else{
         this->Opt_rho.pop_front();
         this->Opt_rho.push_back(rho_tmp);

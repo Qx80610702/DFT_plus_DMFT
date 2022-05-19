@@ -48,6 +48,7 @@ namespace DMFT
     double delta_sigma;             //The convergency criteria of self-energy (unit eV); default:0.1
     double delta_rho;               //The convergency criteria of the charge density; default: 1.0e-4
     int calculation_type;           //DFT+DMFT scf:0; spectra:1; default:0
+    int mixing_step;                //Number of past iteration include in the density mixing; default:8
 
     std::string dft_solver_exe;     //the executable of DFT solver
 

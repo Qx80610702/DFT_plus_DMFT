@@ -133,7 +133,7 @@ namespace DFT_plus_DMFT
       std::exit(EXIT_FAILURE);
     }
 
-    GLV::ofs_running << "\nChemical potential: " << std::setw(15) << std::fixed << std::setprecision(9) 
+    GLV::ofs_running << "Chemical potential: " << std::setw(15) << std::fixed << std::setprecision(9) 
                 << this->sigma_corrected_mu*GLC::Hartree_to_eV << " eV" << std::endl;
 
     return;
