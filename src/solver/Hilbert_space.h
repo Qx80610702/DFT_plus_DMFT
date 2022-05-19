@@ -33,7 +33,7 @@ namespace DFT_plus_DMFT
     std::vector<int>& Wbands(){return n_wbands;}
     std::vector<std::vector<int>>& wbands2ibands(){return wbands_ibands;}
     std::vector<std::vector<int>>& ibands2wbands(){return ibands_wbands;}
-    std::vector<std::vector<bool>>& correction_flag(){return sigma_correction;}
+    std::vector<std::vector<int>>& correction_flag(){return sigma_correction;}
     double valence(){return n_valence;}
     const std::vector<double>& Ener_window(){return energy_up_down;}
     const std::vector<std::vector<std::vector<double>>>& eigen_val(){return this->eigen_values;}
@@ -48,8 +48,8 @@ namespace DFT_plus_DMFT
     //The energy window of KS bands
     std::vector<double> energy_up_down;       // energy_up_down[0(dw) or 1(up)]
 
-    //whether KS band[is][n_KS_bands] is in the window or not
-    std::vector<std::vector<bool>> sigma_correction;
+    //whether KS band[is][n_KS_bands] is in the window or not; 1 for in and 0 for not
+    std::vector<std::vector<int>> sigma_correction;
 
     //number of KS bands in the window; n_KS_bands_corrected[ispin]
     std::vector<int> n_wbands;

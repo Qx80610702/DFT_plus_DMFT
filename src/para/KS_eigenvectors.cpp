@@ -20,7 +20,7 @@ namespace DFT_output
   {
     debug::codestamp("KS_eigenvectors::read_corr_subset");
 
-    const std::vector<std::vector<bool>>& correction=space.correction_flag();
+    const std::vector<std::vector<int>>& correction=space.correction_flag();
     const std::vector<int>& wbands=space.Wbands();
     const std::vector<std::vector<int>>& index=space.ibands2wbands();
 
@@ -93,7 +93,7 @@ namespace DFT_output
   {
     debug::codestamp("KS_eigenvectors::read_DMFT_occ_subset");
 
-    const std::vector<std::vector<bool>>& correction = space.correction_flag();
+    const std::vector<std::vector<int>>& correction = space.correction_flag();
     const std::vector<int>& wbands=space.Wbands();
     const std::vector<std::vector<int>>& index = space.ibands2wbands();
     const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();

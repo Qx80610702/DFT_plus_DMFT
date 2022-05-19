@@ -29,23 +29,43 @@ namespace DFT_plus_DMFT
 
     this->n_valence = band.n_electrons();
 
-    this->n_wbands.resize(this->nspin);
-    this->wbands_ibands.resize(this->nspin);
-    this->ibands_wbands.resize(this->nspin);
+    if(this->n_wbands.empty()) this->n_wbands.resize(this->nspin);
+    if(this->wbands_ibands.empty()) this->wbands_ibands.resize(this->nspin);
+    if(this->ibands_wbands.empty()) this->ibands_wbands.resize(this->nspin);
+    if(this->eigen_values.empty()) this->eigen_values.resize(this->nspin);
 
-    this->sigma_correction.resize(this->nspin);
-    for(int is=0; is<this->nspin; is++)
-      this->sigma_correction.at(is).resize(this->n_KS_bands,false);
+    if(this->sigma_correction.empty()){
+      this->sigma_correction.resize(this->nspin);
+      for(int is=0; is<this->nspin; is++)
+        this->sigma_correction[is].resize(this->n_KS_bands, 0);
+    }
+    else{
+      if(this->sigma_correction.size() != this->nspin){
+        GLV::ofs_error << "Error in reading the correlated bands windows line" << __LINE__ << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
 
-    this->eigen_values.resize(this->nspin);
+      for(int is=0; is<this->nspin; is++){
+        if(this->sigma_correction[is].empty())
+          this->sigma_correction[is].resize(this->n_KS_bands, 0);
+        else{
+          for(int iband=0; iband<this->n_KS_bands; iband++)
+            this->sigma_correction[is][iband] = 0;
+        }
+      }
+    }
     
     if(charge_step==1) this->down_folding_first_charge_step(in, band);
     else this->read_corr_bands_windows(band);
 
     for(int is=0; is<this->nspin; is++){
-      this->eigen_values[is].resize(band.nk());
+      if(this->eigen_values[is].empty()) 
+        this->eigen_values[is].resize(band.nk());
+
       for(int ik=0; ik<band.nk(); ik++){
-        this->eigen_values[is][ik].resize(this->n_wbands[is]);
+        if(this->eigen_values[is][ik].empty()) 
+          this->eigen_values[is][ik].resize(this->n_wbands[is]);
+
         for(int iband=0; iband<this->n_wbands[is]; iband++)
           this->eigen_values[is][ik][iband] = 
           KS_eigenvalues[is][ik][this->wbands_ibands[is][iband]];
@@ -150,7 +170,7 @@ namespace DFT_plus_DMFT
 
       for(iband=lower_band_index; iband<=upper_band_index; iband++)
       {
-        this->sigma_correction.at(is).at(iband) = true;
+        this->sigma_correction.at(is).at(iband) = 1;
         this->wbands_ibands.at(is).at(iband-lower_band_index) = iband;
         this->ibands_wbands.at(is).at(iband) = iband-lower_band_index;
       }
@@ -245,19 +265,45 @@ namespace DFT_plus_DMFT
       }
     }
 
-    this->energy_up_down.resize(2);
+    if(this->energy_up_down.empty()) this->energy_up_down.resize(2);
+    else{
+      if(this->energy_up_down.size() != 2){
+        GLV::ofs_error << "Error in reading the correlated bands windows line" << __LINE__ << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
     this->energy_up_down[1] = eup;
     this->energy_up_down[0] = edw;
 
     for(int is=0; is<this->nspin; is++){
-      this->n_wbands.at(is) = upper_band_index[is]-lower_band_index[is]+1;
-      this->wbands_ibands.at(is).resize(upper_band_index[is]-lower_band_index[is]+1);
-      this->ibands_wbands.at(is).resize(this->n_KS_bands,-1);
+      this->n_wbands[is] = upper_band_index[is]-lower_band_index[is]+1;
+
+      if(this->wbands_ibands[is].empty()) 
+        this->wbands_ibands[is].resize(upper_band_index[is]-lower_band_index[is]+1);
+      else{
+        if(this->wbands_ibands[is].size() != upper_band_index[is]-lower_band_index[is]+1){
+          GLV::ofs_error << "Error in reading the correlated bands windows line" << __LINE__ << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+      }
+
+      if(this->ibands_wbands[is].empty()) 
+        this->ibands_wbands[is].resize(this->n_KS_bands,-1);
+      else{
+        if(this->ibands_wbands[is].size() != this->n_KS_bands){
+          GLV::ofs_error << "Error in reading the correlated bands windows line" << __LINE__ << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+        else{
+          for(auto& iter : this->ibands_wbands[is]) 
+            iter = -1;
+        }
+      }
 
       for(int iband=lower_band_index[is]; iband<=upper_band_index[is]; iband++){
-        this->sigma_correction.at(is).at(iband) = true;
-        this->wbands_ibands.at(is).at(iband-lower_band_index[is]) = iband;
-        this->ibands_wbands.at(is).at(iband) = iband-lower_band_index[is];
+        this->sigma_correction[is][iband] = 1;
+        this->wbands_ibands[is][iband-lower_band_index[is]] = iband;
+        this->ibands_wbands[is][iband] = iband-lower_band_index[is];
       }
 
       if(this->nspin==1) this->n_valence -= 2*lower_band_index[is];

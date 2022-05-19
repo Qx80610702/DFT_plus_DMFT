@@ -301,7 +301,7 @@ namespace DFT_plus_DMFT
     const int n_valence = space.valence();
     const std::vector<double>& freq=sigma.sigma_imag.Matsubara_freq();
     const std::vector<std::vector<int>>& wb2ib = space.wbands2ibands();
-    std::vector<std::vector<bool>>& corb_flag = space.correction_flag();
+    const std::vector<std::vector<int>>& corb_flag = space.correction_flag();
     const std::complex<double> im(0.0,1.0), one(1.0,0.0);
 
     std::vector<int> k_map;
@@ -525,12 +525,22 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::output_charge_density_matrix()
+  void Charge_SCF::output_mixed_charge_density_matrix()
   {
-    debug::codestamp("Charge_SCF::read_charge_density_matrix");
+    debug::codestamp("Charge_SCF::output_mixed_charge_density_matrix");
     
     this->char_ref().output_charge_density_matrix(
           this->nkpoints, this->Opt_DM_mat.back() );
+
+    return;
+  }
+
+  void Charge_SCF::output_DMFT_charge_density_matrix()
+  {
+    debug::codestamp("Charge_SCF::output_DMFT_charge_density_matrix");
+    
+    this->char_ref().output_charge_density_matrix(
+          this->nkpoints, this->dens_mat_out );
 
     return;
   }

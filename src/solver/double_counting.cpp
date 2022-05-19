@@ -27,7 +27,7 @@ namespace DMFT
     {
       GLV::ofs_running << "\n=============Double counting(FLL)============" << std::endl;
 
-      this->V_dc.resize(atom.inequ_atoms());
+      if(this->V_dc.empty()) this->V_dc.resize(atom.inequ_atoms());
 
       for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
       {
@@ -43,10 +43,12 @@ namespace DMFT
 
         const double averJ = atom.Jval(iatom);
 
-        this->V_dc[ineq].resize(nspin_tmp);
+        if(this->V_dc[ineq].empty()) this->V_dc[ineq].resize(nspin_tmp);
+        
         for(int is=0; is<nspin_tmp; is++)
         {       
-          this->V_dc[ineq][is].resize(m_tot*m_tot, zero);
+          if(this->V_dc[ineq][is].empty()) 
+            this->V_dc[ineq][is].resize(m_tot*m_tot, zero);
  
           const double FLL_nominal = averU*(atom.occ_num(iatom,0)+atom.occ_num(iatom,1)-0.5)
                             -averJ*(atom.occ_num(iatom,is)-0.5);

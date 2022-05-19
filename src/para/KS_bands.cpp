@@ -17,7 +17,7 @@ namespace DFT_output
     GLV::ofs_running << "Reading bands information ......" << std::endl;
 
     int val;
-    int spin_index,bands_index,k_index;
+    int spin_index, bands_index, k_index;
 
     std::ifstream if_bands("dft/outputs_to_DMFT/bands.dat", std::ios::in);
 
@@ -44,16 +44,23 @@ namespace DFT_output
       if_bands >> this->Efermi;
       if_bands.ignore(150, '\n');
 
-      this->eigen_values.resize(this->nspin);
-      this->DFT_occ_numbers.resize(this->nspin);
-      for(int ispin=0; ispin<nspin; ispin++)
-      {
-        this->eigen_values[ispin].resize(this->kpoints);
-        this->DFT_occ_numbers[ispin].resize(this->kpoints);
-        for(int ik=0; ik<kpoints; ik++)
+      if(this->eigen_values.empty()){
+        this->eigen_values.resize(this->nspin);
+        for(int ispin=0; ispin<nspin; ispin++)
         {
-          this->eigen_values[ispin][ik].resize(this->nbands);
-          this->DFT_occ_numbers[ispin][ik].resize(this->nbands);
+          this->eigen_values[ispin].resize(this->kpoints);
+          for(int ik=0; ik<kpoints; ik++)
+            this->eigen_values[ispin][ik].resize(this->nbands);
+        }
+      }
+
+      if(this->DFT_occ_numbers.empty()){
+        this->DFT_occ_numbers.resize(this->nspin);
+        for(int ispin=0; ispin<nspin; ispin++)
+        {
+          this->DFT_occ_numbers[ispin].resize(this->kpoints);
+          for(int ik=0; ik<kpoints; ik++)
+            this->DFT_occ_numbers[ispin][ik].resize(this->nbands);
         }
       }
 
@@ -84,7 +91,9 @@ namespace DFT_output
 
     ifs.seekg(0);      //set the position at the beginning of the file
     ifs >> val;
-    this->k_weight.resize(val);
+
+    if(this->k_weight.empty()) this->k_weight.resize(val);
+    
     ifs.ignore(150,'\n');
 
     while(ifs.good())

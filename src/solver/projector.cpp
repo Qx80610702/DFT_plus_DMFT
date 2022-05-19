@@ -53,29 +53,62 @@ namespace DFT_plus_DMFT
     for(int ik=0; ik<nkpoints; ik++)
       if(ik%mpi_ntasks() == mpi_rank()) k_map.push_back(ik);
 
-    this->projector_mat.resize(k_map.size());
-    this->TB_Hk.resize(k_map.size());
-    this->unitary_trans.resize(k_map.size());
-    for(int ik=0; ik<k_map.size(); ik++)
-    {
-      this->projector_mat[ik].resize(natom);
-      this->TB_Hk[ik].resize(natom);
-      this->unitary_trans[ik].resize(natom);
-      
-      for(int iatom=0; iatom<natom; iatom++)
+    if(this->projector_mat.empty()){
+      this->projector_mat.resize(k_map.size());
+      for(int ik=0; ik<k_map.size(); ik++)
       {
-        const int m_tot=norb_sub[iatom];
+        this->projector_mat[ik].resize(natom);
 
-        this->projector_mat[ik][iatom].resize(nspin);
-        this->TB_Hk[ik][iatom].resize(nspin);
-        this->unitary_trans[ik][iatom].resize(nspin);
-        for(int is=0; is<nspin; is++)
+        for(int iatom=0; iatom<natom; iatom++)
         {
-          this->projector_mat[ik][iatom][is].resize(wbands[is]*m_tot);
-          this->TB_Hk[ik][iatom][is].resize(m_tot);
-          this->unitary_trans[ik][iatom][is].resize(m_tot*m_tot, zero);
+          const int m_tot=norb_sub[iatom];
+
+          this->projector_mat[ik][iatom].resize(nspin);
+          for(int is=0; is<nspin; is++)
+            this->projector_mat[ik][iatom][is].resize(wbands[is]*m_tot);
         }
       }
+    }
+
+    if(this->TB_Hk.empty()){
+      this->TB_Hk.resize(k_map.size());
+      for(int ik=0; ik<k_map.size(); ik++)
+      {
+        this->TB_Hk[ik].resize(natom);
+
+        for(int iatom=0; iatom<natom; iatom++)
+        {
+          const int m_tot=norb_sub[iatom];
+
+          this->TB_Hk[ik][iatom].resize(nspin);
+          for(int is=0; is<nspin; is++)
+            this->TB_Hk[ik][iatom][is].resize(m_tot);
+        }
+      }
+    }
+
+    if(this->unitary_trans.empty()){
+      this->unitary_trans.resize(k_map.size());
+      for(int ik=0; ik<k_map.size(); ik++)
+      {
+        this->unitary_trans[ik].resize(natom);
+
+        for(int iatom=0; iatom<natom; iatom++)
+        {
+          const int m_tot=norb_sub[iatom];
+
+          this->unitary_trans[ik][iatom].resize(nspin);
+          for(int is=0; is<nspin; is++)
+            this->unitary_trans[ik][iatom][is].resize(m_tot*m_tot, zero);
+        }
+      }
+    }
+    else{
+      for(auto& iter1 : this->unitary_trans)
+        for(auto& iter2 : iter1)
+          for(auto& iter3 : iter2)
+           for(auto& iter4 : iter3)
+            iter4 = zero;
     }
 
     int max_threads=omp_get_max_threads();
