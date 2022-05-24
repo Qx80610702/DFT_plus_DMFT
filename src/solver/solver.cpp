@@ -150,6 +150,7 @@ namespace DFT_plus_DMFT
         last_DMFT_step = dmft_step;
 
         loop_count++;
+        dmft_loop_count++;
       }//dmft loop
       GLV::ofs_running << "================ End of DMFT loop ================\n" << std::endl;
 
@@ -197,6 +198,12 @@ namespace DFT_plus_DMFT
         
         GLV::ofs_running << "End mixing charge density" << std::endl;
 
+        GLV::ofs_running << "Self-consistency of charge density in current loop: ";
+        if(density_convergency)
+          GLV::ofs_running << "true" << std::endl;
+        else
+          GLV::ofs_running << "false" << std::endl;
+
         if(density_convergency && sigma_convergency){
           GLV::ofs_running << "\nThe DFT+DMFT calculation has reached convergency!!!" << std::endl;
           break;
@@ -223,13 +230,20 @@ namespace DFT_plus_DMFT
 
             density_convergency = this->DFT_loop_charge_mixing(mix_step);
 
+            GLV::ofs_running << "Self-consistency of charge density in current loop: ";
+            if(density_convergency)
+              GLV::ofs_running << "true" << std::endl;
+            else
+              GLV::ofs_running << "false" << std::endl;
+
             mix_step++;
 
             GLV::ofs_running << std::endl;
           }
         }//DFT loop
-        GLV::ofs_running << "<><><><><><><><><> End of DFT loop <><><><><><><><><>\n" << std::endl;
+        GLV::ofs_running << "<><><><><><><><><> End of DFT loop <><><><><><><><><>" << std::endl;
       }
+      GLV::ofs_running << "<><><><><><><><><> End charge step " << char_step << " <><><><><><><><><><><><><>\n" << std::endl; 
     }//charge loop
 
     timer::get_time(time, seconds, minutes, hours, days);
@@ -497,7 +511,7 @@ namespace DFT_plus_DMFT
     debug::codestamp("solver::DFT_loop_charge_mixing");
     bool density_convergency = false;
 
-    GLV::ofs_running << "Start updating charge density..." << std::endl;
+    GLV::ofs_running << "\nStart updating charge density..." << std::endl;
 
     this->pars.bands.read();
 
@@ -538,7 +552,7 @@ namespace DFT_plus_DMFT
     GLV::ofs_running << "End updating charge density" << std::endl;
 
     // this->Char_scf.read_charge_density(false, false);
-    GLV::ofs_running << "Start mixing charge density..." << std::endl;
+    GLV::ofs_running << "\nStart mixing charge density..." << std::endl;
     
     density_convergency = this->Char_scf.charge_mixing(mix_step);
 
@@ -568,8 +582,11 @@ namespace DFT_plus_DMFT
 
     GLV::ofs_running << "\nSelf-consistency of self-energy in charge step " 
               << charge_step 
-              << " DMFT step " << DMFT_step 
-              << " : false" << std::endl;
+              << " DMFT step " << DMFT_step;
+    if(convergency)
+      GLV::ofs_running << ": true" << std::endl;
+    else
+      GLV::ofs_running << ": false" << std::endl;
       
     GLV::ofs_running << "    impuritys            Delta_Sigma (eV)" << std::endl;
     for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){

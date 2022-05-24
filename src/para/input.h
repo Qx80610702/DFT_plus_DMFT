@@ -30,7 +30,7 @@ namespace DMFT
     // Input parameter
     int flag_DFT_solver;            //1:aims, 2:ABACUS
     double temperature;             //unit:Kelvin; default:300
-    int flag_magnetism=-1;          //AFM:1, FM:2, paramagenetism:3, none:4
+    int flag_magnetism;             //AFM:1, FM:2, paramagenetism:3, none:4
     int n_tau;                      //number of segments on the interval [0,beta] when using CTQMC impuroty solver;default:500
     int n_omega;                    //number of Matsubara frequency points
     //ALPS-CTHYB:1;  LPS-CTHYB-SEGMENT:2; (not supported now)
@@ -46,7 +46,7 @@ namespace DMFT
     double hyf_xc_alpha;            //The mixing factor in hybrid funtional; default:0.25;
     double charge_mix_beta;         //The charge density mixing parameter; default:0.05
     double delta_sigma;             //The convergency criteria of self-energy (unit eV); default:0.1
-    double delta_rho;               //The convergency criteria of the charge density; default: 5.0e-4
+    double delta_rho;               //The convergency criteria of the charge density; default: 1.0e-3
     int calculation_type;           //DFT+DMFT scf:0; spectra:1; default:0
     int mixing_step;                //Number of past iteration include in the density mixing; default:8
 

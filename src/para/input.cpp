@@ -284,7 +284,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       // GLV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
-      this->delta_rho = 5.0e-4;
+      this->delta_rho = 1.0e-3;
     }
     GLV::ofs_running << "delta_rho  " 
             << std::setprecision(3) << std::setiosflags(std::ios::scientific)
