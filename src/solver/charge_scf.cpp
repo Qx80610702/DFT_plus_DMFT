@@ -481,7 +481,11 @@ namespace DFT_plus_DMFT
     for(int ispin=0; ispin<this->nspin; ispin++){
       if(dense_cmplx[ispin].empty())
         dense_cmplx[ispin].resize(nbasis*nbasis, zero);
-
+      else{
+        for(auto& iter : dense_cmplx[ispin])
+          iter = zero;
+      }
+    
       cblas_zherk(CblasRowMajor, CblasUpper, CblasNoTrans, 
                   nbasis, this->fik_DMFT[ispin][ik].size(), 
                   1.0, &eigenvector[ispin][0], this->fik_DMFT[ispin][ik].size(), 
@@ -592,87 +596,89 @@ namespace DFT_plus_DMFT
     debug::codestamp("Charge_SCF::mixing_density_matrix");
 
     //mixing density matrix
-    if(mix_step==0){//Plain mixing
-      std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
-      std::swap(dens_mat_tmp, this->dens_mat_out);
+    if(mix_step==1){//Plain mixing
+      // std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
+      // std::swap(dens_mat_tmp, this->dens_mat_out);
       
       //Residual DM_mat
       for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
-          for(int igrid=0; igrid<this->Opt_DM_mat.back()[ik][is].size(); igrid++)
-            dens_mat_tmp[ik][is][igrid] -= this->Opt_DM_mat.back()[ik][is][igrid];
+          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+            this->dens_mat_out[ik][is][i] -= this->Opt_DM_mat.back()[ik][is][i];
       
-      if(this->Res_DM_mat.empty()) this->Res_DM_mat.push_back(dens_mat_tmp);
+      if(this->Res_DM_mat.empty()) this->Res_DM_mat.push_back(this->dens_mat_out);
       else{
         this->Res_DM_mat.clear();
-        this->Res_DM_mat.push_back(dens_mat_tmp);
+        this->Res_DM_mat.push_back(this->dens_mat_out);
       }
 
       //Density matrix mixing
       for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
-          for(int igrid=0; igrid<this->Opt_DM_mat.back()[ik][is].size(); igrid++)
-            dens_mat_tmp[ik][is][igrid] = 
-              (1.0-this->mixing_beta)*this->Opt_DM_mat.back()[ik][is][igrid] +
-              this->mixing_beta*( this->Res_DM_mat.back()[ik][is][igrid] + 
-              this->Opt_DM_mat.back()[ik][is][igrid] );
+          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+            this->dens_mat_out[ik][is][i] = 
+              (1.0-this->mixing_beta)*this->Opt_DM_mat.back()[ik][is][i] +
+              this->mixing_beta*( this->Res_DM_mat.back()[ik][is][i] + 
+              this->Opt_DM_mat.back()[ik][is][i] );
 
-      this->Opt_DM_mat.push_back(dens_mat_tmp);
+      this->Opt_DM_mat.push_back(this->dens_mat_out);
     }
     else{
-      std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
-      dens_mat_tmp = this->Opt_DM_mat.back();
+      // std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
+      // dens_mat_tmp = this->Opt_DM_mat.back();
 
-      this->char_ref().read_charge_density_matrix(this->nkpoints, dens_mat_tmp);
+      // this->char_ref().read_charge_density_matrix(this->nkpoints, dens_mat_tmp);
 
       //Residual DM_mat
       for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
-          for(int igrid=0; igrid<this->Opt_DM_mat.back()[ik][is].size(); igrid++)
-            dens_mat_tmp[ik][is][igrid] -= this->Opt_DM_mat.back()[ik][is][igrid];
+          for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+            this->dens_mat_out[ik][is][i] -= this->Opt_DM_mat.back()[ik][is][i];
       
       //this->Res_DM_mat.size()<=this->max_mixing_step
       if(this->Res_DM_mat.size()<this->max_mixing_step) 
-        this->Res_DM_mat.push_back(dens_mat_tmp);
+        this->Res_DM_mat.push_back(this->dens_mat_out);
       else{
         this->Res_DM_mat.pop_front();
-        this->Res_DM_mat.push_back(dens_mat_tmp);
+        this->Res_DM_mat.push_back(this->dens_mat_out);
       }
 
       //Mixing charge density matrix
       //First part: \rho^{opt}
-      dens_mat_tmp = this->Opt_DM_mat.back();
+      for(int ik=0; ik<this->Opt_DM_mat.back().size(); ik++)
+          for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
+            for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
+              this->dens_mat_out[ik][is][i] = this->Opt_DM_mat.back()[ik][is][i];
 
-      for(int istep=0; istep<alpha.size(); istep++){
+      for(int istep=0; istep<alpha.size(); istep++)
         for(int ik=0; ik<this->Opt_DM_mat[istep].size(); ik++)
           for(int is=0; is<this->Opt_DM_mat[istep][ik].size(); is++)
-            for(int igrid=0; igrid<this->Opt_DM_mat[istep][ik][is].size(); igrid++)
-              dens_mat_tmp[ik][is][igrid] += alpha[istep]*
-                ( this->Opt_DM_mat[istep+1][ik][is][igrid] - 
-                  this->Opt_DM_mat[istep][ik][is][igrid] );
-      }
+            for(int i=0; i<this->Opt_DM_mat[istep][ik][is].size(); i++)
+              this->dens_mat_out[ik][is][i] += alpha[istep]*
+                ( this->Opt_DM_mat[istep+1][ik][is][i] - 
+                  this->Opt_DM_mat[istep][ik][is][i] );
 
       //Second part: \Rrho^{opt}
       for(int ik=0; ik<this->Res_DM_mat.back().size(); ik++)
           for(int is=0; is<this->Res_DM_mat.back()[ik].size(); is++)
-            for(int igrid=0; igrid<this->Res_DM_mat.back()[ik][is].size(); igrid++)
-              dens_mat_tmp[ik][is][igrid] += this->mixing_beta*
-                  this->Res_DM_mat.back()[ik][is][igrid];
+            for(int i=0; i<this->Res_DM_mat.back()[ik][is].size(); i++)
+              this->dens_mat_out[ik][is][i] += this->mixing_beta*
+                  this->Res_DM_mat.back()[ik][is][i];
 
       for(int istep=0; istep<alpha.size(); istep++){
         for(int ik=0; ik<this->Res_DM_mat[istep].size(); ik++)
           for(int is=0; is<this->Res_DM_mat[istep][ik].size(); is++)
-            for(int igrid=0; igrid<this->Res_DM_mat[istep][ik][is].size(); igrid++)
-              dens_mat_tmp[ik][is][igrid] += this->mixing_beta*alpha[istep]*
-                ( this->Res_DM_mat[istep+1][ik][is][igrid] - 
-                  this->Res_DM_mat[istep][ik][is][igrid] );
+            for(int i=0; i<this->Res_DM_mat[istep][ik][is].size(); i++)
+              this->dens_mat_out[ik][is][i] += this->mixing_beta*alpha[istep]*
+                ( this->Res_DM_mat[istep+1][ik][is][i] - 
+                  this->Res_DM_mat[istep][ik][is][i] );
       }
 
       if(this->Opt_DM_mat.size()<this->max_mixing_step) 
-        this->Opt_DM_mat.push_back(dens_mat_tmp);
+        this->Opt_DM_mat.push_back(this->dens_mat_out);
       else{
         this->Opt_DM_mat.pop_front();
-        this->Opt_DM_mat.push_back(dens_mat_tmp);
+        this->Opt_DM_mat.push_back(this->dens_mat_out);
       }
     }
 

@@ -90,23 +90,6 @@ namespace DMFT
     if(this->flag_DFT_solver==1) GLV::ofs_running << "aims" << std::endl;
     else if(this->flag_DFT_solver==2) GLV::ofs_running << "abacus" << std::endl;
 
-    //dft_solver_exe
-    try {
-      std::vector<std::string> str_val;
-      
-      this->read_parameter("dft_solver_exe", str_val);
-
-      this->dft_solver_exe = str_val[0];
-    }
-    catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-    catch(const bool not_given){
-      this->dft_solver_exe = "";
-    }
-    GLV::ofs_running << "dft_solver_exe  " << this->dft_solver_exe << std::endl;
-
     //temperature
     try {
       std::vector<std::string> str_val;
@@ -247,6 +230,28 @@ namespace DMFT
     }
     GLV::ofs_running << "max_charge_step  " << this->charge_step_max << std::endl;
 
+    //dft_solver_exe
+    try {
+      std::vector<std::string> str_val;
+      
+      this->read_parameter("dft_solver_exe", str_val);
+
+      this->dft_solver_exe = str_val[0];
+    }
+    catch (const std::string messg) {
+      GLV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      if(this->charge_step_max>1){
+        GLV::ofs_error << "DFT_solver_exe must be given in charge scf DFT+DMFT calculations" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+      else
+        this->dft_solver_exe = "";
+    }
+    GLV::ofs_running << "dft_solver_exe  " << this->dft_solver_exe << std::endl;
+
     //delta_sigma
     try {
       std::vector<std::string> str_val;
@@ -279,7 +284,7 @@ namespace DMFT
     }
     catch(const bool not_given){
       // GLV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
-      this->delta_rho = 1.0e-4;
+      this->delta_rho = 5.0e-4;
     }
     GLV::ofs_running << "delta_rho  " 
             << std::setprecision(3) << std::setiosflags(std::ios::scientific)

@@ -56,6 +56,9 @@ namespace DFT_plus_DMFT
         const int charge_step, 
         const int DMFT_step );
 
+    bool DFT_loop_charge_mixing(
+        const int mix_step );
+
     void run_nscf_dft(const int dft_solver);
 
     public:  
