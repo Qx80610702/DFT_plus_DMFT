@@ -23,13 +23,13 @@
 
 namespace DFT_plus_DMFT
 {
-  void projector::elaluate_projector(
+  void projector::evaluate_projector(
         const int DFT_solver,
         DFT_output::KS_bands& band,
         DFT_plus_DMFT::Hilbert_space& space,
         DFT_output::atoms_info& atom )
   {
-    debug::codestamp("projector::elaluate_projector");
+    debug::codestamp("projector::evaluate_projector");
 
     double time;
     double seconds;
@@ -111,149 +111,140 @@ namespace DFT_plus_DMFT
             iter4 = zero;
     }
 
-    int max_threads=omp_get_max_threads();
-    int threads_num = (max_threads>k_map.size()? k_map.size() : max_threads);
-    const int mkl_threads = mkl_get_max_threads();
-    mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
-    #pragma omp parallel num_threads(threads_num)
+    DFT_output::overlap_matrix ovlp(DFT_solver, "dft/outputs_to_DMFT/overlap_matrix");
+    wave_function wfc;
+
+    std::vector<std::complex<double>> Lowdin(norb*norb);
+    std::vector<std::complex<double>> proj_mat_tmp(wbands_max*norb);
+    std::vector<std::complex<double>> mat_tmp(wbands_max*norb);
+    std::vector<std::complex<double>> norm_orth(norb*norb);
+    std::vector<std::complex<double>> sqrt_inver(norb*norb);
+    std::vector<std::complex<double>> work_mat(norb*norb);
+    std::vector<double> eigen_val(norb);
+    int info_zheev;
+
+    std::vector<std::vector<std::complex<double>>> eigenvec;
+
+    for(int ik=0; ik<k_map.size(); ik++)
     {
-      DFT_output::overlap_matrix ovlp(DFT_solver, "dft/outputs_to_DMFT/overlap_matrix");
-      wave_function wfc;
+      const int i_k_point = k_map[ik];
 
-      std::vector<std::complex<double>> Lowdin(norb*norb);
-      std::vector<std::complex<double>> proj_mat_tmp(wbands_max*norb);
-      std::vector<std::complex<double>> mat_tmp(wbands_max*norb);
-      std::vector<std::complex<double>> norm_orth(norb*norb);
-      std::vector<std::complex<double>> sqrt_inver(norb*norb);
-      std::vector<std::complex<double>> work_mat(norb*norb);
-      std::vector<double> eigen_val(norb);
-      int info_zheev;
+      ovlp.evaluate_ovlp_k(i_k_point, atom);        //caculate overlap matrix in k-space
 
-      std::vector<std::vector<std::complex<double>>> eigenvec;
+      wfc.read_corr_subset("dft/outputs_to_DMFT/KS_eigenvector/", i_k_point, space, eigenvec);       //read KS-eigenvector
 
-      #pragma omp for
-      for(int ik=0; ik<k_map.size(); ik++)
+      const int nbasis=wfc.basis_n();
+      
+      const std::vector<std::complex<double>>& ovlp_mat = ovlp.overlap();
+
+      std::vector<std::complex<double>>& ovlp_localorb = ovlp.overlap_localorb();
+      Hermitian_matrix_sqrt_inver(
+        &ovlp_localorb[0], &eigen_val[0], 
+        &work_mat[0], &Lowdin[0], norb, info_zheev );
+
+      for(int is=0; is<nspin; is++)
       {
-        const int i_k_point = k_map[ik];
+        // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
+        // CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
+        // *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
+        // *beta, void *c, const MKL_INT ldc);
 
-        ovlp.evaluate_ovlp_k(i_k_point, atom);        //caculate overlap matrix in k-space
+        //===============test the orthonormality of wavefunctions=====
+        /*
+        std::vector<std::complex<double>> wfc_norm(wbands[is]*wbands[is]);
+        std::vector<std::complex<double>> wfc_ovlp_tmp(wbands[is]*nbasis);
+        const std::vector<std::complex<double>>& ovlp_all = ovlp.ovlp_aims.ovlp_mat_work();
+        cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
+                    wbands[is], nbasis, nbasis,
+                    &one,
+                    &eigenvec[is][0], wbands[is],
+                    &ovlp_all[0], nbasis,
+                    &zero,
+                    &wfc_ovlp_tmp[0], nbasis );
 
-        wfc.read_corr_subset("dft/outputs_to_DMFT/KS_eigenvector/", i_k_point, space, eigenvec);       //read KS-eigenvector
-
-        const int nbasis=wfc.basis_n();
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    wbands[is], wbands[is], nbasis,
+                    &one,
+                    &wfc_ovlp_tmp[0], nbasis,
+                    &eigenvec[is][0], wbands[is],
+                    &zero,
+                    &wfc_norm[0], wbands[is] );
         
-        const std::vector<std::complex<double>>& ovlp_mat = ovlp.overlap();
+        std::stringstream ss;
+        ss << "wfc-norm/wfc_norm_is" << is << "_ik" << ik << ".dat";
+        std::ofstream ofs(ss.str().c_str(), std::ios::out);
 
-        std::vector<std::complex<double>>& ovlp_localorb = ovlp.overlap_localorb();
-        Hermitian_matrix_sqrt_inver(
-          &ovlp_localorb[0], &eigen_val[0], 
-          &work_mat[0], &Lowdin[0], norb, info_zheev );
-
-        for(int is=0; is<nspin; is++)
+        for(int m1=0; m1<wbands[is]; m1++)
         {
-          // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
-          // CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
-          // *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
-          // *beta, void *c, const MKL_INT ldc);
-
-          //===============test the orthonormality of wavefunctions=====
-          /*
-          std::vector<std::complex<double>> wfc_norm(wbands[is]*wbands[is]);
-          std::vector<std::complex<double>> wfc_ovlp_tmp(wbands[is]*nbasis);
-          const std::vector<std::complex<double>>& ovlp_all = ovlp.ovlp_aims.ovlp_mat_work();
-          cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-                      wbands[is], nbasis, nbasis,
-                      &one,
-                      &eigenvec[is][0], wbands[is],
-                      &ovlp_all[0], nbasis,
-                      &zero,
-                      &wfc_ovlp_tmp[0], nbasis );
-
-          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                      wbands[is], wbands[is], nbasis,
-                      &one,
-                      &wfc_ovlp_tmp[0], nbasis,
-                      &eigenvec[is][0], wbands[is],
-                      &zero,
-                      &wfc_norm[0], wbands[is] );
-          
-          std::stringstream ss;
-          ss << "wfc-norm/wfc_norm_is" << is << "_ik" << ik << ".dat";
-          std::ofstream ofs(ss.str().c_str(), std::ios::out);
-
-          for(int m1=0; m1<wbands[is]; m1++)
+          for(int m2=0; m2<wbands[is]; m2++)
           {
-            for(int m2=0; m2<wbands[is]; m2++)
-            {
-              ofs << std::setw(15) << std::fixed << std::setprecision(9) << wfc_norm[m1*wbands[is]+m2].real()
-                  << std::setw(15) << std::fixed << std::setprecision(9) << wfc_norm[m1*wbands[is]+m2].imag(); 
-            }
-            ofs << std::endl;
-          }//m
-          ofs.close(); */
-
-
-          cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-                      wbands[is], norb, nbasis,
-                      &one,
-                      &eigenvec[is][0], wbands[is],
-                      &ovlp_mat[0], norb,
-                      &zero,
-                      &proj_mat_tmp[0], norb);
-
-          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                      wbands[is], norb, norb,
-                      &one,
-                      &proj_mat_tmp[0], norb,
-                      &Lowdin[0], norb,
-                      &zero,
-                      &mat_tmp[0], norb);
-
-          cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-                      norb, norb, wbands[is],
-                      &one,
-                      &mat_tmp[0], norb,
-                      &mat_tmp[0], norb,
-                      &zero,
-                      &norm_orth[0], norb );
-
-          Hermitian_matrix_sqrt_inver(
-                      &norm_orth[0], &eigen_val[0], &work_mat[0],
-                      &sqrt_inver[0], norb, info_zheev );
-
-          cblas_zgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                      wbands[is], norb, norb,
-                      &one,
-                      &mat_tmp[0], norb,
-                      &sqrt_inver[0], norb,
-                      &zero,
-                      &proj_mat_tmp[0], norb);
-
-          for(int iatom=0; iatom<natom; iatom++)
-          {
-            const int m_tot = norb_sub[iatom];
-            for(int m=0; m<m_tot; m++)
-              for(int iband=0; iband<wbands[is]; iband++)
-                this->projector_mat[ik][iatom][is][iband*m_tot+m] = 
-                      proj_mat_tmp[iband*norb+orb_index[iatom][m]];
-          
-            //Local Haimiltonian
-            for(int m1=0; m1<m_tot; m1++)
-              for(int m2=0; m2<m_tot; m2++)
-                for(int iband=0; iband<wbands[is]; iband++)
-                  this->unitary_trans[ik][iatom][is][m1*m_tot+m2] += 
-                    std::conj(proj_mat_tmp[iband*norb+orb_index[iatom][m1]])*
-                    epsilon[is][i_k_point][iband]*
-                    proj_mat_tmp[iband*norb+orb_index[iatom][m2]];
-
-            for(int m=0; m<m_tot; m++)
-              this->TB_Hk[ik][iatom][is][m] = this->unitary_trans[ik][iatom][is][m*m_tot+m];
+            ofs << std::setw(15) << std::fixed << std::setprecision(9) << wfc_norm[m1*wbands[is]+m2].real()
+                << std::setw(15) << std::fixed << std::setprecision(9) << wfc_norm[m1*wbands[is]+m2].imag(); 
           }
+          ofs << std::endl;
+        }//m
+        ofs.close(); */
 
-        }//is
-      }//ik
-    }
-    mkl_set_num_threads(mkl_threads);
+
+        cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
+                    wbands[is], norb, nbasis,
+                    &one,
+                    &eigenvec[is][0], wbands[is],
+                    &ovlp_mat[0], norb,
+                    &zero,
+                    &proj_mat_tmp[0], norb);
+
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    wbands[is], norb, norb,
+                    &one,
+                    &proj_mat_tmp[0], norb,
+                    &Lowdin[0], norb,
+                    &zero,
+                    &mat_tmp[0], norb);
+
+        cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
+                    norb, norb, wbands[is],
+                    &one,
+                    &mat_tmp[0], norb,
+                    &mat_tmp[0], norb,
+                    &zero,
+                    &norm_orth[0], norb );
+
+        Hermitian_matrix_sqrt_inver(
+                    &norm_orth[0], &eigen_val[0], &work_mat[0],
+                    &sqrt_inver[0], norb, info_zheev );
+
+        cblas_zgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    wbands[is], norb, norb,
+                    &one,
+                    &mat_tmp[0], norb,
+                    &sqrt_inver[0], norb,
+                    &zero,
+                    &proj_mat_tmp[0], norb);
+
+        for(int iatom=0; iatom<natom; iatom++)
+        {
+          const int m_tot = norb_sub[iatom];
+          for(int m=0; m<m_tot; m++)
+            for(int iband=0; iband<wbands[is]; iband++)
+              this->projector_mat[ik][iatom][is][iband*m_tot+m] = 
+                    proj_mat_tmp[iband*norb+orb_index[iatom][m]];
+        
+          //Local Haimiltonian
+          for(int m1=0; m1<m_tot; m1++)
+            for(int m2=0; m2<m_tot; m2++)
+              for(int iband=0; iband<wbands[is]; iband++)
+                this->unitary_trans[ik][iatom][is][m1*m_tot+m2] += 
+                  std::conj(proj_mat_tmp[iband*norb+orb_index[iatom][m1]])*
+                  epsilon[is][i_k_point][iband]*
+                  proj_mat_tmp[iband*norb+orb_index[iatom][m2]];
+
+          for(int m=0; m<m_tot; m++)
+            this->TB_Hk[ik][iatom][is][m] = this->unitary_trans[ik][iatom][is][m*m_tot+m];
+        }
+
+      }//is
+    }//ik
 
     timer::get_time(time, seconds);
     GLV::ofs_running << "Time consuming for contruction of the projector: " 
@@ -331,47 +322,40 @@ namespace DFT_plus_DMFT
     {
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot = norb_sub[iatom];
+      int info_zheev;
+      std::vector<double> eigen_val(m_tot);
 
-      mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
-      #pragma omp parallel num_threads(threads_num)
+      for(int ik=0; ik<k_map.size(); ik++)
       {
-        int info_zheev;
-        std::vector<double> eigen_val(m_tot);
-
-        #pragma omp for
-        for(int ik=0; ik<k_map.size(); ik++)
+        for(int is=0; is<nspin; is++)
         {
-          for(int is=0; is<nspin; is++)
-          {
-            auto& unitary_trans_isk = this->unitary_trans[ik][iatom][is];
+          auto& unitary_trans_isk = this->unitary_trans[ik][iatom][is];
 
-            info_zheev=LAPACKE_zheev(LAPACK_ROW_MAJOR, 'V', 'U', m_tot,
-                          &unitary_trans_isk[0], m_tot, &eigen_val[0] );
+          info_zheev=LAPACKE_zheev(LAPACK_ROW_MAJOR, 'V', 'U', m_tot,
+                        &unitary_trans_isk[0], m_tot, &eigen_val[0] );
 
-            for(int m=0; m<m_tot; m++) this->TB_Hk[ik][iatom][is][m] = std::complex<double>(eigen_val[m], 0.0);
+          for(int m=0; m<m_tot; m++) this->TB_Hk[ik][iatom][is][m] = std::complex<double>(eigen_val[m], 0.0);
 
-            cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        wbands[is], m_tot, m_tot,
-                        &one,
-                        &projector_mat_tmp[ik][iatom][is][0], m_tot,
-                        &unitary_trans_isk[0], m_tot,
-                        &zero,
-                        &this->projector_mat[ik][iatom][is][0], m_tot );
+          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                      wbands[is], m_tot, m_tot,
+                      &one,
+                      &projector_mat_tmp[ik][iatom][is][0], m_tot,
+                      &unitary_trans_isk[0], m_tot,
+                      &zero,
+                      &this->projector_mat[ik][iatom][is][0], m_tot );
 
-            for(int iatom1=0; iatom1<natom; iatom1++)
-              if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
-                cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        wbands[is], m_tot, m_tot,
-                        &one,
-                        &projector_mat_tmp[ik][iatom1][is][0], m_tot,
-                        &unitary_trans_isk[0], m_tot,
-                        &zero,
-                        &this->projector_mat[ik][iatom1][is][0], m_tot );
-              
-          }//is
-        }//ik
-      }
-      mkl_set_num_threads(mkl_threads);
+          for(int iatom1=0; iatom1<natom; iatom1++)
+            if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
+              cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                      wbands[is], m_tot, m_tot,
+                      &one,
+                      &projector_mat_tmp[ik][iatom1][is][0], m_tot,
+                      &unitary_trans_isk[0], m_tot,
+                      &zero,
+                      &this->projector_mat[ik][iatom1][is][0], m_tot );
+            
+        }//is
+      }//ik  
     }//iatom
 
 //=========TEST orthonormality========================

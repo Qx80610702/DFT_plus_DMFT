@@ -20,7 +20,7 @@ namespace DFT_plus_DMFT
     projector(){};
     ~projector(){};
 
-    void elaluate_projector(
+    void evaluate_projector(
         const int DFT_solver,
         DFT_output::KS_bands& band,
         DFT_plus_DMFT::Hilbert_space& space,

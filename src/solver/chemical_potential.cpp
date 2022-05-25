@@ -248,7 +248,7 @@ namespace DFT_plus_DMFT
     }//ik
 
     MPI_Allreduce(&sum_tmp, &nele_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    
+  
     return nele_sum;
   }
 

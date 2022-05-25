@@ -61,7 +61,6 @@ namespace DMFT
           DFT_plus_DMFT::projector& proj,
           DFT_output::atoms_info& atom,
           DFT_plus_DMFT::Hilbert_space& space,
-          const double mu,
           const int nomega,
           const int mag);
 

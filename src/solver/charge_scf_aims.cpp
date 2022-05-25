@@ -316,7 +316,9 @@ namespace DFT_plus_DMFT
       for(int igrid=0; igrid<this->Rrho[0][is].size(); igrid++)
         charge_change += this->partition_tab[igrid]*
             std::pow(this->Rrho.back()[is][igrid], 2);
-
+    
+    double val_tmp = charge_change;
+    MPI_Allreduce(&val_tmp, &charge_change, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     charge_change = std::sqrt(charge_change);
 
     if(mix_step==1){//plain mixing

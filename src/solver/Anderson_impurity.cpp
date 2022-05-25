@@ -83,7 +83,7 @@ namespace DMFT
 
         MPI_Allreduce(&tmp[0], &this->impurity_level[ineq][is][0], m_tot*m_tot,
                       MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
-
+ 
         for(int m=0; m<m_tot; m++)
           this->impurity_level[ineq][is][m*m_tot+m] -= dc_term[m*m_tot+m];
 
@@ -285,7 +285,7 @@ namespace DMFT
           std::vector<std::complex<double>> tmp = this->Green_fun_omega[ineq][is][iomega];
 
           MPI_Allreduce( &tmp[0], &this->Green_fun_omega[ineq][is][iomega][0],
-                        m_tot*m_tot, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD );
+                        m_tot*m_tot, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD );                      
         }
       }
 
@@ -967,7 +967,6 @@ namespace DMFT
                 DFT_plus_DMFT::projector& proj,
                 DFT_output::atoms_info& atom,
                 DFT_plus_DMFT::Hilbert_space& space,
-                const double mu,
                 const int nomega,
                 const int mag )
   {
@@ -1026,7 +1025,7 @@ namespace DMFT
     GLV::ofs_running << "\n===========Local occupation number========" << std::endl;
 
     //==========evaluation========
-    /*
+    // /*
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -1055,7 +1054,7 @@ namespace DMFT
       for(int is=0; is<nspin; is++){
         MPI_Allreduce( &local_occ_tmp[iatom][is][0], 
                        &local_occ[iatom][is][0], m_tot, 
-                       MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+                       MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );                     
       }
 
       if(nspin==1) local_occ[iatom][1] = local_occ[iatom][0];
@@ -1107,7 +1106,7 @@ namespace DMFT
       }
 
     }//ineq  
-    */
+    // */
 
     /*
     for(int ineq=0; ineq<ineq_num; ineq++)
@@ -1191,9 +1190,9 @@ namespace DMFT
       }
 
     }//ineq 
-    */
+    // */
 
-    // /* 
+    /* 
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);

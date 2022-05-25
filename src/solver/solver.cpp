@@ -90,18 +90,17 @@ namespace DFT_plus_DMFT
             this->pars.in );
       }
 
-      this->Mu.evaluate_mu_bisection_imag_DFT(
-            this->pars.bands, this->pars.atom, 
-            this->pars.in, this->space);
+      // this->Mu.evaluate_mu_bisection_imag_DFT(
+      //       this->pars.bands, this->pars.atom, 
+      //       this->pars.in, this->space);
 
-      this->proj.elaluate_projector(
+      this->proj.evaluate_projector(
             *(int*)pars.in.parameter("DFT_solver"),
             pars.bands, this->space, this->pars.atom );
 
       this->imp.evaluate_local_occupation( 
             this->pars.in, this->pars.bands, 
-            this->proj, this->pars.atom,
-            this->space, this->Mu.mu_DFT(),
+            this->proj, this->pars.atom, this->space,
             *(int*)this->pars.in.parameter("n_omega"),
             *(int*)this->pars.in.parameter("magnetism") );
 
@@ -215,7 +214,6 @@ namespace DFT_plus_DMFT
 
         GLV::ofs_running << "================ End of charge updating ================\n" << std::endl;
         GLV::ofs_running << "<><><><><><><><><> DFT loop <><><><><><><><><>" << std::endl;
-        density_convergency = false;
         //=========================================
         //            DFT loop
         //=========================================
@@ -224,7 +222,7 @@ namespace DFT_plus_DMFT
           GLV::ofs_running << "================  DFT step "  << dft_step << " ================" << std::endl;
           this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver")); //Run at least one dft step under each charge step
 
-          if(density_convergency) break;
+          if(dft_step>1 && density_convergency) break;
 
           if(dft_step < *(int*)this->pars.in.parameter("max_dft_step")){
 
@@ -249,7 +247,7 @@ namespace DFT_plus_DMFT
     timer::get_time(time, seconds, minutes, hours, days);
     timer::get_date_time(end_date);
 
-    GLV::ofs_running << "\nCongratulations!!! The DFT+DMFT calculation finished" << std::endl;
+    GLV::ofs_running << "Congratulations!!! The DFT+DMFT calculation finished" << std::endl;
     GLV::ofs_running << "========================== The full time records ==========================" << std::endl;
     GLV::ofs_running << "       starting time              ending time              time-consumption" << std::endl;
     GLV::ofs_running << "      " << start_date
@@ -295,7 +293,7 @@ namespace DFT_plus_DMFT
           this->pars.bands, this->pars.atom, 
           this->pars.in, this->space);
     
-    this->proj.elaluate_projector(
+    this->proj.evaluate_projector(
           *(int*)pars.in.parameter("DFT_solver"),
           pars.bands, this->space, this->pars.atom );
     
@@ -407,18 +405,17 @@ namespace DFT_plus_DMFT
           this->pars.atom,
           this->pars.in );
 
-    this->Mu.evaluate_mu_bisection_imag_DFT(
-          this->pars.bands, this->pars.atom, 
-          this->pars.in, this->space);
+    // this->Mu.evaluate_mu_bisection_imag_DFT(
+    //       this->pars.bands, this->pars.atom, 
+    //       this->pars.in, this->space);
 
-    this->proj.elaluate_projector(
+    this->proj.evaluate_projector(
           *(int*)pars.in.parameter("DFT_solver"),
           pars.bands, this->space, this->pars.atom );
 
     this->imp.evaluate_local_occupation( 
           this->pars.in, this->pars.bands, 
-          this->proj, this->pars.atom,
-          this->space, this->Mu.mu_DFT(),
+          this->proj, this->pars.atom, this->space,
           *(int*)this->pars.in.parameter("n_omega"),
           *(int*)this->pars.in.parameter("magnetism") );
 
@@ -515,18 +512,17 @@ namespace DFT_plus_DMFT
 
     this->pars.bands.read();
 
-    this->Mu.evaluate_mu_bisection_imag_DFT(
-            this->pars.bands, this->pars.atom, 
-            this->pars.in, this->space);
+    // this->Mu.evaluate_mu_bisection_imag_DFT(
+    //         this->pars.bands, this->pars.atom, 
+    //         this->pars.in, this->space);
 
-    this->proj.elaluate_projector(
+    this->proj.evaluate_projector(
           *(int*)pars.in.parameter("DFT_solver"),
           pars.bands, this->space, this->pars.atom );
 
     this->imp.evaluate_local_occupation( 
           this->pars.in, this->pars.bands, 
-          this->proj, this->pars.atom,
-          this->space, this->Mu.mu_DFT(),
+          this->proj, this->pars.atom, this->space,
           *(int*)this->pars.in.parameter("n_omega"),
           *(int*)this->pars.in.parameter("magnetism") );
 
@@ -653,6 +649,15 @@ namespace DFT_plus_DMFT
       ofs_running.open("DMFT_running.log", std::ios_base::app);
       ofs_error.open("DMFT_running.error", std::ios_base::out);
     }
+
+    // std::stringstream ss1;
+    // ss1 << "DMFT_running_proc" << mpi_rank() << ".log";
+    // ofs_running.open(ss1.str(), std::ios_base::app);
+    
+    // std::stringstream ss2;
+    // ss2 << "DMFT_running_proc" << mpi_rank() << ".error";
+    // ofs_error.open(ss2.str(), std::ios_base::out);
+
   }
 
   void solver::unset_ios(
@@ -681,6 +686,8 @@ namespace DFT_plus_DMFT
       std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
       std::exit(EXIT_FAILURE);
     }
+    if(mpi_rank()==0) system("rm -rf ./outputs_to_DMFT");
+    
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
     switch(dft_solver)
@@ -690,19 +697,22 @@ namespace DFT_plus_DMFT
           int unit = 6;
           bool use_mpi = true;
           int mpi_comm_global = MPI_COMM_WORLD;
-
-          // aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
+        
+          aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
+          
+          /*
           if(mpi_rank()==0){
             std::string dft_exe = "mpirun " + *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
+            // std::string dft_exe = *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
             std::ofstream ofs("task.sh", std::ios::out);
             ofs << "#!/bin/sh\n" << std:: endl;
             ofs << dft_exe << std::endl;
             ofs.close();
+            int info = system("rm -rf ./outputs_to_DMFT");
 
-            system("bash task.sh");
-            // system(dft_exe.c_str());
-          }
-
+            info=system("bash task.sh");
+          }*/
+          
         #else
           GLV::ofs_error << "FHI-aims has not been installed!!!  ";
           GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
@@ -724,13 +734,14 @@ namespace DFT_plus_DMFT
         GLV::ofs_error << "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
+    
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
     ierr = chdir("../");
     if(ierr != 0){
       std::cout << "Process " << mpi_rank() << " fails to return to root directory " << std::endl;
       std::exit(EXIT_FAILURE);
     }
-    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
     timer::get_time(time, seconds, minutes);
     GLV::ofs_running << "End non-self-consistent DFT.\nThe time consumption of this DFT step: " 

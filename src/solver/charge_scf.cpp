@@ -176,9 +176,10 @@ namespace DFT_plus_DMFT
       }
     }
 
-    if(this->nspin==1 && !band.soc())
+    if(this->nspin==1 && !band.soc()){
       for(int ik=0; ik<k_weight.size(); ik++)
         k_weight[ik] *= 2.0;
+    }
 
     double val_sum = 0.0, val_tmp=0.0;
     for(int ik=0; ik<task_nks; ik++){
@@ -526,8 +527,6 @@ namespace DFT_plus_DMFT
       this->Opt_DM_mat.push_back(dens_mat_tmp);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
-    
     return;
   }
 

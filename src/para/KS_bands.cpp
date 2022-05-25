@@ -21,7 +21,7 @@ namespace DFT_output
 
     std::ifstream if_bands("dft/outputs_to_DMFT/bands.dat", std::ios::in);
 
-    if (!if_bands)  
+    if (!if_bands)
 	  {
 	  	GLV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
       std::exit(EXIT_FAILURE);
@@ -53,6 +53,26 @@ namespace DFT_output
             this->eigen_values[ispin][ik].resize(this->nbands);
         }
       }
+      else{
+        if(this->eigen_values.size() != this->nspin){
+          GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+
+        for(int ispin=0; ispin<nspin; ispin++){
+          if(this->eigen_values[ispin].size() != this->kpoints){
+            GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+
+          for(int ik=0; ik<kpoints; ik++){
+            if(this->eigen_values[ispin][ik].size() != this->nbands){
+              GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+            std::exit(EXIT_FAILURE);
+            }
+          }
+        }
+      }
 
       if(this->DFT_occ_numbers.empty()){
         this->DFT_occ_numbers.resize(this->nspin);
@@ -61,6 +81,26 @@ namespace DFT_output
           this->DFT_occ_numbers[ispin].resize(this->kpoints);
           for(int ik=0; ik<kpoints; ik++)
             this->DFT_occ_numbers[ispin][ik].resize(this->nbands);
+        }
+      }
+      else{
+        if(this->DFT_occ_numbers.size() != this->nspin){
+          GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+
+        for(int ispin=0; ispin<nspin; ispin++){
+          if(this->DFT_occ_numbers[ispin].size() != this->kpoints){
+            GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+
+          for(int ik=0; ik<kpoints; ik++){
+            if(this->DFT_occ_numbers[ispin][ik].size() != this->nbands){
+              GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+              std::exit(EXIT_FAILURE);
+            }
+          }
         }
       }
 
@@ -72,14 +112,13 @@ namespace DFT_output
         if_bands >> k_index;
 
         if_bands >> this->eigen_values[spin_index][k_index][bands_index];
-        // if_bands >> this->DFT_occ_numbers[spin_index][k_index][bands_index];
+        if_bands >> this->DFT_occ_numbers[spin_index][k_index][bands_index];
 
         if_bands.ignore(150, '\n');
         if(if_bands.eof()) break;  //Check whether end of file is reached 
       }
-      if_bands.close();
-
     }
+    if_bands.close();
 
     std::ifstream ifs("dft/outputs_to_DMFT/k_weight.dat", std::ios::in);
 
@@ -92,7 +131,15 @@ namespace DFT_output
     ifs.seekg(0);      //set the position at the beginning of the file
     ifs >> val;
 
-    if(this->k_weight.empty()) this->k_weight.resize(val);
+    if(this->k_weight.empty()){
+      this->k_weight.resize(val);
+    }
+    else{
+      if(this->k_weight.size() != val){
+        GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
     
     ifs.ignore(150,'\n');
 
