@@ -173,29 +173,13 @@ namespace DFT_plus_DMFT
           this->Char_scf.read_charge_density(true, false);
         }
 
-        GLV::ofs_running << "Start updating DMFT corrected charge density..." << std::endl;
         this->DMFT_charge_updating();
 
         //Reading initial input charge density matrix
         if(mix_step==1) this->Char_scf.read_initial_charge_density_matrix();
-        
-        this->Char_scf.output_DMFT_charge_density_matrix();
-        
-        //Call DFT solver to compute the charge density corresponding to 
-        //the DMFT corrected density matrix
-        // GLV::ofs_running << "Calculating DMFT corrected charge density..." << std::endl;
-        this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));  
-        
-        //Read the charge density corresponding to 
-        //the DMFT corrected density matrix
-        this->Char_scf.read_charge_density(false, true);
-        
-        GLV::ofs_running << "End updating DMFT corrected charge density\n" << std::endl;
-        GLV::ofs_running << "Start mixing charge density..." << std::endl;
 
         density_convergency = this->Char_scf.charge_mixing(mix_step);
-        
-        GLV::ofs_running << "End mixing charge density" << std::endl;
+        mix_step++;
 
         GLV::ofs_running << "Self-consistency of charge density in current loop: ";
         if(density_convergency)
@@ -207,10 +191,6 @@ namespace DFT_plus_DMFT
           GLV::ofs_running << "\nThe DFT+DMFT calculation has reached convergency!!!" << std::endl;
           break;
         }
-
-        this->Char_scf.output_mixed_charge_density_matrix();
-        
-        mix_step++;
 
         GLV::ofs_running << "================ End of charge updating ================\n" << std::endl;
         GLV::ofs_running << "<><><><><><><><><> DFT loop <><><><><><><><><>" << std::endl;
@@ -227,15 +207,14 @@ namespace DFT_plus_DMFT
           if(dft_step < *(int*)this->pars.in.parameter("max_dft_step")){
 
             density_convergency = this->DFT_loop_charge_mixing(mix_step);
+            mix_step++;
 
             GLV::ofs_running << "Self-consistency of charge density in current loop: ";
             if(density_convergency)
               GLV::ofs_running << "true" << std::endl;
             else
               GLV::ofs_running << "false" << std::endl;
-
-            mix_step++;
-
+              
             GLV::ofs_running << std::endl;
           }
         }//DFT loop
@@ -487,6 +466,8 @@ namespace DFT_plus_DMFT
             this->pars.bands, this->pars.in, this->pars.atom );
     */
 
+    GLV::ofs_running << "Start updating DMFT corrected charge density..." << std::endl;
+
     this->imp.sigma.subtract_double_counting(this->flag_axis);
 
     this->Mu.update_chemical_potential(
@@ -498,6 +479,19 @@ namespace DFT_plus_DMFT
             this->flag_axis, this->Mu,
             this->pars.bands, this->pars.atom, 
             this->proj, this->imp.sigma, this->space );
+
+    this->Char_scf.output_DMFT_charge_density_matrix();
+        
+    //Call DFT solver to compute the charge density corresponding to 
+    //the DMFT corrected density matrix
+    // GLV::ofs_running << "Calculating DMFT corrected charge density..." << std::endl;
+    this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));  
+    
+    //Read the charge density corresponding to 
+    //the DMFT corrected density matrix
+    this->Char_scf.read_charge_density(false, true);
+    
+    GLV::ofs_running << "End updating DMFT corrected charge density\n" << std::endl;
    
     return;
   }
@@ -535,26 +529,9 @@ namespace DFT_plus_DMFT
 
     this->DMFT_charge_updating();
 
-    this->Char_scf.output_DMFT_charge_density_matrix();
-
-    //Call DFT solver to compute the charge density corresponding to 
-    //the DMFT corrected density matrix
-    this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));
-
-    //Read the charge density corresponding to 
-    //the DMFT corrected density matrix
-    this->Char_scf.read_charge_density(false, true);
-
     GLV::ofs_running << "End updating charge density" << std::endl;
 
-    // this->Char_scf.read_charge_density(false, false);
-    GLV::ofs_running << "\nStart mixing charge density..." << std::endl;
-    
     density_convergency = this->Char_scf.charge_mixing(mix_step);
-
-    this->Char_scf.output_mixed_charge_density_matrix();
-
-    GLV::ofs_running << "End mixing charge density" << std::endl;
 
     return density_convergency;
   }

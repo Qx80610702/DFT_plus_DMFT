@@ -94,8 +94,6 @@ namespace DFT_plus_DMFT
       const int mix_step, 
       const std::vector<double>& alpha);
 
-    void output_mixed_charge_density_matrix();
-
     void output_DMFT_charge_density_matrix();
 
     void prepare_nscf_dft();

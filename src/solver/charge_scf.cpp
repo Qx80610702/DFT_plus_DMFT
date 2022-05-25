@@ -530,16 +530,6 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::output_mixed_charge_density_matrix()
-  {
-    debug::codestamp("Charge_SCF::output_mixed_charge_density_matrix");
-    
-    this->char_ref().output_charge_density_matrix(
-          this->nkpoints, this->Opt_DM_mat.back() );
-
-    return;
-  }
-
   void Charge_SCF::output_DMFT_charge_density_matrix()
   {
     debug::codestamp("Charge_SCF::output_DMFT_charge_density_matrix");
@@ -554,6 +544,8 @@ namespace DFT_plus_DMFT
         const int mix_step )
   {
     debug::codestamp("Charge_SCF::charge_mixing");
+
+    GLV::ofs_running << "Start mixing charge density..." << std::endl;
 
     double time, seconds;
     int minutes;
@@ -578,6 +570,11 @@ namespace DFT_plus_DMFT
                      << std::endl;
 
     this->mixing_density_matrix(mix_step, alpha);
+
+    this->char_ref().output_charge_density_matrix(
+          this->nkpoints, this->Opt_DM_mat.back() );
+
+    GLV::ofs_running << "End mixing charge density" << std::endl;
 
     timer::get_time(time, seconds, minutes);
     GLV::ofs_running << "End charge mixing. The time consumption: " 
