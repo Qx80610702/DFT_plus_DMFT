@@ -42,8 +42,12 @@ namespace DFT_plus_DMFT
     
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
           Hloc(){return TB_Hk;}
+
+    const int& nbasis(){return n_basis;} 
     
     private:
+    int n_basis;
+
     //projector_mat[ik][iatom][nspin][nbands*m_tot];
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> projector_mat;
   

@@ -15,6 +15,7 @@
 #include <cstring>
 #include <fstream>
 #include <cstdlib>   //Use exit function
+#include <stdio.h>
 
 #include <elsi.h>
 
@@ -51,6 +52,13 @@ namespace DFT_plus_DMFT
            << ".csc";
 
         std::string file = ss.str();
+        
+        std::ifstream ifs(file, std::ios::in);
+        bool exist = ifs.good();
+        ifs.close();
+        if(exist){
+          remove(file.c_str());
+        }
         
         // std::stringstream rmfl;
         // rmfl << "test -f " << file << " && rm " << file;
@@ -280,6 +288,9 @@ namespace DFT_plus_DMFT
             Abar[i*this->dRrho.size()+j] += std::pow(this->partition_tab[igrid],2)*
               this->dRrho[i][is][igrid]*this->dRrho[j][is][igrid];
         }
+    
+    std::vector<double> Abar_tmp(Abar);
+    MPI_Allreduce(&Abar_tmp[0], &Abar[0], Abar.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     std::vector<int> ipiv(this->dRrho.size());
     general_real_matrix_inverse(&Abar[0], this->dRrho.size(), &ipiv[0]);
@@ -291,6 +302,9 @@ namespace DFT_plus_DMFT
         for(int igrid=0; igrid<this->dRrho[i][is].size(); igrid++)
           dRR[i] += std::pow(this->partition_tab[igrid],2)*
            this->dRrho[i][is][igrid]*this->Rrho.back()[is][igrid];
+
+    std::vector<double> dRR_tmp(dRR);
+    MPI_Allreduce(&dRR_tmp[0], &dRR[0], dRR.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     //alpha
     alpha.resize(this->dRrho.size(), 0.0);

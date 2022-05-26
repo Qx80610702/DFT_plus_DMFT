@@ -16,8 +16,8 @@
 #include <deque>
 
 // Pulay DIIS method. 
-//Refs.: P. Pulay. Chem. Phys. Lett. 73, 393(1980); G. Kress, J. Furthmuller. Phys. Rev. B 54, 11169(1996)
-//Mixing step 8.
+// Refs.: P. Pulay. Chem. Phys. Lett. 73, 393(1980); 
+// G. Kress, J. Furthmuller. Phys. Rev. B 54, 11169(1996)
 namespace DFT_plus_DMFT
 {
   class Charge_SCF
@@ -38,7 +38,9 @@ namespace DFT_plus_DMFT
         const double mixing_parameter,
         const int mixing_step,
         const double delta_rho,
-        const int nks, const int n_spin );
+        const int nks, 
+        const int n_spin,
+        const int nbasis);
 
     void update_charge_density_matrix(
         const int axis_flag,
@@ -48,6 +50,9 @@ namespace DFT_plus_DMFT
         DFT_plus_DMFT::projector& proj,
         DMFT::self_energy& sigma,
         DFT_plus_DMFT::Hilbert_space& space );
+
+    void evaluate_DFT_charge_density_matrix(
+        DFT_output::KS_bands& band );
 
     void eva_new_char_dens(
         const int axis_flag,
@@ -68,7 +73,7 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
-    void eva_k_densmat(
+    void eva_DFT_DMFT_k_densmat(
         const int dft_solver,
         const int ik,
         const int i_k_point,
@@ -78,11 +83,22 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& dense_cmplx );
 
+    void eva_DFT_k_densmat(
+        const int dft_solver,
+        const int ik,
+        const int i_k_point,
+        const std::vector<std::vector<
+        std::vector<double>>>& fik,
+        std::vector<std::vector<
+        std::complex<double>>>& eigenvector,
+        std::vector<std::vector<
+        std::complex<double>>>& dense_cmplx );
+
     void read_charge_density(
       const bool initial_charge,
       const bool DMFT_charge );
 
-    void read_initial_charge_density_matrix();
+    void store_initial_DFT_charge_density_matrix();
 
     bool charge_mixing(const int mix_step);
 
@@ -105,6 +121,7 @@ namespace DFT_plus_DMFT
     int max_mixing_step;
     int nkpoints;
     int nspin;
+    int n_basis;
 
     //Opt_DM_mat[istep][ik][ispin][nbasis*nbasis]
     std::deque<std::vector<std::vector<std::vector<std::complex<double>>>>> Opt_DM_mat;

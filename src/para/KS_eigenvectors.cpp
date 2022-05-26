@@ -13,6 +13,75 @@
 
 namespace DFT_output
 {
+  bool KS_eigenvectors::read_eigenvec(
+          const std::string dir,
+          const int ik,
+          std::vector<std::vector<
+          std::complex<double>>>& eigenvector )
+  {
+    debug::codestamp("KS_eigenvectors::read_eigenvec");
+
+    std::stringstream ss;
+
+    int ispin, iband, ibasis;
+    double real, imag;
+
+    this->i_kpoint = ik;
+
+    ss << dir << "eigenvector" << ik << ".dat";
+
+    std::ifstream ifs(ss.str().c_str(), std::ios::in);
+
+    if (!ifs)
+	  {
+	  	GLV::ofs_error << "Fail to oepn " << ss.str().c_str() << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    ifs.seekg(0);      //set the position at the beginning of the file
+    ifs >> this->flag_SOC;
+    ifs.ignore(150,'\n');
+
+    if(flag_SOC) // SOC
+    {
+
+    }
+    else //non_SOC
+    {
+      ifs >> this->nspins;
+      ifs >> this->nbands;
+      ifs >> this->nbasis;
+      ifs.ignore(150, '\n');
+
+      //eigenvector[ispin][nbasis*nbands];
+      if(eigenvector.empty()){
+        eigenvector.resize(this->nspins);
+        for(ispin=0; ispin<nspins; ispin++)
+          eigenvector[ispin].resize(this->nbasis*this->nbands);
+      }
+
+      while(ifs.good())
+      {
+        ifs >> ispin;
+        if(ifs.eof()) break;
+        ifs >> iband;
+        ifs >> ibasis;
+
+        ifs >> real;
+        ifs >> imag;
+
+        eigenvector[ispin][ibasis*this->nbands+iband] = std::complex<double>(real,imag);
+
+        ifs.ignore(150, '\n'); 
+
+        if(ifs.eof()) break;  //Check whether end of file is reached 
+      }
+    } 
+    ifs.close();
+
+    return true;
+  }
+
   bool KS_eigenvectors::read_corr_subset(
       const std::string dir, const int ik,
       DFT_plus_DMFT::Hilbert_space& space,

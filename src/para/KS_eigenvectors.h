@@ -13,13 +13,25 @@ namespace DFT_output
     KS_eigenvectors(){};
     ~KS_eigenvectors(){};
 
-    bool read_corr_subset(const std::string dir, const int ik,
-              DFT_plus_DMFT::Hilbert_space& space,
-              std::vector<std::vector<std::complex<double>>>& eigenvector );
+    bool read_eigenvec(
+          const std::string dir,
+          const int ik,
+          std::vector<std::vector<
+          std::complex<double>>>& eigenvector );
 
-    bool read_DMFT_occ_subset(const std::string dir, const int ik,
-              DFT_plus_DMFT::Hilbert_space& space,
-              std::vector<std::vector<std::complex<double>>>& eigenvector );
+    bool read_corr_subset(
+          const std::string dir, 
+          const int ik,
+          DFT_plus_DMFT::Hilbert_space& space,
+          std::vector<std::vector<
+          std::complex<double>>>& eigenvector );
+
+    bool read_DMFT_occ_subset(
+          const std::string dir, 
+          const int ik,
+          DFT_plus_DMFT::Hilbert_space& space,
+          std::vector<std::vector<
+          std::complex<double>>>& eigenvector );
 
     void evalute_k_wave_c_mat(
       std::complex<double>* wave_c_mat, const int is,

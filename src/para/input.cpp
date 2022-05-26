@@ -231,6 +231,7 @@ namespace DMFT
     GLV::ofs_running << "max_charge_step  " << this->charge_step_max << std::endl;
 
     //dft_solver_exe
+    // /*
     try {
       std::vector<std::string> str_val;
       
@@ -251,6 +252,7 @@ namespace DMFT
         this->dft_solver_exe = "";
     }
     GLV::ofs_running << "dft_solver_exe  " << this->dft_solver_exe << std::endl;
+    // */
 
     //delta_sigma
     try {

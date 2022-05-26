@@ -73,8 +73,7 @@ namespace DFT_plus_DMFT
     //           Charge loop
     //===============================================
     for(int char_step = *(int*)this->pars.in.parameter("start_charge_step"); 
-        char_step <= *(int*)this->pars.in.parameter("max_charge_step") && 
-        (!density_convergency || !sigma_convergency); char_step++)
+        char_step <= *(int*)this->pars.in.parameter("max_charge_step"); char_step++)
     {
       GLV::ofs_running << "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n";
       GLV::ofs_running << "<><><><><><><><><> Charge step " << char_step << " <><><><><><><><><><><><><>\n"; 
@@ -82,7 +81,7 @@ namespace DFT_plus_DMFT
 
       this->pars.bands.read();
 
-      if(mix_step==1){
+      if(loop_count==1){
         this->space.KS_bands_window(
             char_step,
             this->pars.bands, 
@@ -165,27 +164,22 @@ namespace DFT_plus_DMFT
                 *(double*)this->pars.in.parameter("charge_mix_beta"),
                 *(int*)this->pars.in.parameter("mixing_step"),
                 *(double*)this->pars.in.parameter("delta_rho"),
-                this->pars.bands.nk(), this->pars.bands.nspins() );
+                this->pars.bands.nk(), this->pars.bands.nspins(), proj.nbasis() );
           
           this->Char_scf.prepare_nscf_dft();
 
           //Reading initial input charge density 
           this->Char_scf.read_charge_density(true, false);
+
+          //Calculate and store initial input DFT charge density matrix
+          this->Char_scf.evaluate_DFT_charge_density_matrix(this->pars.bands);
+          this->Char_scf.store_initial_DFT_charge_density_matrix();
         }
 
         this->DMFT_charge_updating();
 
-        //Reading initial input charge density matrix
-        if(mix_step==1) this->Char_scf.read_initial_charge_density_matrix();
-
         density_convergency = this->Char_scf.charge_mixing(mix_step);
         mix_step++;
-
-        GLV::ofs_running << "Self-consistency of charge density in current loop: ";
-        if(density_convergency)
-          GLV::ofs_running << "true" << std::endl;
-        else
-          GLV::ofs_running << "false" << std::endl;
 
         if(density_convergency && sigma_convergency){
           GLV::ofs_running << "\nThe DFT+DMFT calculation has reached convergency!!!" << std::endl;
@@ -201,6 +195,7 @@ namespace DFT_plus_DMFT
         {
           GLV::ofs_running << "================  DFT step "  << dft_step << " ================" << std::endl;
           this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver")); //Run at least one dft step under each charge step
+          loop_count++;
 
           if(dft_step>1 && density_convergency) break;
 
@@ -208,12 +203,6 @@ namespace DFT_plus_DMFT
 
             density_convergency = this->DFT_loop_charge_mixing(mix_step);
             mix_step++;
-
-            GLV::ofs_running << "Self-consistency of charge density in current loop: ";
-            if(density_convergency)
-              GLV::ofs_running << "true" << std::endl;
-            else
-              GLV::ofs_running << "false" << std::endl;
               
             GLV::ofs_running << std::endl;
           }
@@ -481,7 +470,7 @@ namespace DFT_plus_DMFT
             this->proj, this->imp.sigma, this->space );
 
     this->Char_scf.output_DMFT_charge_density_matrix();
-        
+
     //Call DFT solver to compute the charge density corresponding to 
     //the DMFT corrected density matrix
     // GLV::ofs_running << "Calculating DMFT corrected charge density..." << std::endl;
@@ -645,6 +634,9 @@ namespace DFT_plus_DMFT
       ofs_running.close();
       ofs_error.close();
     }
+
+    // ofs_running.close();
+    // ofs_error.close();
   }
 
   void solver::run_nscf_dft(
@@ -677,19 +669,20 @@ namespace DFT_plus_DMFT
         
           aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
           
-          /*
-          if(mpi_rank()==0){
-            std::string dft_exe = "mpirun " + *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
-            // std::string dft_exe = *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
-            std::ofstream ofs("task.sh", std::ios::out);
-            ofs << "#!/bin/sh\n" << std:: endl;
-            ofs << dft_exe << std::endl;
-            ofs.close();
-            int info = system("rm -rf ./outputs_to_DMFT");
+          // /*
+          // if(mpi_rank()==0){
+          //   std::string dft_exe = "mpirun " + *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
+          //   // std::string dft_exe = *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
+          //   std::ofstream ofs("task.sh", std::ios::out);
+          //   ofs << "#!/bin/sh\n" << std:: endl;
+          //   ofs << dft_exe << std::endl;
+          //   ofs.close();
 
-            info=system("bash task.sh");
-          }*/
-          
+          //   system("bash task.sh");
+          // }
+          // */
+          // MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+          // system("bash task.sh");
         #else
           GLV::ofs_error << "FHI-aims has not been installed!!!  ";
           GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;

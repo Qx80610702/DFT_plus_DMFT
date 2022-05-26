@@ -21,7 +21,9 @@ namespace DFT_plus_DMFT
       const double mixing_parameter,
       const int mixing_step,
       const double delta_rho,
-      const int nks, const int n_spin )
+      const int nks, 
+      const int n_spin,
+      const int nbasis )
   {
     this->flag_DFT_solver = DFT_solver;
     this->mixing_beta = mixing_parameter;
@@ -29,6 +31,8 @@ namespace DFT_plus_DMFT
     this->sc_delta_rho = delta_rho;
     this->nkpoints = nks;
     this->nspin = n_spin;
+    this->n_basis = nbasis;
+    
     return;
   }
 
@@ -61,48 +65,6 @@ namespace DFT_plus_DMFT
         std::exit(EXIT_FAILURE);
     }
   }
-
-  // void Charge_SCF::update_charge_density_matrix(
-  //     const int axis_flag,
-  //     DFT_plus_DMFT::chemical_potential& Mu,
-  //     DFT_output::KS_bands& band, 
-  //     DFT_output::atoms_info& atom, 
-  //     DFT_plus_DMFT::projector& proj,
-  //     DMFT::self_energy& sigma,
-  //     DMFT::input_info& in,
-  //     DFT_plus_DMFT::Hilbert_space& space)
-  // {
-  //   debug::codestamp("Charge_SCF::update_char_dens");
-
-  //   this->eva_new_charge_density_matrix(
-  //         axis_flag, Mu, band, atom, 
-  //         proj, sigma, in, space );
-
-  //   // this->output_char_dense(
-  //   //       *(int*)in.parameter("dft_solver"), band.nk() );
-
-  //   // this->read_char_dense(band.nk());
-
-  //   // //TEST
-  //   // double delta_tmp=0.0, delta=0.0;
-  //   // for(int ik=0; ik<this->dens_mat.size(); ik++){
-  //   //   for(int is=0; is<this->dens_mat[ik].size(); is++){
-  //   //     for(int i=0; i<this->dens_mat[ik][is].size(); i++){
-  //   //       delta_tmp += std::sqrt(std::norm( this->dens_mat[ik][is][i] 
-  //   //             - this->dens_mat_last[ik][is][i] ));
-  //   //     }
-  //   //   }
-  //   // }
-
-  //   // MPI_Allreduce(&delta_tmp, &delta, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-  //   // GLV::ofs_error << "The difference between the input and output rho: " 
-  //   //           << std::setw(15) << std::setprecision(9) << delta << std::endl;
-
-  //   // this->mix_char_dense(*(double*)in.parameter("charge_mix_beta"));
-
-  //   return;
-  // }
 
   void Charge_SCF::update_charge_density_matrix(
         const int axis_flag,
@@ -251,7 +213,7 @@ namespace DFT_plus_DMFT
     }
 
     for(int ik=0; ik<task_nks; ik++){
-      this->eva_k_densmat(
+      this->eva_DFT_DMFT_k_densmat(
           this->flag_DFT_solver, 
           ik, k_map[ik], 
           space, eigenvector,
@@ -280,6 +242,82 @@ namespace DFT_plus_DMFT
         } 
         */
     }
+
+    return;
+  }
+
+  void Charge_SCF::evaluate_DFT_charge_density_matrix(
+        DFT_output::KS_bands& band )
+  {
+    debug::codestamp("Charge_SCF::evaluate_DFT_charge_density_matrix");
+
+    std::vector<double> k_weight = band.kweight();
+    std::vector<std::vector<std::vector<double>>> dft_occ_num = band.dft_occ();
+
+    std::vector<int> k_map;
+    int task_nks=0;
+    for(int ik=0; ik<this->nkpoints; ik++){
+      if(ik%mpi_ntasks() != mpi_rank()) continue;   //k_points are divided acording to the process id
+      task_nks += 1;
+      k_map.push_back(ik);
+    }
+
+    std::vector<std::vector<std::vector<double>>> dft_occ_num_local(this->nspin);
+    for(int is=0; is<this->nspin; is++){
+      dft_occ_num_local[is].resize(task_nks);
+      for(int ik=0; ik<task_nks; ik++)
+        dft_occ_num_local[is][ik].resize(dft_occ_num[is][k_map[ik]].size(), 0.0);
+    }
+
+    if(this->nspin==1 && !band.soc()){
+      for(int ik=0; ik<k_weight.size(); ik++)
+        k_weight[ik] *= 2.0;
+    }
+
+    for(int is=0; is<this->nspin; is++)
+      for(int ik=0; ik<task_nks; ik++)
+        for(int iband=0; iband<dft_occ_num_local[is][ik].size(); iband++)
+          dft_occ_num_local[is][ik][iband] = 
+            dft_occ_num[is][ k_map[ik] ][iband]*k_weight[ k_map[ik] ];
+
+    if(this->dens_mat_out.empty()){
+      this->dens_mat_out.resize(task_nks);
+      for(int ik=0; ik<task_nks; ik++){
+        this->dens_mat_out[ik].resize(this->nspin);
+      }
+    }
+
+    std::vector<std::vector<std::complex<double>>> eigenvector;
+    for(int ik=0; ik<task_nks; ik++){
+      this->eva_DFT_k_densmat(
+          this->flag_DFT_solver, ik, 
+          k_map[ik], dft_occ_num_local, eigenvector,
+          this->dens_mat_out[ik] );
+
+      /*
+        //========Test==========
+        ovlp.evaluate_ovlp_k(k_map[ik], atom);        //caculate overlap matrix in k-space
+        const std::vector<std::complex<double>>& ovlp_mat = ovlp.ovlp_aims.ovlp_mat_work();
+
+        for(int is=0; is<nspin; is++){
+          double tmp=0.0;
+          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                      n_basis, n_basis, n_basis,
+                      &one,
+                      &this->dens_mat[ik][is][0], n_basis,
+                      &ovlp_mat[0], n_basis,
+                      &zero,
+                      &mat_tmp[0], n_basis);
+
+          for(int ibasis=0; ibasis<n_basis; ibasis++)
+            tmp += mat_tmp[ibasis*n_basis+ibasis].real();
+          
+          #pragma omp atomic
+            Nele += tmp;
+        } 
+        */
+    }
+
 
     return;
   }
@@ -438,7 +476,7 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::eva_k_densmat(
+  void Charge_SCF::eva_DFT_DMFT_k_densmat(
         const int dft_solver,
         const int ik,
         const int i_k_point,
@@ -448,7 +486,7 @@ namespace DFT_plus_DMFT
         std::vector<std::vector<
         std::complex<double>>>& dense_cmplx )
   {
-    debug::codestamp("Charge_SCF::eva_k_densmat");
+    debug::codestamp("Charge_SCF::eva_DFT_DMFT_k_densmat");
 
     const std::complex<double> zero(0.0,0.0);
 
@@ -500,6 +538,70 @@ namespace DFT_plus_DMFT
     return;
   }
 
+  void Charge_SCF::eva_DFT_k_densmat(
+        const int dft_solver,
+        const int ik,
+        const int i_k_point,
+        const std::vector<std::vector<
+        std::vector<double>>>& fik,
+        std::vector<std::vector<
+        std::complex<double>>>& eigenvector,
+        std::vector<std::vector<
+        std::complex<double>>>& dense_cmplx )
+  {
+    debug::codestamp("Charge_SCF::eva_DFT_k_densmat");
+
+    const std::complex<double> zero(0.0,0.0);
+
+    wave_function wfc;
+
+    wfc.read_eigenvec(
+        "dft/outputs_to_DMFT/KS_eigenvector/", 
+        i_k_point, eigenvector );       //read KS-eigenvector
+
+    const int nbasis = wfc.basis_n();
+    const int nbands = wfc.nband();
+
+    for(int ispin=0; ispin<this->nspin; ispin++)
+      for(int iband=0; iband<fik[ispin][ik].size(); iband++)
+        for(int ibasis=0; ibasis<nbasis; ibasis++){
+          if(fik[ispin][ik][iband] < -1.0e-6){
+            GLV::ofs_error << "Error in fik : negative occupation number!!!" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+          else if(std::fabs(fik[ispin][ik][iband]) < 1.0e-6){
+             eigenvector[ispin][ibasis*nbands+iband] *= 0.0;
+          }
+          else{
+            eigenvector[ispin][ibasis*nbands+iband] *= std::sqrt(fik[ispin][ik][iband]);
+          }
+        }
+  
+    // void cblas_zherk (const CBLAS_LAYOUT Layout, const CBLAS_UPLO uplo, const
+    //    CBLAS_TRANSPOSE trans, const MKL_INT n, const MKL_INT k, const double alpha, const void
+    //    *a, const MKL_INT lda, const double beta, void *c, const MKL_INT ldc);
+
+    for(int ispin=0; ispin<this->nspin; ispin++){
+      if(dense_cmplx[ispin].empty())
+        dense_cmplx[ispin].resize(nbasis*nbasis, zero);
+      else{
+        for(auto& iter : dense_cmplx[ispin])
+          iter = zero;
+      }
+    
+      cblas_zherk(CblasRowMajor, CblasUpper, CblasNoTrans, 
+                  nbasis, nbands, 
+                  1.0, &eigenvector[ispin][0], nbands, 
+                  0.0, &dense_cmplx[ispin][0], nbasis );
+
+      for(int ibasis1=0; ibasis1<nbasis; ibasis1++)
+        for(int ibasis2=0; ibasis2<ibasis1; ibasis2++)
+          dense_cmplx[ispin][ibasis1*nbasis + ibasis2] = std::conj(dense_cmplx[ispin][ibasis2*nbasis + ibasis1]);
+    }
+
+    return;
+  }
+
   void Charge_SCF::read_charge_density(
         const bool initial_charge,
         const bool DMFT_charge )
@@ -511,20 +613,15 @@ namespace DFT_plus_DMFT
     return;
   }
 
-  void Charge_SCF::read_initial_charge_density_matrix()
+  void Charge_SCF::store_initial_DFT_charge_density_matrix()
   {
-    debug::codestamp("Charge_SCF::read_initial_charge_density_matrix");
-
-    std::vector<std::vector<std::vector<std::complex<double>>>> dens_mat_tmp;
-    dens_mat_tmp = this->dens_mat_out;
-
-    this->char_ref().read_charge_density_matrix(nkpoints, dens_mat_tmp);
+    debug::codestamp("Charge_SCF::store_initial_DFT_charge_density_matrix");
 
     if(this->Opt_DM_mat.empty()) 
-      this->Opt_DM_mat.push_back(dens_mat_tmp);
+      this->Opt_DM_mat.push_back(this->dens_mat_out);
     else{
       this->Opt_DM_mat.clear();
-      this->Opt_DM_mat.push_back(dens_mat_tmp);
+      this->Opt_DM_mat.push_back(this->dens_mat_out);
     }
 
     return;
@@ -545,6 +642,8 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("Charge_SCF::charge_mixing");
 
+    bool density_convergency;
+
     GLV::ofs_running << "Start mixing charge density..." << std::endl;
 
     double time, seconds;
@@ -561,13 +660,22 @@ namespace DFT_plus_DMFT
     this->char_ref().update_alpha(mix_step, alpha);
 
     this->char_ref().mixing_density(
-        mix_step, this->mixing_beta, 
+        mix_step, this->mixing_beta,
         this->max_mixing_step,
         alpha, charge_change );
+
+    if(charge_change<this->sc_delta_rho) density_convergency = true;
+    else density_convergency = false;
 
     GLV::ofs_running << "Change of the charge density: "
                      << std::setprecision(6) << charge_change
                      << std::endl;
+    
+    GLV::ofs_running << "Self-consistency of charge density in current loop: ";
+    if(density_convergency)
+      GLV::ofs_running << "true" << std::endl;
+    else
+      GLV::ofs_running << "false" << std::endl;
 
     this->mixing_density_matrix(mix_step, alpha);
 
@@ -581,8 +689,7 @@ namespace DFT_plus_DMFT
                          << minutes << "m "
                          << (int)seconds << "s" << std::endl;
 
-    if(charge_change<this->sc_delta_rho) return true;
-    else return false;
+    return density_convergency;
   }
 
   void Charge_SCF::mixing_density_matrix(

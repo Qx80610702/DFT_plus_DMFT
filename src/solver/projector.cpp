@@ -133,7 +133,7 @@ namespace DFT_plus_DMFT
 
       wfc.read_corr_subset("dft/outputs_to_DMFT/KS_eigenvector/", i_k_point, space, eigenvec);       //read KS-eigenvector
 
-      const int nbasis=wfc.basis_n();
+      this->n_basis=wfc.basis_n();
       
       const std::vector<std::complex<double>>& ovlp_mat = ovlp.overlap();
 
@@ -152,20 +152,20 @@ namespace DFT_plus_DMFT
         //===============test the orthonormality of wavefunctions=====
         /*
         std::vector<std::complex<double>> wfc_norm(wbands[is]*wbands[is]);
-        std::vector<std::complex<double>> wfc_ovlp_tmp(wbands[is]*nbasis);
+        std::vector<std::complex<double>> wfc_ovlp_tmp(wbands[is]*this->n_basis);
         const std::vector<std::complex<double>>& ovlp_all = ovlp.ovlp_aims.ovlp_mat_work();
         cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-                    wbands[is], nbasis, nbasis,
+                    wbands[is], this->n_basis, this->n_basis,
                     &one,
                     &eigenvec[is][0], wbands[is],
-                    &ovlp_all[0], nbasis,
+                    &ovlp_all[0], this->n_basis,
                     &zero,
-                    &wfc_ovlp_tmp[0], nbasis );
+                    &wfc_ovlp_tmp[0], this->n_basis );
 
         cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    wbands[is], wbands[is], nbasis,
+                    wbands[is], wbands[is], this->n_basis,
                     &one,
-                    &wfc_ovlp_tmp[0], nbasis,
+                    &wfc_ovlp_tmp[0], this->n_basis,
                     &eigenvec[is][0], wbands[is],
                     &zero,
                     &wfc_norm[0], wbands[is] );
@@ -187,7 +187,7 @@ namespace DFT_plus_DMFT
 
 
         cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-                    wbands[is], norb, nbasis,
+                    wbands[is], norb, this->n_basis,
                     &one,
                     &eigenvec[is][0], wbands[is],
                     &ovlp_mat[0], norb,
@@ -485,7 +485,7 @@ namespace DFT_plus_DMFT
 // const int nbands=wfc.nband();
 // const int NBANDS_square=nbands*nbands;
 // const int nspin_tmp=wfc.nspin();
-// const int nbasis = wfc.basis_n();
+// const int this->n_basis = wfc.basis_n();
 // const auto& ovlp_mat_all=ovlp.ovlp_aims.ovlp_mat_work();
 // const std::complex<double> zero(0.0,0.0);
 // std::vector<std::vector<std::complex<double>>> norm_tmp;
@@ -496,20 +496,20 @@ namespace DFT_plus_DMFT
 //   const std::complex<double> beta(0.0,0.0);
 //   norm_tmp[is].resize(NBANDS_square);
 
-//   std::unique_ptr<std::complex<double>[]> product_mat(new std::complex<double> [nbands*nbasis]);
+//   std::unique_ptr<std::complex<double>[]> product_mat(new std::complex<double> [nbands*this->n_basis]);
 
 //   cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
-//             nbands, nbasis, nbasis,
+//             nbands, this->n_basis, this->n_basis,
 //             &alpha,
 //             &eigenvec[is][0], nbands,
-//             &ovlp_mat_all[0], nbasis,
+//             &ovlp_mat_all[0], this->n_basis,
 //             &beta,
-//             &product_mat[0], nbasis);
+//             &product_mat[0], this->n_basis);
   
 //   cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-//             nbands, nbands, nbasis,
+//             nbands, nbands, this->n_basis,
 //             &alpha,
-//             &product_mat[0], nbasis,
+//             &product_mat[0], this->n_basis,
 //             &eigenvec[is][0], nbands,
 //             &beta,
 //             &norm_tmp[is][0], nbands);
