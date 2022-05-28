@@ -129,7 +129,7 @@ namespace DFT_plus_DMFT
     }
 
     //charge density rho
-    int nspin_tmp, ngrids_tmp, ispin;
+    int nspin_tmp, ispin;
     double value_tmp;
     std::vector<std::vector<double>> rho_tmp;
     std::ifstream ifsr(rho_file.str().c_str(), std::ios::in);
@@ -140,7 +140,7 @@ namespace DFT_plus_DMFT
     ifsr.seekg(0); //set the position at the beginning of the file
     
     ifsr >> nspin_tmp;
-    ifsr >> ngrids_tmp;
+    ifsr.ignore(150,'\n');
     rho_tmp.resize(nspin_tmp);
 
     while(ifsr.good())

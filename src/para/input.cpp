@@ -231,7 +231,7 @@ namespace DMFT
     GLV::ofs_running << "max_charge_step  " << this->charge_step_max << std::endl;
 
     //dft_solver_exe
-    // /*
+    /*
     try {
       std::vector<std::string> str_val;
       
@@ -252,7 +252,7 @@ namespace DMFT
         this->dft_solver_exe = "";
     }
     GLV::ofs_running << "dft_solver_exe  " << this->dft_solver_exe << std::endl;
-    // */
+    */
 
     //delta_sigma
     try {
@@ -429,7 +429,10 @@ namespace DMFT
         std::exit(EXIT_FAILURE);
       }
 
-      this->flag_restart = true;
+      if(this->start_DMFT_step>1 || this->start_charge_step>1)
+        this->flag_restart = true;
+      else
+        this->flag_restart = false;
     }
     catch (const std::string messg) {
       GLV::ofs_error << messg << std::endl;

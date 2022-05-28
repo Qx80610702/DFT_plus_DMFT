@@ -61,7 +61,7 @@ namespace DFT_plus_DMFT
     timer::timestamp(time);
     timer::get_date_time(start_date);
 
-    int loop_count = 1;
+    int loop_count = 1, dmft_loop_count = 1, charge_loop_count = 1;
     int mix_step = 1;
     bool density_convergency = false;
     bool sigma_convergency = false;
@@ -114,15 +114,12 @@ namespace DFT_plus_DMFT
       //=============================================================
       //            DMFT loop
       //=============================================================
-      int dmft_loop_count = 1;
-      for(int dmft_step = *(int*)this->pars.in.parameter("start_dmft_step");
+      for(int dmft_step = (charge_loop_count>1? 1 : *(int*)this->pars.in.parameter("start_dmft_step"));
           dmft_step <= *(int*)this->pars.in.parameter("max_dmft_step"); dmft_step++)
       {
-        if(dmft_loop_count>1 && sigma_convergency) break;   //Run at least one dmft step under each charge step
+        if(dmft_step>1 && sigma_convergency) break;   //Run at least one dmft step under each charge step
 
         GLV::ofs_running << "================  DMFT step "  << dmft_step << " ================" << std::endl;
-        
-        if(dmft_step>1) last_char_step = char_step;
 
         if(char_step==1 && dmft_step==1)
           this->imp.sigma.initial_guess( 
@@ -143,7 +140,7 @@ namespace DFT_plus_DMFT
             *(int*)this->pars.in.parameter("impurity_solver"),
               char_step, dmft_step, this->pars.atom );
 
-        sigma_convergency = this->sigma_scf_update(char_step, dmft_step );
+        sigma_convergency = this->sigma_scf_update(char_step, dmft_step);
 
         last_DMFT_step = dmft_step;
 
@@ -182,7 +179,7 @@ namespace DFT_plus_DMFT
         mix_step++;
 
         if(density_convergency && sigma_convergency){
-          GLV::ofs_running << "\nThe DFT+DMFT calculation has reached convergency!!!" << std::endl;
+          GLV::ofs_running << "\nThe DFT+DMFT calculation has converged!!!" << std::endl;
           break;
         }
 
@@ -209,7 +206,8 @@ namespace DFT_plus_DMFT
         }//DFT loop
         GLV::ofs_running << "<><><><><><><><><> End of DFT loop <><><><><><><><><>" << std::endl;
       }
-      GLV::ofs_running << "<><><><><><><><><> End charge step " << char_step << " <><><><><><><><><><><><><>\n" << std::endl; 
+      GLV::ofs_running << "<><><><><><><><><> End charge step " << char_step << " <><><><><><><><><><><><><>\n" << std::endl;
+      charge_loop_count++;
     }//charge loop
 
     timer::get_time(time, seconds, minutes, hours, days);
@@ -457,6 +455,9 @@ namespace DFT_plus_DMFT
 
     GLV::ofs_running << "Start updating DMFT corrected charge density..." << std::endl;
 
+    if(mpi_rank()==0) system("test -d outputs_to_DMFT && mv outputs_to_DMFT .outputs_to_DMFT");
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+
     this->imp.sigma.subtract_double_counting(this->flag_axis);
 
     this->Mu.update_chemical_potential(
@@ -474,11 +475,15 @@ namespace DFT_plus_DMFT
     //Call DFT solver to compute the charge density corresponding to 
     //the DMFT corrected density matrix
     // GLV::ofs_running << "Calculating DMFT corrected charge density..." << std::endl;
-    this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));  
+    this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));
     
     //Read the charge density corresponding to 
     //the DMFT corrected density matrix
     this->Char_scf.read_charge_density(false, true);
+
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+    if(mpi_rank()==0) system("rm -rf outputs_to_DMFT && mv .outputs_to_DMFT outputs_to_DMFT");
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
     
     GLV::ofs_running << "End updating DMFT corrected charge density\n" << std::endl;
    
@@ -655,7 +660,7 @@ namespace DFT_plus_DMFT
       std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
       std::exit(EXIT_FAILURE);
     }
-    if(mpi_rank()==0) system("rm -rf ./outputs_to_DMFT");
+    if(mpi_rank()==0) system("test -d ./outputs_to_DMFT && rm -rf ./outputs_to_DMFT");
     
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
