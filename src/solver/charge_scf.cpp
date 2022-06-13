@@ -26,7 +26,7 @@ namespace DFT_plus_DMFT
       const int nbasis )
   {
     this->flag_DFT_solver = DFT_solver;
-    this->mixing_beta = mixing_parameter;
+    this->mixing_param = mixing_parameter;
     this->max_mixing_step = mixing_step;
     this->sc_delta_rho = delta_rho;
     this->nkpoints = nks;
@@ -660,7 +660,7 @@ namespace DFT_plus_DMFT
     this->char_ref().update_alpha(mix_step, alpha);
 
     this->char_ref().mixing_density(
-        mix_step, this->mixing_beta,
+        mix_step, this->mixing_param,
         this->max_mixing_step,
         alpha, charge_change );
 
@@ -720,8 +720,8 @@ namespace DFT_plus_DMFT
         for(int is=0; is<this->Opt_DM_mat.back()[ik].size(); is++)
           for(int i=0; i<this->Opt_DM_mat.back()[ik][is].size(); i++)
             this->dens_mat_out[ik][is][i] = 
-              (1.0-this->mixing_beta)*this->Opt_DM_mat.back()[ik][is][i] +
-              this->mixing_beta*( this->Res_DM_mat.back()[ik][is][i] + 
+              (1.0-this->mixing_param)*this->Opt_DM_mat.back()[ik][is][i] +
+              this->mixing_param*( this->Res_DM_mat.back()[ik][is][i] + 
               this->Opt_DM_mat.back()[ik][is][i] );
 
       this->Opt_DM_mat.push_back(this->dens_mat_out);
@@ -765,14 +765,14 @@ namespace DFT_plus_DMFT
       for(int ik=0; ik<this->Res_DM_mat.back().size(); ik++)
           for(int is=0; is<this->Res_DM_mat.back()[ik].size(); is++)
             for(int i=0; i<this->Res_DM_mat.back()[ik][is].size(); i++)
-              this->dens_mat_out[ik][is][i] += this->mixing_beta*
+              this->dens_mat_out[ik][is][i] += this->mixing_param*
                   this->Res_DM_mat.back()[ik][is][i];
 
       for(int istep=0; istep<alpha.size(); istep++){
         for(int ik=0; ik<this->Res_DM_mat[istep].size(); ik++)
           for(int is=0; is<this->Res_DM_mat[istep][ik].size(); is++)
             for(int i=0; i<this->Res_DM_mat[istep][ik][is].size(); i++)
-              this->dens_mat_out[ik][is][i] += this->mixing_beta*alpha[istep]*
+              this->dens_mat_out[ik][is][i] += this->mixing_param*alpha[istep]*
                 ( this->Res_DM_mat[istep+1][ik][is][i] - 
                   this->Res_DM_mat[istep][ik][is][i] );
       }

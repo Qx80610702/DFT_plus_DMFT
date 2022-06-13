@@ -317,7 +317,7 @@ namespace DFT_plus_DMFT
 
   void Charge_SCF_aims::mixing_density(
     const int mix_step,
-    const double mixing_beta,
+    const double mixing_param,
     const int max_mixing_step,
     std::vector<double>& alpha,
     double& charge_change)
@@ -341,8 +341,8 @@ namespace DFT_plus_DMFT
 
       for(int is=0; is<this->Opt_rho.back().size(); is++)
         for(int igrid=0; igrid<this->Opt_rho.back()[is].size(); igrid++){
-          rho_tmp[is][igrid] = this->rho_out[is][igrid]*mixing_beta +
-              (1.0-mixing_beta)*rho_tmp[is][igrid];
+          rho_tmp[is][igrid] = this->rho_out[is][igrid]*mixing_param +
+              (1.0-mixing_param)*rho_tmp[is][igrid];
         }
 
       this->Opt_rho.push_back(rho_tmp);
@@ -364,12 +364,12 @@ namespace DFT_plus_DMFT
       //Second part: \Rrho^{opt}
       for(int is=0; is<this->Rrho.back().size(); is++)
           for(int igrid=0; igrid<this->Rrho.back()[is].size(); igrid++)
-            rho_tmp[is][igrid] += mixing_beta*this->Rrho.back()[is][igrid];
+            rho_tmp[is][igrid] += mixing_param*this->Rrho.back()[is][igrid];
 
       for(int istep=0; istep<alpha.size(); istep++){
         for(int is=0; is<this->Rrho[istep].size(); is++)
           for(int igrid=0; igrid<this->Rrho[istep][is].size(); igrid++)
-            rho_tmp[is][igrid] += mixing_beta*alpha[istep]*
+            rho_tmp[is][igrid] += mixing_param*alpha[istep]*
               ( this->Rrho[istep+1][is][igrid] - 
               this->Rrho[istep][is][igrid] );
       }

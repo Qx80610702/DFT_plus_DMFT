@@ -164,12 +164,12 @@ namespace DMFT
         GLV::ofs_error << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
-      else if(std::strcmp("pacs", this->strtolower(str_val[0]).c_str())==0) this->flag_impurity_solver = 3;
-      else if(std::strcmp("rutgers-cthyb",this->strtolower(str_val[0]).c_str())==0) this->flag_impurity_solver = 4;
+      else if(std::strcmp("pacs", this->strtolower(str_val[0]).c_str())==0)
+        this->flag_impurity_solver = 3;
+      else if(std::strcmp("rutgers-cthyb",this->strtolower(str_val[0]).c_str())==0)
+        this->flag_impurity_solver = 4;
       else if(std::strcmp("iqist",this->strtolower(str_val[0]).c_str())==0)
-      {
         this->flag_impurity_solver = 5;
-      }
       else
       {
         GLV::ofs_error << "unsupported value of impurity_solver " << this->strtolower(str_val[0]) << std::endl;
@@ -189,7 +189,7 @@ namespace DMFT
     else if(this->flag_impurity_solver==2) GLV::ofs_running << "alps-cthyb-segment" << std::endl;
     else if(this->flag_impurity_solver==3) GLV::ofs_running << "pacs" << std::endl;
     else if(this->flag_impurity_solver==4) GLV::ofs_running << "rutgers-cthyb" << std::endl;
-    else if(this->flag_impurity_solver==4) GLV::ofs_running << "iqist" << std::endl;
+    else if(this->flag_impurity_solver==5) GLV::ofs_running << "iqist" << std::endl;
 
     //double_counting
     try {
@@ -230,8 +230,42 @@ namespace DMFT
     }
     GLV::ofs_running << "max_charge_step  " << this->charge_step_max << std::endl;
 
+    //max_dmft_step
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("max_dmft_step", str_val);
+
+      this->DMFT_step_max = atoi(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      GLV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // GLV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
+      this->DMFT_step_max = 1;
+    }
+    GLV::ofs_running << "max_dmft_step  " << this->DMFT_step_max << std::endl;
+
+    //max_dft_step
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("max_dft_step", str_val);
+
+      this->DFT_step_max = atoi(str_val[0].c_str());
+    }
+    catch (const std::string messg) {
+      GLV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // GLV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
+      this->DFT_step_max = 1;
+    }
+    GLV::ofs_running << "max_dft_step  " << this->DFT_step_max << std::endl;
+
     //dft_solver_exe
-    /*
+    // /*
     try {
       std::vector<std::string> str_val;
       
@@ -252,7 +286,7 @@ namespace DMFT
         this->dft_solver_exe = "";
     }
     GLV::ofs_running << "dft_solver_exe  " << this->dft_solver_exe << std::endl;
-    */
+    // */
 
     //delta_sigma
     try {
@@ -311,12 +345,12 @@ namespace DMFT
             << std::setprecision(3) << std::setiosflags(std::ios::scientific)
             << this->mixing_step << std::endl;
 
-    //charge_mix_beta
+    //charge_mix_param
     try {
       std::vector<std::string> str_val;
-      this->read_parameter("charge_mix_beta", str_val);
+      this->read_parameter("charge_mix_param", str_val);
 
-      this->charge_mix_beta = atof(str_val[0].c_str());
+      this->charge_mix_param = atof(str_val[0].c_str());
     }
     catch (const std::string messg) {
       GLV::ofs_error << messg << std::endl;
@@ -324,42 +358,8 @@ namespace DMFT
     }
     catch(const bool not_given){
       // GLV::ofs_running << "Warning: charge mixing parameter is not given and set default value 0.05" << std::endl;
-      this->charge_mix_beta = 0.05;
+      this->charge_mix_param = 0.05;
     }
-
-    //max_dmft_step
-    try {
-      std::vector<std::string> str_val;
-      this->read_parameter("max_dmft_step", str_val);
-
-      this->DMFT_step_max = atoi(str_val[0].c_str());
-    }
-    catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-    catch(const bool not_given){
-      // GLV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
-      this->DMFT_step_max = 1;
-    }
-    GLV::ofs_running << "max_dmft_step  " << this->DMFT_step_max << std::endl;
-
-    //max_dft_step
-    try {
-      std::vector<std::string> str_val;
-      this->read_parameter("max_dft_step", str_val);
-
-      this->DFT_step_max = atoi(str_val[0].c_str());
-    }
-    catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-    catch(const bool not_given){
-      // GLV::ofs_running << "Warning: max_dmft_step is not given and set default value 1" << std::endl;
-      this->DFT_step_max = 1;
-    }
-    GLV::ofs_running << "max_dft_step  " << this->DFT_step_max << std::endl;
 
     //mc_step
     try {
@@ -581,7 +581,7 @@ namespace DMFT
           std::strcmp("local_symmetry", key_str_lower.c_str())==0 ||
           std::strcmp("restart", key_str_lower.c_str())==0 ||
           std::strcmp("dft_xc", key_str_lower.c_str())==0 ||
-          std::strcmp("charge_mix_beta", key_str_lower.c_str())==0 ||
+          std::strcmp("charge_mix_param", key_str_lower.c_str())==0 ||
           std::strcmp("delta_sigma", key_str_lower.c_str())==0 ||
           std::strcmp("delta_rho", key_str_lower.c_str())==0 ||
           std::strcmp("mixing_step", key_str_lower.c_str())==0 ||
@@ -650,7 +650,7 @@ namespace DMFT
     else if(std::strcmp("mc_step", word.c_str())==0) return &MC_step;
     else if(std::strcmp("hyb_func", word.c_str())==0) return &hyb_func;
     else if(std::strcmp("hyf_xc_alpha", word.c_str())==0) return &hyf_xc_alpha;
-    else if(std::strcmp("charge_mix_beta", word.c_str())==0) return &charge_mix_beta;
+    else if(std::strcmp("charge_mix_param", word.c_str())==0) return &charge_mix_param;
     else if(std::strcmp("delta_sigma", word.c_str())==0) return &delta_sigma;
     else if(std::strcmp("delta_rho", word.c_str())==0) return &delta_rho;
     else if(std::strcmp("start_charge_step", word.c_str())==0) return &start_charge_step;

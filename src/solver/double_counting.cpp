@@ -37,9 +37,13 @@ namespace DMFT
         int nspin_tmp=nspin;
         if(SOC) nspin_tmp=4;
 
-        const double Norb = 2*m_tot;
-        const double averU = ( atom.Uval(iatom) + (atom.Uval(iatom)-2.0*atom.Jval(iatom))
-                              *(Norb-2) )/(Norb-1.0);
+        // const double Norb = 2*m_tot;
+        // const double averU = ( atom.Uval(iatom) + (atom.Uval(iatom)-2.0*atom.Jval(iatom))
+        //                       *(Norb-2) )/(Norb-1.0);
+
+        //K. Held. Adv. Phys., 56(2007):829--926
+        const double averU = ( atom.Uval(iatom) + (atom.Uval(iatom)-2.0*atom.Jval(iatom))*(m_tot-1.0) +
+                              (atom.Uval(iatom)-3.0*atom.Jval(iatom))*(m_tot-1.0))/(2*m_tot-1.0);
 
         const double averJ = atom.Jval(iatom);
 

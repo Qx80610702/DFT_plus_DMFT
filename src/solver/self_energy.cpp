@@ -237,7 +237,6 @@ namespace DMFT
         {
           std::complex<double> tmp=this->dc.Vdc().at(ineq).at(ispin).at(m_index);
           for(int iomega=0; iomega<omega_number; iomega++){
-          // sigma_correlatd[ineq][ispin][iomega][m_index] = std::complex<double>(0.0,0.0);
             sigma_correlatd[ineq][ispin][iomega][m_index] = sigma_new[ineq][ispin][iomega][m_index] - tmp;
           }
         }//m_index

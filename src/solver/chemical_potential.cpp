@@ -103,7 +103,7 @@ namespace DFT_plus_DMFT
       max_U = max_U > atom.Uval(atom.ineq_iatom(ineq)) ? max_U : atom.Uval(atom.ineq_iatom(ineq));
 
     bool converged=false;
-    double elw = window[0], eup = window[1];
+    double elw = window[0]-2.0*max_U, eup = window[1]+2.0*max_U;
     double mid_n_elec;
     
     for(int istep=0; istep<50; istep++) //50 may be a very safe value
@@ -129,7 +129,7 @@ namespace DFT_plus_DMFT
     }
 
     if(!converged){
-      GLV::ofs_error << "Error in calculating chemical potential!!!!" << std::endl;
+      GLV::ofs_error << "Error in calculating chemical potential!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

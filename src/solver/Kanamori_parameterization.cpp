@@ -19,22 +19,24 @@ namespace DMFT
     const std::vector<int>& norb_sub = atom.iatom_norb();
 
     //Allocation
-    U_matrix.resize(atom.inequ_atoms());
-    for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
-    {
-      const int iatom = atom.ineq_iatom(ineq);
-      const int m_tot = norb_sub[iatom];
-
-      U_matrix[ineq].resize(2*m_tot);
-      for(int m1=0; m1<2*m_tot; m1++)
+    if(U_matrix.empty()){
+      U_matrix.resize(atom.inequ_atoms());
+      for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
       {
-        U_matrix[ineq][m1].resize(2*m_tot);
-        for(int m2=0; m2<2*m_tot; m2++)
+        const int iatom = atom.ineq_iatom(ineq);
+        const int m_tot = norb_sub[iatom];
+  
+        U_matrix[ineq].resize(2*m_tot);
+        for(int m1=0; m1<2*m_tot; m1++)
         {
-          U_matrix[ineq][m1][m2].resize(2*m_tot);
-          for(int m3=0; m3<2*m_tot; m3++)
+          U_matrix[ineq][m1].resize(2*m_tot);
+          for(int m2=0; m2<2*m_tot; m2++)
           {
-            U_matrix[ineq][m1][m2][m3].resize(2*m_tot,0.0);
+            U_matrix[ineq][m1][m2].resize(2*m_tot);
+            for(int m3=0; m3<2*m_tot; m3++)
+            {
+              U_matrix[ineq][m1][m2][m3].resize(2*m_tot,0.0);
+            }
           }
         }
       }

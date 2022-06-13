@@ -117,7 +117,7 @@ namespace DFT_plus_DMFT
     private:
     int flag_DFT_solver;
     double sc_delta_rho;
-    double mixing_beta;
+    double mixing_param;
     int max_mixing_step;
     int nkpoints;
     int nspin;

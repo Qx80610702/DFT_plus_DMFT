@@ -158,7 +158,7 @@ namespace DFT_plus_DMFT
         GLV::ofs_running << "================ Starting charge updating... ================" << std::endl;
         if(mix_step==1){
           this->Char_scf.init(*(int*)this->pars.in.parameter("dft_solver"),
-                *(double*)this->pars.in.parameter("charge_mix_beta"),
+                *(double*)this->pars.in.parameter("charge_mix_param"),
                 *(int*)this->pars.in.parameter("mixing_step"),
                 *(double*)this->pars.in.parameter("delta_rho"),
                 this->pars.bands.nk(), this->pars.bands.nspins(), proj.nbasis() );
@@ -674,20 +674,19 @@ namespace DFT_plus_DMFT
         
           aims_(&mpi_comm_global, &unit, &use_mpi);    //run FHI-aims
           
-          // /*
-          // if(mpi_rank()==0){
-          //   std::string dft_exe = "mpirun " + *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
-          //   // std::string dft_exe = *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
-          //   std::ofstream ofs("task.sh", std::ios::out);
-          //   ofs << "#!/bin/sh\n" << std:: endl;
-          //   ofs << dft_exe << std::endl;
-          //   ofs.close();
+          /*
+          if(mpi_rank()==0){
+            std::string dft_exe = "mpirun " + *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
+            // std::string dft_exe = *(std::string*)this->pars.in.parameter("dft_solver_exe") + " 1>job.log 2>job.error";
+            std::ofstream ofs("task.sh", std::ios::out);
+            ofs << "#!/bin/sh\n" << std:: endl;
+            ofs << dft_exe << std::endl;
+            ofs.close();
 
-          //   system("bash task.sh");
-          // }
-          // */
-          // MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
-          // system("bash task.sh");
+            system("bash task.sh");
+          }
+          */
+         
         #else
           GLV::ofs_error << "FHI-aims has not been installed!!!  ";
           GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;

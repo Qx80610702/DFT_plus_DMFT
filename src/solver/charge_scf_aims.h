@@ -33,7 +33,7 @@ namespace DFT_plus_DMFT
 
     void mixing_density(
           const int mix_step, 
-          const double mixing_beta, 
+          const double mixing_param, 
           const int max_mixing_step,
           std::vector<double>& alpha,
           double& charge_change);
