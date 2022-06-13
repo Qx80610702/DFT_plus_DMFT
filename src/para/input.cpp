@@ -213,6 +213,28 @@ namespace DMFT
       this->flag_double_counting = 1;
     }
 
+    //energy_window
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("energy_window", str_val, 2);
+      this->E_window.resize(2);
+      this->E_window[0] = atof(str_val[0].c_str());
+      this->E_window[1] = atof(str_val[1].c_str());
+    }
+    catch (const std::string messg) {
+      GLV::ofs_error << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      // GLV::ofs_running << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
+      this->E_window[0] = -5.0;
+      this->E_window[1] = 5.0;
+    }
+    GLV::ofs_running << "energy_window  " 
+            << std::setprecision(3) << this->E_window[0] 
+            << "  "
+            << std::setprecision(3) << this->E_window[1] << std::endl;
+            
     //max_charge_step
     try {
       std::vector<std::string> str_val;
@@ -341,9 +363,7 @@ namespace DMFT
       // GLV::ofs_running << "Warning: max_charge_step is not given and set default value 1, i.e., non self-consitent DFT+DMFT." << std::endl;
       this->mixing_step = 8;
     }
-    GLV::ofs_running << "mixing_step  " 
-            << std::setprecision(3) << std::setiosflags(std::ios::scientific)
-            << this->mixing_step << std::endl;
+    GLV::ofs_running << "mixing_step  " << this->mixing_step << std::endl;
 
     //charge_mix_param
     try {
@@ -360,6 +380,9 @@ namespace DMFT
       // GLV::ofs_running << "Warning: charge mixing parameter is not given and set default value 0.05" << std::endl;
       this->charge_mix_param = 0.05;
     }
+    GLV::ofs_running << "charge_mix_param  " 
+        << std::setprecision(3) << std::setiosflags(std::ios::scientific)
+        << this->charge_mix_param << std::endl;
 
     //mc_step
     try {
@@ -377,28 +400,6 @@ namespace DMFT
       this->MC_step = 5000000;
     }
     GLV::ofs_running << "mc_step  " << this->MC_step << std::endl;
-
-    //energy_window
-    try {
-      std::vector<std::string> str_val;
-      this->read_parameter("energy_window", str_val, 2);
-      this->E_window.resize(2);
-      this->E_window[0] = atof(str_val[0].c_str());
-      this->E_window[1] = atof(str_val[1].c_str());
-    }
-    catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-    catch(const bool not_given){
-      // GLV::ofs_running << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
-      this->E_window[0] = -5.0;
-      this->E_window[1] = 5.0;
-    }
-    GLV::ofs_running << "energy_window  " 
-            << std::setprecision(3) << this->E_window[0] 
-            << "  "
-            << std::setprecision(3) << this->E_window[1] << std::endl;
 
     //restart
     try {

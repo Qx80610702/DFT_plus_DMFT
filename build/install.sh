@@ -411,6 +411,7 @@ OBJS=main.o \\
 parameters.o \\
 mpi_environment.o \\
 global_variables.o \\
+utilities.o \\
 correlated_atoms.o \\
 KS_bands.o \\
 tetrahedron.o \\
@@ -492,6 +493,7 @@ OBJS=main.o \\
 parameters.o \\
 mpi_environment.o \\
 global_variables.o \\
+utilities.o \\
 correlated_atoms.o \\
 KS_bands.o \\
 tetrahedron.o \\

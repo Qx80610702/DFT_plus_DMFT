@@ -5,6 +5,7 @@
 #include "math_zone.h"
 #include "../constants.h"
 #include "../global_variables.h"
+#include "../utilities.h"
 
 #include <omp.h>
 #include <memory>
@@ -15,6 +16,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdlib>   //Use exit function
+#include <unistd.h>
 
 namespace DMFT
 {
@@ -38,29 +40,40 @@ namespace DMFT
     const int ntau = *(int*)in.parameter("n_tau");
     const int nomega = *(int*)in.parameter("n_omega");
 
-        //Create directory impurity 
+    //Create directory impurity 
     std::string dir_impurity_solving = "dmft";
-    std::stringstream make_dir1;
-    make_dir1 << "test -d " << dir_impurity_solving << " || mkdir " << dir_impurity_solving;
-    system(make_dir1.str().c_str());
+    if(access(dir_impurity_solving.c_str(),0) != 0){
+      if(mk_dir(dir_impurity_solving.c_str()) !=0){
+        std::cout << "Fails to creat the directory " << dir_impurity_solving << std::endl;
+        std::exit(EXIT_FAILURE);
+      };
+    }
 
     std::stringstream char_dir_ss;
     char_dir_ss << "/charge_step" << char_step;
     std::string char_step_dir= char_dir_ss.str();
 
     std::stringstream make_char_dir;
-    make_char_dir << "test -d " << dir_impurity_solving << char_step_dir
-            << " || mkdir " << dir_impurity_solving << char_step_dir;
-    system(make_char_dir.str().c_str());
+    make_char_dir << dir_impurity_solving << char_step_dir;
+    if(access(make_char_dir.str().c_str(),0) != 0){
+      if(mk_dir(make_char_dir.str().c_str()) !=0){
+        std::cout << "Fails to creat the directory " << make_char_dir.str() << std::endl;
+        std::exit(EXIT_FAILURE);
+      };
+    }
 
     std::stringstream step_dir_ss;
     step_dir_ss << "/dmft_step" << DMFT_step;
     std::string step_dir= step_dir_ss.str();
 
     std::stringstream make_dmft_dir;
-    make_dmft_dir << "test -d " << dir_impurity_solving << char_step_dir << step_dir
-            << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir;
-    system(make_dmft_dir.str().c_str());
+    make_dmft_dir << dir_impurity_solving << char_step_dir << step_dir;
+    if(access(make_dmft_dir.str().c_str(),0) != 0){
+      if(mk_dir(make_dmft_dir.str().c_str()) !=0){
+        std::cout << "Fails to creat the directory " << make_dmft_dir.str() << std::endl;
+        std::exit(EXIT_FAILURE);
+      };
+    }
 
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
@@ -84,9 +97,13 @@ namespace DMFT
       std::string site_dir= site_dir_ss.str();
       
       std::stringstream make_imp_dir;
-      make_imp_dir << "test -d " << dir_impurity_solving << char_step_dir << step_dir << site_dir
-              << " || mkdir " << dir_impurity_solving << char_step_dir << step_dir << site_dir;
-      system(make_imp_dir.str().c_str());
+      make_imp_dir << dir_impurity_solving << char_step_dir << step_dir << site_dir;
+      if(access(make_imp_dir.str().c_str(),0) != 0){
+        if(mk_dir(make_imp_dir.str().c_str()) !=0){
+          std::cout << "Fails to creat the directory " << make_imp_dir.str() << std::endl;
+          std::exit(EXIT_FAILURE);
+        };
+      }
 
       std::stringstream current_dir_ss;
       current_dir_ss << dir_impurity_solving << char_step_dir << step_dir << site_dir;

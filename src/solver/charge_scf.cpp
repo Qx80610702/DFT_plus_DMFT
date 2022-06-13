@@ -667,9 +667,12 @@ namespace DFT_plus_DMFT
     if(charge_change<this->sc_delta_rho) density_convergency = true;
     else density_convergency = false;
 
+    GLV::ofs_running.setf(std::ios::scientific, std::ios_base::floatfield);
+    GLV::ofs_running.setf(std::ios::dec, std::ios_base::basefield);
     GLV::ofs_running << "Change of the charge density: "
-                     << std::setprecision(6) << charge_change
+                     << std::setprecision(3) << charge_change
                      << std::endl;
+    GLV::ofs_running.unsetf(std::ios::scientific);
     
     GLV::ofs_running << "Self-consistency of charge density in current loop: ";
     if(density_convergency)
@@ -686,8 +689,8 @@ namespace DFT_plus_DMFT
 
     timer::get_time(time, seconds, minutes);
     GLV::ofs_running << "End charge mixing. The time consumption: " 
-                         << minutes << "m "
-                         << (int)seconds << "s" << std::endl;
+                     << minutes << "m "
+                     << (int)seconds << "s" << std::endl;
 
     return density_convergency;
   }

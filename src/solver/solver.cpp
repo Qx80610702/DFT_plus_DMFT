@@ -5,6 +5,7 @@
 #include "projector.h"
 #include "../constants.h"
 #include "../global_variables.h"
+#include "../utilities.h"
 
 #include <mpi.h>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include <vector>
 #include <iomanip>
 #include <unistd.h>
+#include <stdio.h>
 
 extern "C" void aims_(int* mpi_comm, int* unit, bool* mpi_switch);
 
@@ -455,7 +457,11 @@ namespace DFT_plus_DMFT
 
     GLV::ofs_running << "Start updating DMFT corrected charge density..." << std::endl;
 
-    if(mpi_rank()==0) system("test -d outputs_to_DMFT && mv outputs_to_DMFT .outputs_to_DMFT");
+    if(mpi_rank()==0){
+      if(access("outputs_to_DMFT",0)==0){
+        mv_dir("outputs_to_DMFT", ".outputs_to_DMFT");
+      }
+    }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
     this->imp.sigma.subtract_double_counting(this->flag_axis);
@@ -482,7 +488,10 @@ namespace DFT_plus_DMFT
     this->Char_scf.read_charge_density(false, true);
 
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
-    if(mpi_rank()==0) system("rm -rf outputs_to_DMFT && mv .outputs_to_DMFT outputs_to_DMFT");
+    if(mpi_rank()==0){
+      rm_dir("outputs_to_DMFT");
+      mv_dir(".outputs_to_DMFT", "outputs_to_DMFT");
+    }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
     
     GLV::ofs_running << "End updating DMFT corrected charge density\n" << std::endl;
@@ -554,13 +563,16 @@ namespace DFT_plus_DMFT
       GLV::ofs_running << ": true" << std::endl;
     else
       GLV::ofs_running << ": false" << std::endl;
-      
+
+    GLV::ofs_running.setf(std::ios::scientific, std::ios_base::floatfield);
+    GLV::ofs_running.setf(std::ios::dec, std::ios_base::basefield);  
     GLV::ofs_running << "    impuritys            Delta_Sigma (eV)" << std::endl;
     for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
       GLV::ofs_running << "    impurity" << ineq << "              "
                 // << std::setprecision(3) << std::setiosflags(std::ios::scientific)
                 << std::setprecision(3) << this->imp.delta_scf()[ineq] << std::endl;
     }
+    GLV::ofs_running.unsetf(std::ios::scientific);
 
     return convergency;
   }
@@ -617,8 +629,8 @@ namespace DFT_plus_DMFT
     std::ofstream& ofs_error )
   {
     if(mpi_rank()==0){
-      ofs_running.open("DMFT_running.log", std::ios_base::app);
-      ofs_error.open("DMFT_running.error", std::ios_base::out);
+      ofs_running.open("DMFT_running.log", std::ios::app);
+      ofs_error.open("DMFT_running.error", std::ios::out);
     }
 
     // std::stringstream ss1;
@@ -660,7 +672,15 @@ namespace DFT_plus_DMFT
       std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
       std::exit(EXIT_FAILURE);
     }
-    if(mpi_rank()==0) system("test -d ./outputs_to_DMFT && rm -rf ./outputs_to_DMFT");
+    if(mpi_rank()==0){
+      if(access("outputs_to_DMFT",0)==0){
+        int info = rm_dir("outputs_to_DMFT");
+        if(info==-1){
+          std::cout << "Fail to remove the directory outputs_to_DMFT!!!" << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+      }
+    }
     
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
 
