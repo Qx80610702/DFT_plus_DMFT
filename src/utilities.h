@@ -1,3 +1,4 @@
+#pragma once
 
 int rm_dir(const char *dir);
 
