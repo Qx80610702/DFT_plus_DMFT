@@ -5,7 +5,6 @@
 #include "../constants.h"
 #include "../global_variables.h"
 
-#include <omp.h>
 #include <memory>
 #include <string>
 #include <sstream>
@@ -118,7 +117,6 @@ namespace DMFT
     }
     else
     {
-      #pragma omp parallel for    //expensive
       for(int index=0; index<omega_num*nspin; index++) //omega and spin
       {
         int ispin = index/omega_num;
@@ -134,66 +132,58 @@ namespace DMFT
     {
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot = norb_sub[iatom];
+      
+      std::vector<std::complex<double>> mat_tmp(nbands*m_tot);
+      for(int index=0; index<omega_num*nspin; index++)
+      {
+        int ispin = index/omega_num;
+        int iomega = index%omega_num;
 
-      const int mkl_threads = mkl_get_max_threads();
-      mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1   
-      #pragma omp parallel
-      {        
-        std::vector<std::complex<double>> mat_tmp(nbands*m_tot);
+        for(int iband=0; iband<wbands[ispin]; iband++)
+          for(int m=0; m<m_tot; m++)
+            mat_tmp[iband*m_tot+m] = projector[iatom][ispin][iband*m_tot+m]*
+                                    dleta_sigma[ineq][ispin][iomega][m*m_tot+m];
 
-        #pragma omp for
-        for(int index=0; index<omega_num*nspin; index++)
-        {
-          int ispin = index/omega_num;
-          int iomega = index%omega_num;
+        // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
+        //      CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
+        //      *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
+        //      *beta, void *c, const MKL_INT ldc);
 
-          for(int iband=0; iband<wbands[ispin]; iband++)
-            for(int m=0; m<m_tot; m++)
-              mat_tmp[iband*m_tot+m] = projector[iatom][ispin][iband*m_tot+m]*
-                                      dleta_sigma[ineq][ispin][iomega][m*m_tot+m];
-
-          // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
-          //      CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
-          //      *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
-          //      *beta, void *c, const MKL_INT ldc);
-
-          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
-                      wbands[ispin], wbands[ispin], m_tot,
-                      &one,
-                      &mat_tmp[0], m_tot,
-                      &projector[iatom][ispin][0], m_tot,
-                      &one,
-                      &latt_sigma[ispin][iomega][0], wbands[ispin]);
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
+                    wbands[ispin], wbands[ispin], m_tot,
+                    &one,
+                    &mat_tmp[0], m_tot,
+                    &projector[iatom][ispin][0], m_tot,
+                    &one,
+                    &latt_sigma[ispin][iomega][0], wbands[ispin]);
      
-          for(int iatom1=0; iatom1<natom; iatom1++)
+        for(int iatom1=0; iatom1<natom; iatom1++)
+        {
+          if(iatom1==iatom) continue;
+          else if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
           {
-            if(iatom1==iatom) continue;
-            else if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
+            int symm=0;            //symmetry
+            if(mag==1)             //AFM
             {
-              int symm=0;            //symmetry
-              if(mag==1)             //AFM
-              {
-                if(atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry
-              }
-
-              for(int iband=0; iband<wbands[ispin]; iband++)
-                for(int m=0; m<m_tot; m++)
-                  mat_tmp[iband*m_tot+m] = projector[iatom1][ispin][iband*m_tot+m]*
-                              dleta_sigma[ineq][(ispin+symm)%2][iomega][m*m_tot+m];
-
-              cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
-                          wbands[ispin], wbands[ispin], m_tot,
-                          &one,
-                          &mat_tmp[0], m_tot,
-                          &projector[iatom1][ispin][0], m_tot,
-                          &one,
-                          &latt_sigma[ispin][iomega][0], wbands[ispin]);
-
+              if(atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry
             }
-          }//iatom1
-        }//index
-      }
-      mkl_set_num_threads(mkl_threads);
+
+            for(int iband=0; iband<wbands[ispin]; iband++)
+              for(int m=0; m<m_tot; m++)
+                mat_tmp[iband*m_tot+m] = projector[iatom1][ispin][iband*m_tot+m]*
+                            dleta_sigma[ineq][(ispin+symm)%2][iomega][m*m_tot+m];
+
+            cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
+                        wbands[ispin], wbands[ispin], m_tot,
+                        &one,
+                        &mat_tmp[0], m_tot,
+                        &projector[iatom1][ispin][0], m_tot,
+                        &one,
+                        &latt_sigma[ispin][iomega][0], wbands[ispin]);
+
+          }
+        }//iatom1
+      }//index
     }//ineq
 
     return;
@@ -207,7 +197,7 @@ namespace DMFT
             sigma_correlatd = this->correlated_sigma(axis_flag);
     
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
-              sigma_new = this->sigma_new(axis_flag);
+            sigma_new = this->sigma_new(axis_flag);
 
     //Allocation
     if(sigma_correlatd.empty())
@@ -257,7 +247,7 @@ namespace DMFT
       return this->sigma_real.nomega();
       break;
     default:
-      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      std::cerr << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -274,7 +264,7 @@ namespace DMFT
       return this->sigma_real.sigma_new_access();
       break;
     default:
-      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      std::cerr << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -291,7 +281,7 @@ namespace DMFT
       return this->sigma_real.sigma_save_access();
       break;
     default:
-      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      std::cerr << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -308,7 +298,7 @@ namespace DMFT
       return this->sigma_real.correlated_sigma_access();
       break;
     default:
-      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      std::cerr << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -325,7 +315,7 @@ namespace DMFT
       return this->sigma_real.lattice_sigma_access();
       break;
     default:
-      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      std::cerr << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -369,7 +359,6 @@ namespace DMFT
     }
     else
     {
-      #pragma omp parallel for    //expensive
       for(int index=0; index<omega_num*nspin; index++) //omega and spin
       {
         int ispin = index/omega_num;
@@ -386,51 +375,41 @@ namespace DMFT
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot=norb_sub[iatom];
 
-      const int mkl_threads = mkl_get_max_threads();
-      mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
+      int nbands = wbands[0];
+      if(nspin==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
+      std::unique_ptr<std::complex<double>[]> mat_tmp(new std::complex<double> [nbands*m_tot]);
 
-      #pragma omp parallel
+      for(int index=0; index<omega_num*nspin; index++)
       {
-        int nbands = wbands[0];
-        if(nspin==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
-        std::unique_ptr<std::complex<double>[]> mat_tmp(new std::complex<double> [nbands*m_tot]);
+        int ispin = index/omega_num;
+        int iomega = index%omega_num;
 
-        #pragma omp for
-        for(int index=0; index<omega_num*nspin; index++)
-        {
-          int ispin = index/omega_num;
-          int iomega = index%omega_num;
+        // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
+        //      CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
+        //      *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
+        //      *beta, void *c, const MKL_INT ldc);
 
-          // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
-          //      CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
-          //      *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
-          //      *beta, void *c, const MKL_INT ldc);
-
-          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                  wbands[ispin], m_tot, m_tot,
-                  &alpha,
-                  &projector[ineq][ispin][0], m_tot,
-                  &sigma_loc[ineq][ispin][iomega][0], m_tot,
-                  &beta,
-                  &mat_tmp[0], m_tot);
-          
-          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
-                  wbands[ispin], wbands[ispin], m_tot,
-                  &alpha,
-                  &mat_tmp[0], m_tot,
-                  &projector[ineq][ispin][0], m_tot,
-                  &beta,
-                  &lattice_sigma_tmp[ispin][iomega][0], wbands[ispin]);
-        }
-      } 
-
-      mkl_set_num_threads(mkl_threads);
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                wbands[ispin], m_tot, m_tot,
+                &alpha,
+                &projector[ineq][ispin][0], m_tot,
+                &sigma_loc[ineq][ispin][iomega][0], m_tot,
+                &beta,
+                &mat_tmp[0], m_tot);
+        
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
+                wbands[ispin], wbands[ispin], m_tot,
+                &alpha,
+                &mat_tmp[0], m_tot,
+                &projector[ineq][ispin][0], m_tot,
+                &beta,
+                &lattice_sigma_tmp[ispin][iomega][0], wbands[ispin]);
+      }
 
       for(int iatom1=0; iatom1<atom.total_atoms(); iatom1++)
       {
         if(iatom1==iatom)
         {
-          #pragma omp parallel for    //expensive
           for(int index=0; index<omega_num*nspin; index++)
           {
             int ispin = index/omega_num;
@@ -451,7 +430,6 @@ namespace DMFT
             if(atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry
           }
 
-          #pragma omp parallel for    //expensive
           for(int index=0; index<omega_num*nspin; index++)
           {
             int ispin = index/omega_num;

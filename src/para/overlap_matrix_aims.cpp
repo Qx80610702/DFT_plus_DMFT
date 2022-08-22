@@ -22,7 +22,7 @@ namespace DFT_output
       if(icell<0 || icell>=this->n_cells_in_hamiltonian
         || ik<0 || ik>=this->n_k_points)
       {
-        GLV::ofs_error << "Array kphase is out of range" << std::endl;
+        std::cerr << "Array kphase is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -35,7 +35,7 @@ namespace DFT_output
         || icell<0 || icell>=this->n_cells_in_hamiltonian
         || i_basis<0 || i_basis>=this->n_basis)
       {
-        GLV::ofs_error << "Array index_hamiltonian is out of range" << std::endl;
+        std::cerr << "Array index_hamiltonian is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -46,7 +46,7 @@ namespace DFT_output
     {
       if(index<0 || index>=size_colum_index_hamiltonian)
       {
-        GLV::ofs_error << "Array colum_index_hamiltonian is out of range" << std::endl;
+        std::cerr << "Array colum_index_hamiltonian is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -57,7 +57,7 @@ namespace DFT_output
     {
       if(index<0 || index>=this->size_overlap_matrix)
       {
-        GLV::ofs_error << "Array ovlp_matrix_real is out of range" << std::endl;
+        std::cerr << "Array ovlp_matrix_real is out of range" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -81,7 +81,7 @@ namespace DFT_output
 
       if (!if_kphase) 
       {
-      	GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      	std::cerr << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -255,20 +255,22 @@ namespace DFT_output
         }//iorb2
       }//iorb1
 
-// std::stringstream ss;
-// ss << "overlap_matrix/ovlp_ik" << ik << ".dat";
-// std::string file=ss.str();
-// std::ofstream ofs(file.c_str(),std::ios::out);
-// for(int ibasis_row=0; ibasis_row<this->n_basis; ibasis_row++)
-// {
-//   for(int ibasis_col=0; ibasis_col<this->n_basis; ibasis_col++)
-//   {
-//     ofs << std::setw(5) << ibasis_row << std::setw(5) <<  ibasis_col 
-//     << std::setw(15) << std::fixed << std::setprecision(9) << this->ovlp_matrix_work[ibasis_col*this->n_basis+ibasis_row].real()
-//     << std::setw(15) << std::fixed << std::setprecision(9) << this->ovlp_matrix_work[ibasis_col*this->n_basis+ibasis_row].imag() << '\n';
-//   }
-// }
-// ofs.close();
+      /*
+      std::stringstream ss;
+      ss << "overlap_matrix/ovlp_ik" << ik << ".dat";
+      std::string file=ss.str();
+      std::ofstream ofs(file.c_str(),std::ios::out);
+      for(int ibasis_row=0; ibasis_row<this->n_basis; ibasis_row++)
+      {
+        for(int ibasis_col=0; ibasis_col<this->n_basis; ibasis_col++)
+        {
+          ofs << std::setw(5) << ibasis_row << std::setw(5) <<  ibasis_col 
+          << std::setw(15) << std::fixed << std::setprecision(9) << this->ovlp_matrix_work[ibasis_col*this->n_basis+ibasis_row].real()
+          << std::setw(15) << std::fixed << std::setprecision(9) << this->ovlp_matrix_work[ibasis_col*this->n_basis+ibasis_row].imag() << '\n';
+        }
+      }
+      ofs.close();
+      */
 
       return;
     }
@@ -291,7 +293,7 @@ namespace DFT_output
       std::ofstream ofs(file.c_str(), std::ios::out);
       if(!ofs)
       {
-        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        std::cerr << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
       
@@ -314,7 +316,7 @@ namespace DFT_output
       ofs.open(file.c_str(),std::ios::out);
       if(!ofs)
       {
-        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        std::cerr << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
       
@@ -342,7 +344,7 @@ namespace DFT_output
       ofs.open(file.c_str(),std::ios::out);
       if(!ofs)
       {
-        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        std::cerr << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -361,7 +363,7 @@ namespace DFT_output
       ofs.open(file.c_str(),std::ios::out);
       if(!ofs)
       {
-        GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+        std::cerr << "Fail to oepn " << file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

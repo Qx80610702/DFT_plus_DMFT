@@ -62,8 +62,8 @@ namespace DFT_plus_DMFT
     void run_nscf_dft(const int dft_solver);
 
     public:  
-    void set_ios(std::ofstream& ofs_running, std::ofstream& ofs_error);
-    void unset_ios(std::ofstream& ofs_running, std::ofstream& ofs_error);
+    void set_ios(std::ofstream& ofs_running);
+    void unset_ios(std::ofstream& ofs_running);
 
     private:
     int flag_axis;                     //Do calculations on imaginary (0) or real (1) axis

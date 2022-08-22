@@ -71,7 +71,7 @@ namespace DMFT
 
       std::ifstream ifs(file.c_str(), std::ios::in);
       if (!ifs){
-	    	GLV::ofs_error << "Fail to oepn " << file << std::endl;
+	    	std::cerr << "Fail to oepn " << file << std::endl;
         std::exit(EXIT_FAILURE);}
       ifs.seekg(0);    //set the position at the beginning of the file
 
@@ -129,7 +129,7 @@ namespace DMFT
 
       if(count!=this->n_omega)
       {
-        GLV::ofs_error << "The number of frequency points of Sigma_omega.dat is not equal to nomega" << std::endl;
+        std::cerr << "The number of frequency points of Sigma_omega.dat is not equal to nomega" << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
@@ -146,7 +146,7 @@ namespace DMFT
     std::ifstream ifs("maxent_params.dat", std::ios::in);
     if (!ifs)  
 	  {
-	  	GLV::ofs_error << "Error: fail to oepn maxent_params.dat!!!" << std::endl;
+	  	std::cerr << "Error: fail to oepn maxent_params.dat!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);   //set the position at the beginning of the file

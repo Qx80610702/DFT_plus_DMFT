@@ -8,7 +8,6 @@
 #include "../debug.h"
 
 #include <mpi.h>
-#include <omp.h> 
 #include <memory>
 
 #define MKL_Complex16 std::complex<double>
@@ -38,14 +37,14 @@ namespace DFT_plus_DMFT
     const std::vector<int>& wbands = space.Wbands();
     const std::vector<int>& norb_sub = atom.iatom_norb();
     const std::vector<std::vector<int>>& orb_index = atom.Im2iorb();
-    const int natom=atom.total_atoms();
+    const int natom = atom.total_atoms();
     const int nkpoints = band.nk();
     const int nspin = band.nspins();
     const auto& epsilon = space.eigen_val();
-    const int norb=atom.norb();
+    const int norb = atom.norb();
     const std::complex<double> zero(0.0,0.0), one(1.0,0.0);
 
-    int wbands_max=wbands[0];
+    int wbands_max = wbands[0];
     if(nspin==2)
       wbands_max = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
@@ -122,7 +121,7 @@ namespace DFT_plus_DMFT
     std::vector<std::complex<double>> work_mat(norb*norb);
     std::vector<double> eigen_val(norb);
     int info_zheev;
-
+std::vector<std::complex<double>> test_mat(norb*norb);
     std::vector<std::vector<std::complex<double>>> eigenvec;
 
     for(int ik=0; ik<k_map.size(); ik++)
@@ -183,8 +182,8 @@ namespace DFT_plus_DMFT
           }
           ofs << std::endl;
         }//m
-        ofs.close(); */
-
+        ofs.close(); 
+        */
 
         cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
                     wbands[is], norb, this->n_basis,
@@ -208,13 +207,46 @@ namespace DFT_plus_DMFT
                     &mat_tmp[0], norb,
                     &mat_tmp[0], norb,
                     &zero,
-                    &norm_orth[0], norb );
+                    &norm_orth[0], norb);
 
         Hermitian_matrix_sqrt_inver(
                     &norm_orth[0], &eigen_val[0], &work_mat[0],
-                    &sqrt_inver[0], norb, info_zheev );
+                    &sqrt_inver[0], norb, info_zheev);
+        /*
+        for(int i=0; i<norb; i++){
+          if(std::fabs(eigen_val[i])<1.0e-12){
+            std::cout << i_k_point << "  "
+                      << std::setprecision(3) 
+                      << std::setiosflags(std::ios::scientific) 
+                      << eigen_val[i] << std::endl;
+            cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    wbands[is], norb, norb,
+                    &one,
+                    &sqrt_inver[0], norb,
+                    &sqrt_inver[0], norb,
+                    &zero,
+                    &test_mat[0], norb);
+            
+            cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    wbands[is], norb, norb,
+                    &one,
+                    &test_mat[0], norb,
+                    &norm_orth[0], norb,
+                    &zero,
+                    &sqrt_inver[0], norb);
 
-        cblas_zgemm( CblasRowMajor, CblasNoTrans, CblasNoTrans,
+            for(int iorb1=0; iorb1<norb; iorb1++){
+              for(int iorb2=0; iorb2<norb; iorb2++){
+                std::cout << std::setw(7) << std::fixed << std::setprecision(3) << sqrt_inver[iorb1*norb+iorb2].real()
+                          << std::setw(7) << std::fixed << std::setprecision(3) << sqrt_inver[iorb1*norb+iorb2].imag(); 
+              }
+              std::cout << std::endl;
+            }
+          }
+        }
+        */
+
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                     wbands[is], norb, norb,
                     &one,
                     &mat_tmp[0], norb,
@@ -251,15 +283,12 @@ namespace DFT_plus_DMFT
                 << (int)seconds << "s" << std::endl;
 
     //=========TEST orthonormality========================
-    /*
+    // /*
     for(int is=0; is<nspin; is++)
     {
       std::vector<std::complex<double>> norm(norb*norb);
-      int ik_count=-1;
-      for(int ik=0; ik<nkpoints; ik++)
+      for(int ik=0; ik<k_map.size(); ik++)
       {
-        if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
-        ik_count++;
         for(int iatom1=0; iatom1<natom; iatom1++)
         {
           const int m_tot1 = norb_sub[iatom1];
@@ -274,17 +303,17 @@ namespace DFT_plus_DMFT
                 const int iorb2 = orb_index[iatom2][m2];
                 norm[iorb1*norb+iorb2] = zero;
                 for(int iband=0; iband<wbands[is]; iband++)
-                  norm[iorb1*norb+iorb2] += std::conj(this->projector_mat[ik_count][iatom1][is][iband*m_tot1+m1])*
-                                       this->projector_mat[ik_count][iatom2][is][iband*m_tot2+m2];
+                  norm[iorb1*norb+iorb2] += std::conj(this->projector_mat[ik][iatom1][is][iband*m_tot1+m1])*
+                                       this->projector_mat[ik][iatom2][is][iband*m_tot2+m2];
               }
             }//iatom2
           }//m1
         }//iatom1
 
         std::stringstream ss;
-        ss << "projector_orthonormality/norm_ik" << ik << ".dat";
+        ss << "projector_orthonormality/norm_ik" << k_map[ik] << ".dat";
         std::ofstream ofs(ss.str().c_str(), std::ios::out);
-
+        // ofs << "process: " << mpi_rank() << std::endl;
         for(int iatom1=0; iatom1<natom; iatom1++)
         {
           const int m_tot1 = norb_sub[iatom1];
@@ -306,8 +335,8 @@ namespace DFT_plus_DMFT
         }//iatom1
         ofs.close();
       }//ik
-    }//is 
-    */
+    }//is
+    // */
 
     //=============================================
     //   unitary tranform of local orbital to
@@ -331,7 +360,7 @@ namespace DFT_plus_DMFT
         {
           auto& unitary_trans_isk = this->unitary_trans[ik][iatom][is];
 
-          info_zheev=LAPACKE_zheev(LAPACK_ROW_MAJOR, 'V', 'U', m_tot,
+          info_zheev = LAPACKE_zheev(LAPACK_ROW_MAJOR, 'V', 'U', m_tot,
                         &unitary_trans_isk[0], m_tot, &eigen_val[0] );
 
           for(int m=0; m<m_tot; m++) this->TB_Hk[ik][iatom][is][m] = std::complex<double>(eigen_val[m], 0.0);

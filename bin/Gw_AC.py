@@ -98,8 +98,9 @@ if __name__ == '__main__':
     impurity_solver="pacs"
     for line in open("./DMFT.in"):
         strings = line.strip().split()
-        if strings[0].lower() == "impurity_solver":
-            impurity_solver=strings[1].lower()
+        if len(strings)>1:
+          if strings[0].lower() == "impurity_solver":
+              impurity_solver=strings[1].lower()
 
     Gtf="GtRaw.dat"
     if impurity_solver == "pacs":

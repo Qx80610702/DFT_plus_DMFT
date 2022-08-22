@@ -21,7 +21,7 @@ namespace DFT_output
 
     if (!ifs)  
 	  {
-	  	GLV::ofs_error << "Fail to oepn dft/outputs/tetrahedron.dat" << std::endl;
+	  	std::cerr << "Fail to oepn dft/outputs/tetrahedron.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -91,7 +91,7 @@ namespace DFT_output
     std::ofstream ofs(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      std::cerr << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

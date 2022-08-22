@@ -18,7 +18,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GLV::ofs_error << "Array equivalent_atom is out of range" << std::endl;
+      std::cerr << "Array equivalent_atom is out of range" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -29,7 +29,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GLV::ofs_error << "Array angular_momment is out of range" << std::endl;
+      std::cerr << "Array angular_momment is out of range" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -40,7 +40,7 @@ namespace DFT_output
   {
     if(iorb<0 || iorb>=this->n_DMFT_orb)
     {
-      GLV::ofs_error << "Array iorb_ibasis is out of range" <<std::endl;
+      std::cerr << "Array iorb_ibasis is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     
@@ -51,7 +51,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GLV::ofs_error << "Array Hubbard_U is out of range" <<std::endl;
+      std::cerr << "Array Hubbard_U is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->Hubbard_U[iatom];
@@ -61,7 +61,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GLV::ofs_error << "Array Hund_J is out of range" <<std::endl;
+      std::cerr << "Array Hund_J is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->Hund_J[iatom];
@@ -72,7 +72,7 @@ namespace DFT_output
     if(iatom<0 || iatom>=this->n_DMFT_atoms
       || ispin<0 || ispin>=2)
     {
-      GLV::ofs_error << "Array Hund_J is out of range" <<std::endl;
+      std::cerr << "Array Hund_J is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->occ_number[iatom][ispin];
@@ -82,7 +82,7 @@ namespace DFT_output
   {
     if(ineq<0 || ineq>=this->n_inequivalent_atoms)
     {
-      GLV::ofs_error << "Array ineq_atom_to_iatom is out of range" <<std::endl;
+      std::cerr << "Array ineq_atom_to_iatom is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->ineq_atom_to_iatom[ineq];
@@ -92,7 +92,7 @@ namespace DFT_output
   {
     if(iatom<0 || iatom>=this->n_DMFT_atoms)
     {
-      GLV::ofs_error << "Array mag_moment is out of range" <<std::endl;
+      std::cerr << "Array mag_moment is out of range" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
     return this->mag_moment[iatom];
@@ -118,7 +118,7 @@ namespace DFT_output
 
     if (!if_symmetry) 
 	  {
-	  	GLV::ofs_error << "Fail to oepn file dft/outputs_to_DMFT/symmetry.dat" << std::endl;
+	  	std::cerr << "Fail to oepn file dft/outputs_to_DMFT/symmetry.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -184,12 +184,12 @@ namespace DFT_output
 
     tmp = std::make_unique<std::unique_ptr<int[]>[]>(this->n_DMFT_atoms);
 
-    // if(mpi_rank()==0) GLV::ofs_error << "Reading correlated_atoms.info ......" << std::endl;
+    // if(mpi_rank()==0) std::cerr << "Reading correlated_atoms.info ......" << std::endl;
 
     std::ifstream ifs("dft/outputs_to_DMFT/correlated_atoms.info", std::ios::in);
     if (!ifs) 
 	  {
-	  	GLV::ofs_error << "Fail to oepn file dft/outputs_to_DMFT/correlated_atoms.info" << std::endl;
+	  	std::cerr << "Fail to oepn file dft/outputs_to_DMFT/correlated_atoms.info" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -203,9 +203,9 @@ namespace DFT_output
       if(ifs.eof()) break;
       ifs >> iatom;
       ifs.ignore(150,'\n');
+
       ifs >> word;
       ifs >> this->angular_momment[iatom];
-    
       ifs.ignore(150,'\n');
 
       ifs >> this->Hubbard_U[iatom];    
@@ -214,6 +214,7 @@ namespace DFT_output
       this->Hund_J[iatom] /= GLC::Hartree_to_eV;      //eV to Hartree
 
       ifs >> this->mag_moment[iatom];
+      ifs.ignore(150,'\n');
       
       const int ineq = this->equivalent_atom[iatom];
       if(this->local_symmetry==0
@@ -233,12 +234,11 @@ namespace DFT_output
       }
       else
       {
-        GLV::ofs_error << "Unsupported local symmetry!!!" << std::endl;
+        std::cerr << "Unsupported local symmetry!!!" << std::endl;
         std::exit(EXIT_FAILURE); 
       }
       
       this->n_DMFT_orb += this->sub_norb[iatom];
-      ifs.ignore(150,'\n');
 
       this->occ_number_m[iatom][0].resize(this->sub_norb[iatom]); //spin up
       this->occ_number_m[iatom][1].resize(this->sub_norb[iatom]); //spin down
@@ -251,6 +251,7 @@ namespace DFT_output
       {
         ifs >> magnetic_num;
         ifs >> ibasis;
+        ifs.ignore(150,'\n');
         
         if(this->local_symmetry==0
           || this->local_symmetry==1 )
@@ -286,7 +287,6 @@ namespace DFT_output
           }
         }
       }
-      ifs.ignore(150,'\n');
 
       if(ifs.eof()) break;
     }
@@ -314,7 +314,7 @@ namespace DFT_output
       this->local_symmetry = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -339,7 +339,7 @@ namespace DFT_output
 
     if(!ofs)
     {
-      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      std::cerr << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -358,7 +358,7 @@ namespace DFT_output
     ofs.open(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      std::cerr << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
     

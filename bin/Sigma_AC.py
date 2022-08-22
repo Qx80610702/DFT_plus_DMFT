@@ -169,7 +169,7 @@ if __name__ == '__main__':
         # ================================================================
         Sigoo = Sw[imp][-1,1+2*mag]+Sw[imp][-1,2+2*mag]*1.0j
         # Sigoo = Sw[imp][-1,1+2*mag]
-        Auxw = 1.0/(freq[:]*1.0j-Sw[imp][:,1+2*mag]-Sw[imp][:,2+2*mag]*1.0j + Sigoo + mu)
+        Auxw = 1.0/(freq[:]*1.0j-Sw[imp][:,1+2*mag]-Sw[imp][:,2+2*mag]*1.0j + Sigoo)
         Auxt = InverseFourier(Auxw, freq, tau, beta)
 
         # #write Gtau.dat
@@ -205,7 +205,7 @@ if __name__ == '__main__':
             ker = Aux_im[:,1]/(omega - Aux_im[:,0] + ieta)
             Aux_omega[i]=integrate.trapz(ker[:], Aux_im[:,0] )
         
-        Sc = Aux_im[:,0] - 1.0/Aux_omega[:] + Sigoo + mu
+        Sc = Aux_im[:,0] - 1.0/Aux_omega[:] + Sigoo
         np.savetxt('sig.out', np.array([Aux_im[:,0], Sc.real, Sc.imag]).transpose())
 
         os.chdir("../../../")

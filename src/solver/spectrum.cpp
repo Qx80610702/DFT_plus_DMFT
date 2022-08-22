@@ -8,7 +8,6 @@
 #include <mkl.h>
 
 #include <mpi.h>
-#include <omp.h>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -88,62 +87,56 @@ void spectrum::eva_spectrum(
       for(int iomega=0; iomega<nomega; iomega++)
         KS_Gw[iomega].resize(wbands[is]*wbands[is]);
  
-      const int mkl_threads = mkl_get_max_threads();
-      mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-      #pragma omp parallel
-      {
-        int* ipiv = new int [wbands[is]];
+      int* ipiv = new int [wbands[is]];
 
-        #pragma omp for
-        for(int iomega=0; iomega<nomega; iomega++)
-        {        
-          for(int iband1=0; iband1<wbands[is]; iband1++)
-          {
-            for(int iband2=0; iband2<wbands[is]; iband2++)
-            {           
-              if(iband1==iband2)
-                KS_Gw[iomega][iband1*wbands[is]+iband2] = this->freq[iomega] + mu 
-                  -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-              else
-                KS_Gw[iomega][iband1*wbands[is]+iband2] = 
-                  -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-            }
+ 
+      for(int iomega=0; iomega<nomega; iomega++)
+      {        
+        for(int iband1=0; iband1<wbands[is]; iband1++)
+        {
+          for(int iband2=0; iband2<wbands[is]; iband2++)
+          {           
+            if(iband1==iband2)
+              KS_Gw[iomega][iband1*wbands[is]+iband2] = this->freq[iomega] + mu 
+                -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+            else
+              KS_Gw[iomega][iband1*wbands[is]+iband2] = 
+                -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
           }
+        }
 
-          general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
-          
-          for(int iband=0; iband<wbands[is]; iband++)
-            this->Awk[is][iomega][i_k_point] -= KS_Gw[iomega][iband*wbands[is]+iband].imag()/GLC::PI;
+        general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
+        
+        for(int iband=0; iband<wbands[is]; iband++)
+          this->Awk[is][iomega][i_k_point] -= KS_Gw[iomega][iband*wbands[is]+iband].imag()/GLC::PI;
 
-          for(int ineq=0; ineq<ineq_num; ineq++)
+        for(int ineq=0; ineq<ineq_num; ineq++)
+        {
+          const int iatom = atom.ineq_iatom(ineq);
+          const int m_tot = norb_sub[iatom];
+
+          const std::vector<std::complex<double>>& projector = proj.proj_access(ik)[iatom][is];
+
+          for(int m=0; m<m_tot; m++)
           {
-            const int iatom = atom.ineq_iatom(ineq);
-            const int m_tot = norb_sub[iatom];
-
-            const std::vector<std::complex<double>>& projector = proj.proj_access(ik)[iatom][is];
-
-            for(int m=0; m<m_tot; m++)
+            const int m_index = m*m_tot+m;
+            for(int iband1=0; iband1<wbands[is]; iband1++)
             {
-              const int m_index = m*m_tot+m;
-              for(int iband1=0; iband1<wbands[is]; iband1++)
+              int index1 = iband1*m_tot + m;
+              for(int iband2=0; iband2<wbands[is]; iband2++)
               {
-                int index1 = iband1*m_tot + m;
-                for(int iband2=0; iband2<wbands[is]; iband2++)
-                {
-                  int index2 = iband2*m_tot + m;
-                  this->Aw_loc[ineq][is][iomega][m] -= 
-                      ( std::conj(projector[index1])*
-                      KS_Gw[iomega][iband1*wbands[is]+iband2]
-                      *projector[index2]*fk[i_k_point] ).imag()/GLC::PI;
-                }//iband2
-              }//iband1
-            }//m
-          }//ineq
-        }//iomega
+                int index2 = iband2*m_tot + m;
+                this->Aw_loc[ineq][is][iomega][m] -= 
+                    ( std::conj(projector[index1])*
+                    KS_Gw[iomega][iband1*wbands[is]+iband2]
+                    *projector[index2]*fk[i_k_point] ).imag()/GLC::PI;
+              }//iband2
+            }//iband1
+          }//m
+        }//ineq
+      }//iomega
 
-        delete [] ipiv;
-      }
-      mkl_set_num_threads(mkl_threads);
+      delete [] ipiv;
     }//is
   }//ik
 
@@ -204,9 +197,14 @@ void spectrum::eva_spectrum_normalization(
   const int nspin=band.nspins();
   const int mag = *(int*)in.parameter("magnetism");
   const std::vector<int>& wbands=space.Wbands();
+  const std::vector<int>& DOS_wbands=space.DOSWbands();
+  const std::vector<std::vector<int>>& corr_DOS_bands=space.corr_bands2DOS_bands();
   const int ineq_num = atom.inequ_atoms();
   const std::vector<int>& norb_sub = atom.iatom_norb();
   const std::vector<double>& fk = band.kweight();
+
+  const std::complex<double> zero(0.0,0.0);
+  const std::complex<double> eta(0.0, 1.0e-3);
 
   this->freq = sigma.sigma_real.frequency();
   const double dw = (this->freq[1]-this->freq[0])*GLC::Hartree_to_eV;
@@ -230,8 +228,8 @@ void spectrum::eva_spectrum_normalization(
     this->Aw_ik_iband[is].resize(k_map.size());
     for(int ik=0; ik<k_map.size(); ik++)
     {
-      this->Aw_ik_iband[is][ik].resize(wbands[is]);
-      for(int iband=0; iband<wbands[is]; iband++)
+      this->Aw_ik_iband[is][ik].resize(DOS_wbands[is]);
+      for(int iband=0; iband<DOS_wbands[is]; iband++)
       {
         this->Aw_ik_iband[is][ik][iband].resize(nomega, 0.0);
       }
@@ -272,46 +270,48 @@ void spectrum::eva_spectrum_normalization(
     for(int is=0; is<nspin; is++)
     {
       const auto& epsilon=space.eigen_val()[is][i_k_point];
+      const auto& DOS_epsilon=space.DOS_eigen_val()[is][i_k_point];
 
       std::vector<std::vector<std::complex<double>>> KS_Gw(nomega);
       for(int iomega=0; iomega<nomega; iomega++)
-        KS_Gw[iomega].resize(wbands[is]*wbands[is]);
- 
-      const int mkl_threads = mkl_get_max_threads();
-      mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-      #pragma omp parallel
+        KS_Gw[iomega].resize(DOS_wbands[is]*DOS_wbands[is], zero);
+
+      int* ipiv = new int [DOS_wbands[is]];
+      for(int iomega=0; iomega<nomega; iomega++)
       {
-        int* ipiv = new int [wbands[is]];
+        //=====Uncorrelated subset======
+        for(int iband=0; iband<DOS_wbands[is]; iband++)
+          KS_Gw[iomega][iband*DOS_wbands[is]+iband] = 
+              this->freq[iomega] + mu -DOS_epsilon[iband] + eta;
 
-        #pragma omp for
-        for(int iomega=0; iomega<nomega; iomega++)
-        {        
-          for(int iband1=0; iband1<wbands[is]; iband1++)
-          {
-            for(int iband2=0; iband2<wbands[is]; iband2++)
-            {           
-              if(iband1==iband2)
-                KS_Gw[iomega][iband1*wbands[is]+iband2] = this->freq[iomega] + mu 
-                  -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-              else
-                KS_Gw[iomega][iband1*wbands[is]+iband2] = 
-                  -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-            }
+        //======Correlated subset======
+        for(int iband1=0; iband1<wbands[is]; iband1++)
+        {
+          int iDOS_band1 = corr_DOS_bands[is][iband1];
+          for(int iband2=0; iband2<wbands[is]; iband2++)
+          {       
+            int iDOS_band2 = corr_DOS_bands[is][iband2];    
+            if(iband1==iband2)
+              KS_Gw[iomega][iDOS_band1*DOS_wbands[is]+iDOS_band2] = this->freq[iomega] + mu 
+                -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+            else
+              KS_Gw[iomega][iDOS_band1*DOS_wbands[is]+iDOS_band2] = 
+                -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
           }
+        }
 
-          general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
-          
-          for(int iband=0; iband<wbands[is]; iband++)
-            this->Aw_ik_iband[is][ik][iband][iomega] -= KS_Gw[iomega][iband*wbands[is]+iband].imag();
-        }//iomega
+        general_complex_matrix_inverse(&KS_Gw[iomega][0], DOS_wbands[is], &ipiv[0]);
+        
+        for(int iband=0; iband<DOS_wbands[is]; iband++)
+          this->Aw_ik_iband[is][ik][iband][iomega] -= KS_Gw[iomega][iband*DOS_wbands[is]+iband].imag();
 
-        delete [] ipiv;
-      }
-      mkl_set_num_threads(mkl_threads);
+      }//iomega
+
+      delete [] ipiv;
 
       //Re-normalization
       double norm;
-      for(int iband=0; iband<wbands[is]; iband++){
+      for(int iband=0; iband<DOS_wbands[is]; iband++){
         Simpson_Integral(this->Aw_ik_iband[is][ik][iband].size(),
                           &this->Aw_ik_iband[is][ik][iband][0], 
                           dw, norm );
@@ -321,7 +321,7 @@ void spectrum::eva_spectrum_normalization(
       }
       
       for(int iomega=0; iomega<nomega; iomega++){
-        for(int iband=0; iband<wbands[is]; iband++)
+        for(int iband=0; iband<DOS_wbands[is]; iband++)
           this->Awk[is][iomega][i_k_point] += this->Aw_ik_iband[is][ik][iband][iomega];
 
         for(int ineq=0; ineq<ineq_num; ineq++)
@@ -337,9 +337,10 @@ void spectrum::eva_spectrum_normalization(
             for(int iband=0; iband<wbands[is]; iband++)
             {
               int index = iband*m_tot + m;
+              int iDOS_band = corr_DOS_bands[is][iband];
               this->Aw_loc[ineq][is][iomega][m] += 
                   ( std::conj(projector[index])*
-                  this->Aw_ik_iband[is][ik][iband][iomega]
+                  this->Aw_ik_iband[is][ik][iDOS_band][iomega]
                   *projector[index]*fk[i_k_point] ).real();
             }//iband
           }//m

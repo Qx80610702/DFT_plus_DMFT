@@ -23,7 +23,7 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::sovle");
     
-    this->set_ios(GLV::ofs_running, GLV::ofs_error);
+    this->set_ios(GLV::ofs_running);
 
     GLV::ofs_running << "Welcome to DFT+DMFT calculation" << std::endl;
     GLV::ofs_running << "Number of processes of the job: " << mpi_ntasks() << "\n" << std::endl;
@@ -43,11 +43,11 @@ namespace DFT_plus_DMFT
       return this->cal_spectrum_func();
       break;
     default:
-      GLV::ofs_error << "Unknown calculation type" << std::endl;
+      std::cerr << "Unknown calculation type" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
-    this->unset_ios(GLV::ofs_running, GLV::ofs_error);
+    this->unset_ios(GLV::ofs_running);
 
     return;
   }
@@ -84,11 +84,16 @@ namespace DFT_plus_DMFT
       this->pars.bands.read();
 
       if(loop_count==1){
-        this->space.KS_bands_window(
-            char_step,
-            this->pars.bands, 
-            this->pars.atom,
-            this->pars.in );
+        if(char_step==1)
+          this->space.KS_bands_window(
+              0, this->pars.bands, 
+              this->pars.atom,
+              this->pars.in );
+        else
+          this->space.KS_bands_window(
+              1, this->pars.bands, 
+              this->pars.atom,
+              this->pars.in );
       }
 
       // this->Mu.evaluate_mu_bisection_imag_DFT(
@@ -208,6 +213,8 @@ namespace DFT_plus_DMFT
         }//DFT loop
         GLV::ofs_running << "<><><><><><><><><> End of DFT loop <><><><><><><><><>" << std::endl;
       }
+
+      last_char_step = char_step;
       GLV::ofs_running << "<><><><><><><><><> End charge step " << char_step << " <><><><><><><><><><><><><>\n" << std::endl;
       charge_loop_count++;
     }//charge loop
@@ -320,7 +327,7 @@ namespace DFT_plus_DMFT
         this->imp.iQIST_narcissus.impurities_solving(char_step, DMFT_step, atom);
         break;
       default:
-        GLV::ofs_error << "Not supported impurity solver" << std::endl;
+        std::cerr << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -369,7 +376,7 @@ namespace DFT_plus_DMFT
     this->pars.bands.read();
 
     this->space.KS_bands_window(
-          2, this->pars.bands, 
+          1, this->pars.bands,
           this->pars.atom,
           this->pars.in );
 
@@ -426,43 +433,27 @@ namespace DFT_plus_DMFT
   {
     debug::codestamp("solver::DMFT_charge_updating");
 
-    /*
-    const int impurity_solver = *(int*)pars.in.parameter("impurity_solver");
-    if(impurity_solver==1 || 
-       impurity_solver==2 || 
-       impurity_solver==3 ||
-       impurity_solver==4 ||
-       impurity_solver==5 )
-       this->flag_axis = 0;       //imaginary axis
-    else this->flag_axis = 1;     //real axis
-
-    const double beta = *(double*)pars.in.parameter("beta");
-    const int nomega = *(int*)pars.in.parameter("n_omega");
-
-    if(this->flag_axis==0){       //imaginary axis
-      this->imp.sigma.sigma_imag.nomega() = nomega;
-      this->imp.sigma.sigma_imag.inverse_T() = beta;
-      this->imp.sigma.sigma_imag.Matsubara_freq().resize(nomega);
-      auto& freq=this->imp.sigma.sigma_imag.Matsubara_freq();
-      for(int iomega=0; iomega<nomega; iomega++)
-          freq[iomega] = (2*iomega+1)*GLC::PI/beta;
-    }
-
-    this->imp.read_last_step( 
-            this->last_charge_step,
-            this->last_DMFT_step,
-            *(int*)pars.in.parameter("impurity_solver"),
-            this->pars.bands, this->pars.in, this->pars.atom );
-    */
-
     GLV::ofs_running << "Start updating DMFT corrected charge density..." << std::endl;
 
+    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+    int ierr = chdir("./dft");
+    if(ierr != 0){
+      std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
     if(mpi_rank()==0){
       if(access("outputs_to_DMFT",0)==0){
-        mv_dir("outputs_to_DMFT", ".outputs_to_DMFT");
+        // mv_dir("outputs_to_DMFT", ".outputs_to_DMFT");
+        system("cp -a outputs_to_DMFT .outputs_to_DMFT");
       }
     }
-    MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+    ierr = chdir("../");
+    if(ierr != 0){
+      std::cout << "Process " << mpi_rank() << " fails to enter to the root directory of the DFT+DMFT calculation" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);   //Blocks until all processes reach here
 
     this->imp.sigma.subtract_double_counting(this->flag_axis);
 
@@ -482,18 +473,28 @@ namespace DFT_plus_DMFT
     //the DMFT corrected density matrix
     // GLV::ofs_running << "Calculating DMFT corrected charge density..." << std::endl;
     this->run_nscf_dft(*(int*)pars.in.parameter("dft_solver"));
-    
+  
     //Read the charge density corresponding to 
     //the DMFT corrected density matrix
     this->Char_scf.read_charge_density(false, true);
 
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
+    ierr = chdir("./dft");
+    if(ierr != 0){
+      std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
     if(mpi_rank()==0){
       rm_dir("outputs_to_DMFT");
       mv_dir(".outputs_to_DMFT", "outputs_to_DMFT");
     }
+    ierr = chdir("../");
+    if(ierr != 0){
+      std::cout << "Process " << mpi_rank() << " fails to enter to the root directory of the DFT+DMFT calculation" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
-    
+
     GLV::ofs_running << "End updating DMFT corrected charge density\n" << std::endl;
    
     return;
@@ -625,17 +626,20 @@ namespace DFT_plus_DMFT
   }
 
   void solver::set_ios(
-    std::ofstream& ofs_running, 
-    std::ofstream& ofs_error )
+    std::ofstream& ofs_running )
   {
     if(mpi_rank()==0){
       ofs_running.open("DMFT_running.log", std::ios::app);
-      ofs_error.open("DMFT_running.error", std::ios::out);
+      // ofs_error.open("DMFT_running.error", std::ios::out);
     }
 
-    // std::stringstream ss1;
-    // ss1 << "DMFT_running_proc" << mpi_rank() << ".log";
-    // ofs_running.open(ss1.str(), std::ios_base::app);
+    //debug
+    bool debug = false;
+    if(debug){
+      std::stringstream ss1;
+      ss1 << "debug_proc" << mpi_rank() << ".log";
+      GLV::ofs_debug.open(ss1.str(), std::ios_base::app);
+    }
     
     // std::stringstream ss2;
     // ss2 << "DMFT_running_proc" << mpi_rank() << ".error";
@@ -644,12 +648,11 @@ namespace DFT_plus_DMFT
   }
 
   void solver::unset_ios(
-    std::ofstream& ofs_running, 
-    std::ofstream& ofs_error )
+    std::ofstream& ofs_running)
   {
     if(mpi_rank()==0){
       ofs_running.close();
-      ofs_error.close();
+      // ofs_error.close();
     }
 
     // ofs_running.close();
@@ -708,24 +711,24 @@ namespace DFT_plus_DMFT
           */
          
         #else
-          GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-          GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+          std::cerr << "FHI-aims has not been installed!!!  ";
+          std::cerr << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
           std::exit(EXIT_FAILURE);
         #endif   
         break;
       case 2: //ABACUS
         #ifdef __ABACUS
           // this->char_scf_aims.output_charge_density(file, dens_cmplx);
-          GLV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
+          std::cerr << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
           std::exit(EXIT_FAILURE);
         #else
-          GLV::ofs_error << "ABACUS has not been installed!!!  ";
-          GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+          std::cerr << "ABACUS has not been installed!!!  ";
+          std::cerr << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
           std::exit(EXIT_FAILURE);
         #endif
         break;
       default:
-        GLV::ofs_error << "Not supported DFT_solver" << std::endl;
+        std::cerr << "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
     

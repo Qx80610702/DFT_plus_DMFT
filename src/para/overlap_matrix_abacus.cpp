@@ -37,7 +37,7 @@ namespace DFT_output
 
       if (!ifk) 
 	    {
-	    	GLV::ofs_error << "Fail to oepn " << kfile.c_str() << std::endl;
+	    	std::cerr << "Fail to oepn " << kfile.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -70,7 +70,7 @@ namespace DFT_output
 
       if (!ifSr) 
 	    {
-	    	GLV::ofs_error << "Fail to oepn " << Srf.c_str() << std::endl;
+	    	std::cerr << "Fail to oepn " << Srf.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

@@ -6,8 +6,8 @@
 #include "../constants.h"
 #include "../global_variables.h"
 
+#include <mkl.h>
 #include <mpi.h>
-#include <omp.h>
 #include <memory>
 #include <cmath>
 #include <iostream>
@@ -206,68 +206,61 @@ namespace DMFT
       for(int is=0; is<nspin; is++)
       {
         const std::vector<double>& epsilon = space.eigen_val()[is][ik];    
+
+        std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
+        std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
         
-        const int mkl_threads = mkl_get_max_threads();
-        mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-
-        #pragma omp parallel
+        for(int iomega=0; iomega<nomega; iomega++)
         {
-          std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
-          std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-          
-          #pragma omp for
-          for(int iomega=0; iomega<nomega; iomega++)
+          const std::vector<std::complex<double>>& latt_sigmb = latt_sigma[is][iomega];
+
+          for(int iband1=0; iband1<wbands[is]; iband1++)
           {
-            const std::vector<std::complex<double>>& latt_sigmb = latt_sigma[is][iomega];
-
-            for(int iband1=0; iband1<wbands[is]; iband1++)
+            for(int iband2=0; iband2<wbands[is]; iband2++)
             {
-              for(int iband2=0; iband2<wbands[is]; iband2++)
-              {
-                int band_index = iband1*wbands[is]+iband2;
+              int band_index = iband1*wbands[is]+iband2;
 
-                if(iband1==iband2)
-                    Gf_latt[band_index] = im*freq[iomega] + mu
-                          -epsilon[iband1] - latt_sigmb[band_index];
-                else
-                    Gf_latt[band_index] = -latt_sigmb[band_index];
+              if(iband1==iband2)
+                  Gf_latt[band_index] = im*freq[iomega] + mu
+                        -epsilon[iband1] - latt_sigmb[band_index];
+              else
+                  Gf_latt[band_index] = -latt_sigmb[band_index];
 
-              }//iband2
-            }//iband1
+            }//iband2
+          }//iband1
 
-            general_complex_matrix_inverse(&Gf_latt[0], wbands[is], &ipiv[0]);
+          general_complex_matrix_inverse(&Gf_latt[0], wbands[is], &ipiv[0]);
 
-            for(int ineq=0; ineq<ineq_num; ineq++)
+          for(int ineq=0; ineq<ineq_num; ineq++)
+          {
+            const int iatom = atom.ineq_iatom(ineq);
+            const int m_tot=norb_sub[iatom];
+
+            auto& Gf = this->Green_fun_omega[ineq][is];
+
+            const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
+
+            for(int m1=0; m1<m_tot; m1++)
             {
-              const int iatom = atom.ineq_iatom(ineq);
-              const int m_tot=norb_sub[iatom];
-
-              auto& Gf = this->Green_fun_omega[ineq][is];
-
-              const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
-
-              for(int m1=0; m1<m_tot; m1++)
+              for(int m2=0; m2<m_tot; m2++)
               {
-                for(int m2=0; m2<m_tot; m2++)
+                const int m_index = m1*m_tot+m2;
+                for(int iband1=0; iband1<wbands[is]; iband1++)
                 {
-                  const int m_index = m1*m_tot+m2;
-                  for(int iband1=0; iband1<wbands[is]; iband1++)
+                  int index1 = iband1*m_tot + m1;
+                  for(int iband2=0; iband2<wbands[is]; iband2++)
                   {
-                    int index1 = iband1*m_tot + m1;
-                    for(int iband2=0; iband2<wbands[is]; iband2++)
-                    {
-                      int index2 = iband2*m_tot + m2;
-                      Gf[iomega][m_index] += std::conj(projector[index1])*Gf_latt[iband1*wbands[is]+iband2]
-                                              *projector[index2]*fk[ik];
-                    }//iband2
-                  }//iband1
-                }//m2
-              }//m1
-            }//ineq
+                    int index2 = iband2*m_tot + m2;
+                    Gf[iomega][m_index] += std::conj(projector[index1])*Gf_latt[iband1*wbands[is]+iband2]
+                                            *projector[index2]*fk[ik];
+                  }//iband2
+                }//iband1
+              }//m2
+            }//m1
+          }//ineq
 
-          }//iomega
-        }//omp parallel
-        mkl_set_num_threads(mkl_threads);
+        }//iomega
+        
       }//is
       ik_count++;
     }//ik
@@ -295,7 +288,6 @@ namespace DMFT
       const int local_symmetry = atom.local_sym();
       const int corr_L=atom.L(ineq);
       for(int is=0; is<nspin; is++)
-        #pragma omp parallel for
         for(int iomega=0; iomega<nomega; iomega++)
           DFT_output::atoms_info::symmetry_operation_matrix<std::complex<double>>(
             local_symmetry, corr_L, m_tot, &this->Green_fun_omega[ineq][is][iomega][0] );
@@ -394,7 +386,6 @@ namespace DMFT
       const std::vector<std::vector<std::vector<std::complex<double>>>>&
             local_sigma = this->sigma.sigma_new(0)[ineq];
 
-      #pragma omp parallel for
       for(int iomega=0; iomega<nomega; iomega++)
       {
         for(int is=0; is<nspin; is++)
@@ -542,7 +533,6 @@ namespace DMFT
     std::vector<std::complex<double>> hyb_omega_tmp(nomega);
 
     //Fourier transform
-    const int threads_num = omp_get_max_threads();
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -559,8 +549,7 @@ namespace DMFT
 
           Fourier_trans_omega_tau( beta, ntau+1, nomega,
             &this->sigma.sigma_imag.Matsubara_freq()[0],
-            &tau[0], &hyb_omega_tmp[0], &hyb_tau_tmp[0],
-            threads_num );
+            &tau[0], &hyb_omega_tmp[0], &hyb_tau_tmp[0]);
        
           for(int itau=0; itau<ntau+1; itau++)
             hyb_tau1[is][itau][m*m_tot+m] = hyb_tau_tmp[itau];
@@ -571,8 +560,7 @@ namespace DMFT
 
           Fourier_trans_omega_tau( beta, ntau+1, nomega,
             &this->sigma.sigma_imag.Matsubara_freq()[0],
-            &tau[0], &hyb_omega_tmp[0], &hyb_tau_tmp[0],
-            threads_num );
+            &tau[0], &hyb_omega_tmp[0], &hyb_tau_tmp[0]);
           
           for(int itau=0; itau<ntau+1; itau++)
             this->Weiss_tau[ineq][is][itau][m*m_tot+m] = hyb_tau_tmp[itau];
@@ -651,7 +639,7 @@ namespace DMFT
               this->impurity_level, this->hyb_omega, Umat );
         break;
       default:
-        GLV::ofs_error << "Not supported impurity solver" << std::endl;
+        std::cerr << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
     return;
@@ -668,9 +656,9 @@ namespace DMFT
   {
     debug::codestamp("impurity::read_last_step");
 
-    // if(mpi_rank()==0){
-    //   GLV::ofs_running << "Reading the last loop: charge step " << char_step << "  DMFT step " << DMFT_step << std::endl;
-    // }
+    GLV::ofs_running << "Reading selfg-energy from the last loop: charge step " 
+                     << char_step << "  DMFT step " << DMFT_step << std::endl;
+
     int axis_flag;
 
     if(impurity_solver==1 || 
@@ -764,7 +752,7 @@ namespace DMFT
                 band, in, atom, sigma_new);
         break;
       default:
-        GLV::ofs_error << "Not supported impurity solver" << std::endl;
+        std::cerr << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -933,29 +921,21 @@ namespace DMFT
       std::vector<std::vector<std::vector<std::complex<double>>>>&
           sigma_newa =sigma_new[ineq];
 
-      const int mkl_threads = mkl_get_max_threads();
-      mkl_set_num_threads(1);      //set the number of threads of MKL library function to 1
+      std::unique_ptr<int[]> ipiv(new int [m_tot]);
 
-      #pragma omp parallel
-      {
-        std::unique_ptr<int[]> ipiv(new int [m_tot]);
+      for(int iomega=0; iomega<nomega; iomega++)   
+      {          
+        for(int is=0; is<nspin; is++)
+        {         
+          general_complex_matrix_inverse(&Gf_omega[is][iomega][0], m_tot, &ipiv[0]);
 
-        #pragma omp for
-        for(int iomega=0; iomega<nomega; iomega++)   
-        {          
-          for(int is=0; is<nspin; is++)
-          {         
-            general_complex_matrix_inverse(&Gf_omega[is][iomega][0], m_tot, &ipiv[0]);
+          general_complex_matrix_inverse(&Weiss[is][iomega][0], m_tot, &ipiv[0]);
+          
+          for(int m_index=0; m_index<m_tot*m_tot; m_index++)
+            sigma_newa[is][iomega][m_index] = Weiss[is][iomega][m_index] - Gf_omega[is][iomega][m_index];
 
-            general_complex_matrix_inverse(&Weiss[is][iomega][0], m_tot, &ipiv[0]);
-            
-            for(int m_index=0; m_index<m_tot*m_tot; m_index++)
-              sigma_newa[is][iomega][m_index] = Weiss[is][iomega][m_index] - Gf_omega[is][iomega][m_index];
-
-          }//is
-        }//iomega     
-      } 
-      mkl_set_num_threads(mkl_threads); 
+        }//is
+      }//iomega   
     }//ineq
 
     return;
@@ -1328,7 +1308,7 @@ namespace DMFT
         return this->iQIST_narcissus.hybridization_func_tau();
         break;
       default:
-        GLV::ofs_error << "Not supported impurity solver" << std::endl;
+        std::cerr << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
   }
@@ -1340,8 +1320,7 @@ namespace DMFT
             const double* freq,
             const double* tau_mesh,
             const std::complex<double>* fw,
-            std::complex<double>* ftau,
-            const int threads_num)
+            std::complex<double>* ftau)
   {
     debug::codestamp("impurity::Fourier_trans_omega_tau");
 
@@ -1367,7 +1346,6 @@ namespace DMFT
     double C1, C2, C3;
     polynomial_regression(&fw_tail[0], &freq_tail[0], 20, C1, C2, C3);
 
-    #pragma omp parallel for num_threads(threads_num)
     for(int itau=0; itau<ntau; itau++)
     {
       const double tau_val = tau_mesh[itau];                

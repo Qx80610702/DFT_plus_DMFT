@@ -6,7 +6,7 @@
 #include "../global_variables.h"
 #include "../timer.h"
 
-#include <omp.h>
+#include <mkl.h>
 #include <mpi.h>
 #include <memory>
 #include <iostream>
@@ -44,7 +44,7 @@ namespace DFT_plus_DMFT
       // ;
       break;
     default:
-      GLV::ofs_error << "Error parameter of axis_flag" << std::endl;
+      std::cerr << "Error parameter of axis_flag" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -102,7 +102,7 @@ namespace DFT_plus_DMFT
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
       max_U = max_U > atom.Uval(atom.ineq_iatom(ineq)) ? max_U : atom.Uval(atom.ineq_iatom(ineq));
 
-    bool converged=false;
+    bool converged = false;
     double elw = window[0]-2.0*max_U, eup = window[1]+2.0*max_U;
     double mid_n_elec;
     
@@ -110,7 +110,7 @@ namespace DFT_plus_DMFT
     {
       this->sigma_corrected_mu = (elw + eup) / 2.0;
       
-      mid_n_elec=this->evaluate_electrons_number_imag(
+      mid_n_elec = this->evaluate_electrons_number_imag(
               band, space, sigma, atom, proj, beta, 
               magnetism, this->sigma_corrected_mu );
 
@@ -121,15 +121,15 @@ namespace DFT_plus_DMFT
       else
         eup = this->sigma_corrected_mu;
 
-// GLV::ofs_error << "mu        " << std::setw(14) << std::fixed << std::setprecision(9) << this->sigma_corrected_mu << '\n';
-// GLV::ofs_error << "electrons " << std::setw(12) << std::fixed << std::setprecision(6) << mid_n_elec << '\n';
-// GLV::ofs_error << "step " << istep << '\n';
+// std::cerr << "mu        " << std::setw(14) << std::fixed << std::setprecision(9) << this->sigma_corrected_mu << '\n';
+// std::cerr << "electrons " << std::setw(12) << std::fixed << std::setprecision(6) << mid_n_elec << '\n';
+// std::cerr << "step " << istep << '\n';
 
       if(converged) break;
     }
 
     if(!converged){
-      GLV::ofs_error << "Error in calculating chemical potential!!!" << std::endl;
+      std::cerr << "Error in calculating chemical potential!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -202,31 +202,23 @@ namespace DFT_plus_DMFT
         for(int iomega=0; iomega<nomega; iomega++)
           KS_Gw[iomega].resize(wbands[is]*wbands[is]);
 
-        const int mkl_threads = mkl_get_max_threads();
-        mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-        #pragma omp parallel
+        std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
+        for(int iomega=0; iomega<nomega; iomega++)
         {
-          std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-
-          #pragma omp for
-          for(int iomega=0; iomega<nomega; iomega++)
+          for(int iband1=0; iband1<wbands[is]; iband1++)
           {
-            for(int iband1=0; iband1<wbands[is]; iband1++)
-            {
-              for(int iband2=0; iband2<wbands[is]; iband2++)
-              {           
-                if(iband1==iband2)
-                  KS_Gw[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
-                    -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-                else
-                  KS_Gw[iomega][iband1*wbands[is]+iband2] = 
-                    -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-              }
+            for(int iband2=0; iband2<wbands[is]; iband2++)
+            {           
+              if(iband1==iband2)
+                KS_Gw[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
+                  -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+              else
+                KS_Gw[iomega][iband1*wbands[is]+iband2] = 
+                  -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
             }
-            general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
-          }//iomega
-        }
-        mkl_set_num_threads(mkl_threads);
+          }
+          general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
+        }//iomega
 
         for(int iband=0; iband<wbands[is]; iband++)
         {
@@ -338,7 +330,7 @@ namespace DFT_plus_DMFT
 
     std::ifstream ifs("DMFT_running.log", std::ios::in);
     if (!ifs)  {
-      GLV::ofs_error << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
+      std::cerr << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);   //set the position at the beginning of the file

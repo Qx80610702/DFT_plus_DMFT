@@ -515,7 +515,7 @@ namespace DMFT
 
       // if (!ifs_gf)  
 	    // {
-	    // 	GLV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
+	    // 	std::cerr << "Fail to oepn " << Gf_file.c_str() << std::endl;
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -588,7 +588,7 @@ namespace DMFT
 
       // if(count<nomega)
       // {
-      //   GLV::ofs_error << "The number of Matsubara points of Gw.dat is less than nomega\n";
+      //   std::cerr << "The number of Matsubara points of Gw.dat is less than nomega\n";
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -608,7 +608,7 @@ namespace DMFT
 
       // if (!ifs_sigsave)  
 	    // {
-	    // 	GLV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
+	    // 	std::cerr << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -654,7 +654,7 @@ namespace DMFT
 
       if (!ifSw)  
 	    {
-	    	GLV::ofs_error << "Fail to oepn " << Gw_file.c_str() << std::endl;
+	    	std::cerr << "Fail to oepn " << Gw_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -715,7 +715,7 @@ namespace DMFT
 
       if(count<nomega)
       {
-        GLV::ofs_error << "The number of Matsubara points of Sigma.dat is less than nomega" << std::endl;
+        std::cerr << "The number of Matsubara points of Sigma.dat is less than nomega" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

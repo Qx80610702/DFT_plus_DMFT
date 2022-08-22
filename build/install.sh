@@ -39,14 +39,8 @@ if [ -z MPI_CC ];then
 fi
 
 #============DFT softwares path=========
-#The installing path of FHI-aims if FHI-aims has been built  
-FHIaims_install_dir=`grep "FHIaims_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 FHIaims_lib_path=`grep "FHIaims_lib_path" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
-FHIaims_lib_name=`grep "FHIaims_lib_name" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
-
-#The installing path of ABACUS if ABACUS has been built  
-# ABACUS_install_dir=`grep "ABACUS_install_dir" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
-ABACUS_exe=`grep "ABACUS_exe" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+ABACUS_lib_path=`grep "ABACUS_lib_path" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 
 #========Starting compilation========
 cd ../
@@ -378,16 +372,16 @@ cd $root_dir/build
 # if [ ! -f ../bin/DFTDMFT ]
 if [ ! -f DFTDMFT ]
 then
-  if [ -z $ABACUS_exe ];then
+  if [ -z $ABACUS_lib_path ];then
     MACRO_ABACUS=
   else
     MACRO_ABACUS=-D__ABACUS
   fi
 
-  if [ -z $FHIaims_install_dir ];then    #FHI-aims has not been built
+  if [ -z $FHIaims_lib_path ];then    #FHI-aims has not been built
 cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
-OPTIONS = -g -qopenmp -O3 -std=c++14
+OPTIONS = -g -O3 -std=c++14
 MACRO = $MACRO_ABACUS
 INCLUDES = -I\${MKLROOT}/include
 LIB_MKL = -L\${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
@@ -463,14 +457,13 @@ EOF
   else #FHI-aims has been built
   cat > Makefile <<EOF
 CPLUSPLUS_MPI = $MPI_CXX
-OPTIONS = -g -qopenmp -O3 -std=c++14
+OPTIONS = -g -O3 -std=c++14
 MACRO = -D__FHIaims $MACRO_ABACUS
-INCLUDES = -I\${MKLROOT}/include -I${FHIaims_install_dir}/include
+INCLUDES = -I\${MKLROOT}/include -I${FHIaims_lib_path}/include
 
 LIB_MKL = -L\${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 \\
 -lmkl_scalapack_lp64 -lifport -lifcoremt
 
-LIB_elsi = -L$FHIaims_install_dir/lib -lelsi -lelpa  -lOMM -lMatrixSwitch -lNTPoly -lfortjson
 LIB_PACS = -L${root_dir}/build/impurities/PACS -l:libpacs.a
 LIB_iQIST = -L${root_dir}/build/impurities/iQIST/ct_hyb1 -l:libnarcissus.a \\
 -L${root_dir}/build/impurities/iQIST/dependencies/Flink -l:libflink.a
@@ -478,9 +471,9 @@ LIB_iQIST = -L${root_dir}/build/impurities/iQIST/ct_hyb1 -l:libnarcissus.a \\
 LIB_RUTGERS = -L${root_dir}/build/impurities/Rutgers -l:librutgers.a \\
 -L${root_dir}/build/impurities/Rutgers/dependencies/gsl-2.6/lib -l:libgslcblas.a -l:libgsl.a
 
-LIB_aims = -L${FHIaims_lib_path} -l${FHIaims_lib_name}
+LIB_aims = -L${FHIaims_lib_path}/lib -laims -lelsi -lelpa  -lOMM -lMatrixSwitch -lNTPoly -lfortjson
 
-LIBRARY = \$(LIB_MKL) \$(LIB_PACS) \$(LIB_iQIST) \$(LIB_RUTGERS) \$(LIB_elsi) \$(LIB_aims)
+LIBRARY = \$(LIB_MKL) \$(LIB_PACS) \$(LIB_iQIST) \$(LIB_RUTGERS) \$(LIB_aims)
 
 VPATH=../src \\
 :../src/para \\

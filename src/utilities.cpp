@@ -55,3 +55,7 @@ int mk_dir(const char *dir)
   return mkdir(dir,S_IRWXU);
 }
 
+int cp_dir(const char *dir_old, const char *dir_new)
+{
+  
+}

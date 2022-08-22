@@ -87,10 +87,10 @@ namespace DFT_plus_DMFT
     debug::codestamp("Charge_SCF_aims::read_charge_density");
 
     if(initial_charge && DMFT_charge){
-      GLV::ofs_error << "There some logical errors in read the charge density" <<std::endl;
+      std::cerr << "There some logical errors in read the charge density" <<std::endl;
       std::exit(EXIT_FAILURE);
     }
-    
+   
     std::stringstream rho_file, part_file;
 
     part_file << "dft/outputs_to_DMFT/charge_density/partition_tab" 
@@ -110,7 +110,7 @@ namespace DFT_plus_DMFT
     if(this->partition_tab.empty()){
       std::ifstream ifsp(part_file.str().c_str(), std::ios::in);
       if (!ifsp){
-      	GLV::ofs_error << "Fail to oepn " << part_file.str().c_str() << std::endl;
+      	std::cerr << "Fail to oepn " << part_file.str().c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
       ifsp.seekg(0); //set the position at the beginning of the file
@@ -134,7 +134,7 @@ namespace DFT_plus_DMFT
     std::vector<std::vector<double>> rho_tmp;
     std::ifstream ifsr(rho_file.str().c_str(), std::ios::in);
     if (!ifsr){
-    	GLV::ofs_error << "Fail to oepn " << rho_file.str().c_str() << std::endl;
+    	std::cerr << "Fail to oepn " << rho_file.str().c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifsr.seekg(0); //set the position at the beginning of the file
@@ -400,7 +400,7 @@ namespace DFT_plus_DMFT
     //=========Read control.in==========
     std::ifstream ifs("dft/control.in", std::ios::in);
     if(!ifs){
-      GLV::ofs_error << "Fail to oepn file control.in" << std::endl;
+      std::cerr << "Fail to oepn file control.in" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

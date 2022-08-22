@@ -11,7 +11,6 @@
 #include "../utilities.h"
 
 #include <mpi.h>
-#include <omp.h>
 #include <memory>
 #include <cmath>
 #include <iostream>
@@ -269,7 +268,8 @@ namespace DMFT
 
   void IQIST_NARCISSUS::write_solver_eimp_in(
         const std::string file, 
-        std::vector<std::vector<std::complex<double>>>& muvec,
+        std::vector<std::vector<
+        std::complex<double>>>& muvec,
         const int nband, const int symm,
         const int corr_L, const int nspin )
   {
@@ -286,7 +286,7 @@ namespace DMFT
         if(nspin==1)
         {
           ofs << std::setw(22) << std::fixed << std::setprecision(15)
-              << muvec[0][m*nband+m].real()*GLC::Hartree_to_eV;
+              << (muvec[0][m*nband+m].real())*GLC::Hartree_to_eV;
           
           if(symm==1 && corr_L==2) //cubic symmetry, d orbital
           {
@@ -415,7 +415,7 @@ namespace DMFT
 
       // if (!ifs_gf)  
 	    // {
-	    // 	GLV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
+	    // 	std::cerr << "Fail to oepn " << Gf_file.c_str() << std::endl;
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -486,7 +486,7 @@ namespace DMFT
 
       // if(count<nomega)
       // {
-      //   GLV::ofs_error << "The number of Matsubara points of Gw.dat is less than nomega\n";
+      //   std::cerr << "The number of Matsubara points of Gw.dat is less than nomega\n";
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -506,7 +506,7 @@ namespace DMFT
 
       // if (!ifs_sigsave)  
 	    // {
-	    // 	GLV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
+	    // 	std::cerr << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
       //   std::exit(EXIT_FAILURE);
       // }
 
@@ -552,7 +552,7 @@ namespace DMFT
 
       if (!ifSw)  
 	    {
-	    	GLV::ofs_error << "Fail to oepn " << Gw_file.c_str() << std::endl;
+	    	std::cerr << "Fail to oepn " << Gw_file.c_str() << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -611,7 +611,7 @@ namespace DMFT
 
       if(count<nomega)
       {
-        GLV::ofs_error << "The number of Matsubara points of Sigma.dat is less than nomega" << std::endl;
+        std::cerr << "The number of Matsubara points of Sigma.dat is less than nomega" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

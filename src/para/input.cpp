@@ -29,12 +29,12 @@ namespace DMFT
       else if(std::strcmp("spectra", this->strtolower(str_val[0]).c_str())==0)
         this->calculation_type = 1;
       else{
-        GLV::ofs_error << "Unsupported paramater for the key calculationi" << std::endl;
+        std::cerr << "Unsupported paramater for the key calculation" << std::endl;
         std::exit(EXIT_FAILURE);
       }  
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -54,35 +54,35 @@ namespace DMFT
       if(std::strcmp("aims",this->strtolower(str_val[0]).c_str())==0){
         this->flag_DFT_solver = 1;
         #ifndef __FHIaims
-          GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-          GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+          std::cerr << "FHI-aims has not been installed!!!  ";
+          std::cerr << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
           std::exit(EXIT_FAILURE);
         #endif
       }
       else if(std::strcmp("abacus", this->strtolower(str_val[0]).c_str())==0){
         this->flag_DFT_solver = 2;
         #ifndef __ABACUS
-          GLV::ofs_error << "ABACUS has not been installed!!!   ";
-          GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+          std::cerr << "ABACUS has not been installed!!!   ";
+          std::cerr << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
           std::exit(EXIT_FAILURE);
         #endif
       }
       else
       {
-        GLV::ofs_error << "unsupported value of DFT_solver" << std::endl;
+        std::cerr << "unsupported value of DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
       // GLV::ofs_running << "Warning: dft_solver is not given and set default value aims" << std::endl;
       this->flag_DFT_solver = 1;   //FHI-aims
       #ifndef __FHIaims
-        GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+        std::cerr << "FHI-aims has not been installed!!!  ";
+        std::cerr << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
         std::exit(EXIT_FAILURE);
       #endif
     }
@@ -98,7 +98,7 @@ namespace DMFT
       this->temperature = atof(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -128,17 +128,17 @@ namespace DMFT
       else if(std::strcmp("none",this->strtolower(str_val[0]).c_str())==0) this->flag_magnetism = 4;
       else
       {
-        GLV::ofs_error << "unsupported value of magnetism" << std::endl;
+        std::cerr << "unsupported value of magnetism" << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
       this->flag_magnetism = 3;
-      // GLV::ofs_error << "Error: parameter magnetism must be given!!!" << std::endl;
+      // std::cerr << "Error: parameter magnetism must be given!!!" << std::endl;
       // std::exit(EXIT_FAILURE);
     }
     GLV::ofs_running << "magnetism  ";
@@ -155,13 +155,13 @@ namespace DMFT
       if(std::strcmp("alps-cthyb",this->strtolower(str_val[0]).c_str())==0) 
       {
         this->flag_impurity_solver = 1;
-        GLV::ofs_error << "ALPS-CTHYB is unsupported now" << std::endl;
+        std::cerr << "ALPS-CTHYB is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
       else if(std::strcmp("alps-cthyb-segment",this->strtolower(str_val[0]).c_str())==0)
       {
         this->flag_impurity_solver = 2;
-        GLV::ofs_error << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
+        std::cerr << "ALPS-CTHYB-SEGMENT is unsupported now" << std::endl;
         std::exit(EXIT_FAILURE);
       }
       else if(std::strcmp("pacs", this->strtolower(str_val[0]).c_str())==0)
@@ -172,12 +172,12 @@ namespace DMFT
         this->flag_impurity_solver = 5;
       else
       {
-        GLV::ofs_error << "unsupported value of impurity_solver " << this->strtolower(str_val[0]) << std::endl;
+        std::cerr << "unsupported value of impurity_solver " << this->strtolower(str_val[0]) << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -199,13 +199,13 @@ namespace DMFT
       if(std::strcmp("nominal",this->strtolower(str_val[0]).c_str())==0) this->flag_double_counting = 1;
       else
       {
-        GLV::ofs_error << "unsupported value of double_counting" << std::endl;
+        std::cerr << "unsupported value of double_counting" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -213,27 +213,52 @@ namespace DMFT
       this->flag_double_counting = 1;
     }
 
-    //energy_window
+    //projection_energy_window
     try {
       std::vector<std::string> str_val;
-      this->read_parameter("energy_window", str_val, 2);
-      this->E_window.resize(2);
-      this->E_window[0] = atof(str_val[0].c_str());
-      this->E_window[1] = atof(str_val[1].c_str());
+      this->read_parameter("projection_window", str_val, 2);
+      this->proj_window.resize(2);
+      this->proj_window[0] = atof(str_val[0].c_str());
+      this->proj_window[1] = atof(str_val[1].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
       // GLV::ofs_running << "Warning: energy_window is not given and set default value -5.0~5.0" << std::endl;
-      this->E_window[0] = -5.0;
-      this->E_window[1] = 5.0;
+      this->proj_window[0] = -5.0;
+      this->proj_window[1] = 5.0;
     }
-    GLV::ofs_running << "energy_window  " 
-            << std::setprecision(3) << this->E_window[0] 
+    GLV::ofs_running << "projection_window  " 
+            << std::setprecision(3) << this->proj_window[0] 
             << "  "
-            << std::setprecision(3) << this->E_window[1] << std::endl;
+            << std::setprecision(3) << this->proj_window[1] << std::endl;
+    
+    //DOS_window
+    try {
+      std::vector<std::string> str_val;
+      this->read_parameter("dos_window", str_val, 2);
+      this->DOS_window.resize(2);
+      this->DOS_window[0] = atof(str_val[0].c_str());
+      this->DOS_window[1] = atof(str_val[1].c_str());
+    }
+    catch (const std::string messg) {
+      std::cerr << messg << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    catch(const bool not_given){
+      this->DOS_window[0] = this->proj_window[0];
+      this->DOS_window[1] = this->proj_window[0];
+    }
+    if(this->DOS_window[0]>this->proj_window[0] || this->DOS_window[1]<this->proj_window[1]){
+      std::cerr << "The DOS window must be larger than projection window!!!" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    GLV::ofs_running << "DOS_window  " 
+            << std::setprecision(3) << this->DOS_window[0] 
+            << "  "
+            << std::setprecision(3) << this->DOS_window[1] << std::endl;
             
     //max_charge_step
     try {
@@ -243,7 +268,7 @@ namespace DMFT
       this->charge_step_max = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -260,7 +285,7 @@ namespace DMFT
       this->DMFT_step_max = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -277,7 +302,7 @@ namespace DMFT
       this->DFT_step_max = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -296,12 +321,12 @@ namespace DMFT
       this->dft_solver_exe = str_val[0];
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
       if(this->charge_step_max>1){
-        GLV::ofs_error << "DFT_solver_exe must be given in charge scf DFT+DMFT calculations" << std::endl;
+        std::cerr << "DFT_solver_exe must be given in charge scf DFT+DMFT calculations" << std::endl;
         std::exit(EXIT_FAILURE);
       }
       else
@@ -318,7 +343,7 @@ namespace DMFT
       this->delta_sigma = atof(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -337,7 +362,7 @@ namespace DMFT
       this->delta_rho = atof(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -356,7 +381,7 @@ namespace DMFT
       this->mixing_step = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -373,7 +398,7 @@ namespace DMFT
       this->charge_mix_param = atof(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -392,7 +417,7 @@ namespace DMFT
       this->MC_step = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -408,25 +433,25 @@ namespace DMFT
       
       this->start_charge_step = atoi(str_val[0].c_str());
       if(this->start_charge_step<1){
-        GLV::ofs_error << "The starting charge step must be greater than 0." << std::endl;
+        std::cerr << "The starting charge step must be greater than 0." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
       this->start_DMFT_step = atoi(str_val[1].c_str());
       if(this->start_DMFT_step<1){
-        GLV::ofs_error << "The starting DMFT step must be greater than 0." << std::endl;
+        std::cerr << "The starting DMFT step must be greater than 0." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
       this->last_charge_step = atoi(str_val[2].c_str());
       if(this->last_charge_step<1){
-        GLV::ofs_error << "The last charge step must be greater than 0." << std::endl;
+        std::cerr << "The last charge step must be greater than 0." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
       this->last_DMFT_step = atoi(str_val[3].c_str());
       if(this->last_DMFT_step<1){
-        GLV::ofs_error << "The last DMFT step must be greater than 0." << std::endl;
+        std::cerr << "The last DMFT step must be greater than 0." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -436,7 +461,7 @@ namespace DMFT
         this->flag_restart = false;
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -465,7 +490,7 @@ namespace DMFT
       
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -480,7 +505,7 @@ namespace DMFT
       this->hyf_xc_alpha = atof(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch (const bool not_given){
@@ -494,7 +519,7 @@ namespace DMFT
       local_symmetry_tmp = atoi(str_val[0].c_str());
     }
     catch (const std::string messg) {
-      GLV::ofs_error << messg << std::endl;
+      std::cerr << messg << std::endl;
       std::exit(EXIT_FAILURE);
     }
     catch(const bool not_given){
@@ -519,7 +544,7 @@ namespace DMFT
 
     if(!ifs)
     {
-      GLV::ofs_error << "Fail to oepn file DMFT.in" << std::endl;
+      std::cerr << "Fail to oepn file DMFT.in" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -578,7 +603,8 @@ namespace DMFT
           std::strcmp("max_dmft_step", key_str_lower.c_str())==0 ||
           std::strcmp("max_dft_step", key_str_lower.c_str())==0 ||
           std::strcmp("mc_step", key_str_lower.c_str())==0 || 
-          std::strcmp("energy_window", key_str_lower.c_str())==0 ||
+          std::strcmp("projection_window", key_str_lower.c_str())==0 ||
+          std::strcmp("dos_window", key_str_lower.c_str())==0 ||
           std::strcmp("local_symmetry", key_str_lower.c_str())==0 ||
           std::strcmp("restart", key_str_lower.c_str())==0 ||
           std::strcmp("dft_xc", key_str_lower.c_str())==0 ||
@@ -662,7 +688,7 @@ namespace DMFT
     else if(std::strcmp("mixing_step", word.c_str())==0) return &mixing_step;
     else
     {
-      GLV::ofs_error << "No parameter " << keyword << std::endl;
+      std::cerr << "No parameter " << keyword << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -671,7 +697,7 @@ namespace DMFT
   {
     if(this->flag_magnetism==-1)
     {
-      GLV::ofs_error << "Please set the parameter of magnetism" << std::endl;
+      std::cerr << "Please set the parameter of magnetism" << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -685,7 +711,7 @@ namespace DMFT
     std::ofstream ofs(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      std::cerr << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

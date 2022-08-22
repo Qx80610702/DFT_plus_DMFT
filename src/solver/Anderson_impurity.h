@@ -113,8 +113,7 @@ namespace DMFT
             const double* freq,
             const double* tau_mesh,
             const std::complex<double>* fw,
-            std::complex<double>* ftau,
-            const int threads_num );
+            std::complex<double>* ftau);
 
     private:
     //Current step, impurity_level[ineq][is][m_index]

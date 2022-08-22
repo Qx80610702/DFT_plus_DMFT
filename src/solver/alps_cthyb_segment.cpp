@@ -7,7 +7,6 @@
 #include "../global_variables.h"
 #include "../utilities.h"
 
-#include <omp.h>
 #include <memory>
 #include <cmath>
 #include <iostream>
@@ -341,7 +340,7 @@ namespace DMFT
 
         if (!ifs_Tij)  
 	      {
-	      	GLV::ofs_error << "Fail to oepn " << hopping_file.c_str() << std::endl;
+	      	std::cerr << "Fail to oepn " << hopping_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -374,7 +373,7 @@ namespace DMFT
 
         if (!ifs_gf)  
 	      {
-	      	GLV::ofs_error << "Fail to oepn " << Gf_file.c_str() << std::endl;
+	      	std::cerr << "Fail to oepn " << Gf_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -409,7 +408,7 @@ namespace DMFT
 
         if (!ifs_gfsave)  
 	      {
-	      	GLV::ofs_error << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
+	      	std::cerr << "Fail to oepn " << Gf_save_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -441,7 +440,7 @@ namespace DMFT
 
         if (!ifs_hybsave)  
 	      {
-	      	GLV::ofs_error << "Fail to oepn " << hyb_save_file.c_str() << std::endl;
+	      	std::cerr << "Fail to oepn " << hyb_save_file.c_str() << std::endl;
           std::exit(EXIT_FAILURE);
         }
 

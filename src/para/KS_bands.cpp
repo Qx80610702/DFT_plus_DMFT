@@ -23,7 +23,7 @@ namespace DFT_output
 
     if (!if_bands)
 	  {
-	  	GLV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
+	  	std::cerr << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -55,19 +55,19 @@ namespace DFT_output
       }
       else{
         if(this->eigen_values.size() != this->nspin){
-          GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+          std::cerr << "Error in reading bands.dat" << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
         for(int ispin=0; ispin<nspin; ispin++){
           if(this->eigen_values[ispin].size() != this->kpoints){
-            GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+            std::cerr << "Error in reading bands.dat" << std::endl;
             std::exit(EXIT_FAILURE);
           }
 
           for(int ik=0; ik<kpoints; ik++){
             if(this->eigen_values[ispin][ik].size() != this->nbands){
-              GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+              std::cerr << "Error in reading bands.dat" << std::endl;
             std::exit(EXIT_FAILURE);
             }
           }
@@ -85,19 +85,19 @@ namespace DFT_output
       }
       else{
         if(this->DFT_occ_numbers.size() != this->nspin){
-          GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+          std::cerr << "Error in reading bands.dat" << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
         for(int ispin=0; ispin<nspin; ispin++){
           if(this->DFT_occ_numbers[ispin].size() != this->kpoints){
-            GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+            std::cerr << "Error in reading bands.dat" << std::endl;
             std::exit(EXIT_FAILURE);
           }
 
           for(int ik=0; ik<kpoints; ik++){
             if(this->DFT_occ_numbers[ispin][ik].size() != this->nbands){
-              GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+              std::cerr << "Error in reading bands.dat" << std::endl;
               std::exit(EXIT_FAILURE);
             }
           }
@@ -124,7 +124,7 @@ namespace DFT_output
 
     if (!ifs)  
 	  {
-	  	GLV::ofs_error << "Fail to oepn dft/outputs_to_DMFT/k_weight.dat" << std::endl;
+	  	std::cerr << "Fail to oepn dft/outputs_to_DMFT/k_weight.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -136,7 +136,7 @@ namespace DFT_output
     }
     else{
       if(this->k_weight.size() != val){
-        GLV::ofs_error << "Error in reading bands.dat" << std::endl;
+        std::cerr << "Error in reading bands.dat" << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }
@@ -170,7 +170,7 @@ namespace DFT_output
     std::ofstream ofs(file.c_str(),std::ios::out);
     if(!ofs)
     {
-      GLV::ofs_error << "Fail to oepn " << file.c_str() << std::endl;
+      std::cerr << "Fail to oepn " << file.c_str() << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

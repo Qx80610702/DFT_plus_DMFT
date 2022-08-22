@@ -6,7 +6,6 @@
 #include "../global_variables.h"
 #include "../timer.h"
 
-#include <omp.h>
 #include <mpi.h>
 #include <memory>
 #include <fstream>
@@ -44,24 +43,24 @@ namespace DFT_plus_DMFT
         #ifdef __FHIaims
         return this->char_scf_aims;
         #else
-        GLV::ofs_error << "FHI-aims has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
+        std::cerr << "FHI-aims has not been installed!!!  ";
+        std::cerr << "Suggestion:Install FHI-aims and then re-compile the codes." << std::endl;
         std::exit(EXIT_FAILURE);
         #endif   
         break;
       case 2: //ABACUS
         #ifdef __ABACUS
         // this->char_scf_aims.output_charge_density(file, dens_cmplx);
-        GLV::ofs_error << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
+        std::cerr << "Charge sel-consistent DMFT does not support ABACUS at present!!!  ";
         std::exit(EXIT_FAILURE);
         #else
-        GLV::ofs_error << "ABACUS has not been installed!!!  ";
-        GLV::ofs_error << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
+        std::cerr << "ABACUS has not been installed!!!  ";
+        std::cerr << "Suggestion:Install ABACUS and then re-compile the codes." << std::endl;
         std::exit(EXIT_FAILURE);
         #endif
         break;
       default:
-        GLV::ofs_error << "Not supported DFT_solver" << std::endl;
+        std::cerr << "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
   }
@@ -123,8 +122,8 @@ namespace DFT_plus_DMFT
       for(int is=0; is<this->nspin; is++){
         for(int iband=0; iband<=wb2ib[is].back(); iband++){
           if(this->fik_DMFT[is][ik][iband] < -1.0e-2){
-            GLV::ofs_error << "Error in fik : negative occupation number!!!" << std::endl;
-            GLV::ofs_error << "spin:" << std::setw(2) << is
+            std::cerr << "Error in fik : negative occupation number!!!" << std::endl;
+            std::cerr << "spin:" << std::setw(2) << is
                       << "; ik:" << std::setw(4) << k_map[ik]
                       << "; iband:" << std::setw(4) << iband
                       << "; fik:" << std::setw(15) << std::fixed << std::setprecision(12) 
@@ -377,32 +376,23 @@ namespace DFT_plus_DMFT
         for(int iomega=0; iomega<nomega; iomega++)
           KS_Gw[iomega].resize(wbands[is]*wbands[is]);
 
-        const int mkl_threads = mkl_get_max_threads();
-        mkl_set_num_threads(1);  //set the number of threads of MKL library function to 1
-
-        #pragma omp parallel
+        std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
+        for(int iomega=0; iomega<nomega; iomega++)
         {
-          std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
-
-          #pragma omp for
-          for(int iomega=0; iomega<nomega; iomega++)
+          for(int iband1=0; iband1<wbands[is]; iband1++)
           {
-            for(int iband1=0; iband1<wbands[is]; iband1++)
+            for(int iband2=0; iband2<wbands[is]; iband2++)
             {
-              for(int iband2=0; iband2<wbands[is]; iband2++)
-              {
-                if(iband1==iband2)
-                  KS_Gw[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
-                    -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-                else
-                  KS_Gw[iomega][iband1*wbands[is]+iband2] = 
-                    -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-              }
-            } 
-            general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
-          }//iomega
-        }
-        mkl_set_num_threads(mkl_threads);
+              if(iband1==iband2)
+                KS_Gw[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
+                  -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+              else
+                KS_Gw[iomega][iband1*wbands[is]+iband2] = 
+                  -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+            }
+          } 
+          general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
+        }//iomega
 
         for(int iband=0; iband<wbands[is]; iband++){
           double sum_tmp = 0.0;
@@ -444,7 +434,7 @@ namespace DFT_plus_DMFT
     std::ifstream ifs("dft/occu.dat", std::ios::in);
 
     if (!ifs){
-	  	GLV::ofs_error << "Fail to oepn dft/occu.dat" << std::endl;
+	  	std::cerr << "Fail to oepn dft/occu.dat" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     ifs.seekg(0);      //set the position at the beginning of the file
@@ -502,7 +492,7 @@ namespace DFT_plus_DMFT
       for(int iband=0; iband<this->fik_DMFT[ispin][ik].size(); iband++)
         for(int ibasis=0; ibasis<nbasis; ibasis++){
           if(this->fik_DMFT[ispin][ik][iband] < -1.0e-6){
-            GLV::ofs_error << "Error in fik : negative occupation number!!!" << std::endl;
+            std::cerr << "Error in fik : negative occupation number!!!" << std::endl;
             std::exit(EXIT_FAILURE);
           }
           else if(std::fabs(this->fik_DMFT[ispin][ik][iband]) < 1.0e-6){
@@ -566,7 +556,7 @@ namespace DFT_plus_DMFT
       for(int iband=0; iband<fik[ispin][ik].size(); iband++)
         for(int ibasis=0; ibasis<nbasis; ibasis++){
           if(fik[ispin][ik][iband] < -1.0e-6){
-            GLV::ofs_error << "Error in fik : negative occupation number!!!" << std::endl;
+            std::cerr << "Error in fik : negative occupation number!!!" << std::endl;
             std::exit(EXIT_FAILURE);
           }
           else if(std::fabs(fik[ispin][ik][iband]) < 1.0e-6){

@@ -24,7 +24,8 @@ namespace DMFT
     
     const void* parameter(char* keyword);    //   interfaces
 
-    const std::vector<double>& window(){return this->E_window;}
+    const std::vector<double>& projection_window(){return this->proj_window;}
+    const std::vector<double>& spectra_window(){return this->DOS_window;}
 
     private:
     // Input parameter
@@ -41,7 +42,8 @@ namespace DMFT
     int DMFT_step_max;              //number of the maximum DMFT interation step under each charge loop; default:1
     int DFT_step_max;               //number of the maximum DFT interation step under each charge loop; default:1
     long long MC_step;              //numuber of MC sampling steps; default:1000
-    std::vector<double> E_window;   //Energy window for hybridization function; default E_window[0]=-2.0, E_window[1]=2.0;
+    std::vector<double> proj_window;  //Energy window for hybridization function; default proj_window[0]=-5.0, proj_window[1]=5.0;
+    std::vector<double> DOS_window;   //Energy window for DOS; default proj_window[0]=proj_window[0], proj_window[1]=proj_window[1];
     bool hyb_func;                  //Whether hybrid functional is used or not; default:false
     double hyf_xc_alpha;            //The mixing factor in hybrid funtional; default:0.25;
     double charge_mix_param;         //The charge density mixing parameter; default:0.05

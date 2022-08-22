@@ -19,7 +19,7 @@ namespace DFT_output
         this->ovlp_abacus.read(dir);
         break;
       default:
-        GLV::ofs_error<< "Not supported DFT_solver" << std::endl;
+        std::cerr<< "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
   }
@@ -36,7 +36,7 @@ namespace DFT_output
         this->ovlp_abacus.evaluate_ovlp_k(ik, at_info);
         break;
       default:
-        GLV::ofs_error<< "Not supported DFT_solver" << std::endl;
+        std::cerr<< "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }  
 
@@ -53,7 +53,7 @@ namespace DFT_output
         return this->ovlp_abacus.ovlp_mat();
         break;
       default:
-        GLV::ofs_error<< "Not supported DFT_solver" << std::endl;
+        std::cerr<< "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     } 
   }
@@ -69,7 +69,7 @@ namespace DFT_output
         return this->ovlp_abacus.local_ovlp();
         break;
       default:
-        GLV::ofs_error<< "Not supported DFT_solver" << std::endl;
+        std::cerr<< "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     } 
   }
@@ -85,7 +85,7 @@ namespace DFT_output
 
         break;
       default:
-        GLV::ofs_error<< "Not supported DFT_solver" << std::endl;
+        std::cerr<< "Not supported DFT_solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
   }

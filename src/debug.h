@@ -7,6 +7,6 @@ namespace debug
 {
   inline void codestamp(const std::string function)
   {
-    // GLV::ofs_running << function << std::endl;
+    GLV::ofs_debug << function << std::endl;
   }
 };
