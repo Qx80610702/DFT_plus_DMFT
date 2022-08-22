@@ -97,7 +97,48 @@ namespace DFT_plus_DMFT
           for(auto& iter3 : iter2)
             iter3 = 0.0;
     }
+    
+    //==================================================
+    // Calculate the eigen values of the Hamiltonian 
+    // H_{ij}(\bfk,i\omega_{\infty}) = \epsilon_{i\bfk}\delta_{ij} + \bar{\Sigma}_{ij}(\mathbf{k},i\omega_{\infty})
+    //==================================================
+    if(this->epsilon_infty.empty()){
+      this->epsilon_infty.resize(nspin);
+      for(int is=0; is<nspin; is++){
+        this->epsilon_infty[is].resize(task_nks);
+        for(int ik=0; ik<task_nks; ik++)
+          this->epsilon_infty[is][ik].resize(wbands[is], 0.0);
+      }
+    }
 
+    for(int is=0; is<nspin; is++){
+      std::vector<std::complex<double>> Hij(wbands[is]*wbands[is],zero);
+      for(int ik=0; ik<task_nks; ik++){
+        sigma.evalute_lattice_sigma_infty(
+          0, magnetism, is, wbands, atom, 
+          proj.proj_access(ik), Hij);
+
+        const auto& epsilon = space.eigen_val()[is][ik];
+        
+        for(int iband=0; iband<wbands[is]; iband++)
+          Hij[iband*wbands[is]+iband] += epsilon[iband];
+
+        // lapack_int LAPACKE_zheev( int matrix_layout, char jobz, char uplo, 
+        // lapack_int n, lapack_complex_double* a, lapack_int lda, double* w );
+ 
+        lapack_int info_zheev = LAPACKE_zheev(LAPACK_ROW_MAJOR, 'N', 'U', wbands[is], 
+                                              reinterpret_cast<MKL_Complex16*>(Hij.data()), 
+                                              wbands[is], &this->epsilon_infty[is][ik][0] );
+        if(info_zheev != 0){
+          std::cerr << "Failed to compute the eigenvalues of the H_ij(\\bfk,i\\omega_{\\infty})" << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+      }//ik
+    }//is
+
+    //==================================================
+    // Update chemical potential
+    //==================================================
     double max_U=0.0;
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
       max_U = max_U > atom.Uval(atom.ineq_iatom(ineq)) ? max_U : atom.Uval(atom.ineq_iatom(ineq));
@@ -156,7 +197,7 @@ namespace DFT_plus_DMFT
     const std::vector<int>& wbands = space.Wbands();
     const std::vector<double>& freq=sigma.sigma_imag.Matsubara_freq();
     const int nomega=freq.size();
-    const std::complex<double> im(0.0,1.0), one(1.0,0.0);
+    const std::complex<double> im(0.0,1.0), one(1.0,0.0), zero(0.0,0.0);
 
     if(nspin==1 && !band.soc()) 
     {
@@ -169,38 +210,35 @@ namespace DFT_plus_DMFT
     double nele_sum=0.0;
     double sum_tmp=0.0;
 
-    int ik_count = 0;
-    for(int ik=0; ik<nks; ik++)
-    {
-      if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
+    for(int is=0; is<nspin; is++){
+      std::vector<std::vector<std::complex<double>>> lattice_Sigma(nomega);
+      for(int iomega=0; iomega<nomega; iomega++)
+        lattice_Sigma[iomega].resize(wbands[is]*wbands[is], zero);
 
-      sigma.evalute_lattice_sigma(
-          0, mag, nspin, wbands, atom, 
-          proj.proj_access(ik_count) );
+      std::vector<std::complex<double>> lattice_Sigma_infty(wbands[is]*wbands[is], zero);
 
-      const std::vector<std::vector<std::vector<std::complex<double>>>>&
-            latt_sigma = sigma.lattice_sigma(0);
-
-      for(int is=0; is<nspin; is++)
+      int ik_count = 0;
+      for(int ik=0; ik<nks; ik++)
       {
-        const auto& epsilon=space.eigen_val()[is][ik];
+        if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
 
-        // for(int iband=0; iband<wbands[is]; iband++)
-        // {
-        //   const double sigma_N = latt_sigma[ik_count][is][nomega-1][iband].real();
+        sigma.evalute_lattice_sigma(
+            0, mag, is, wbands, atom, 
+            proj.proj_access(ik_count), 
+            lattice_Sigma);
 
-        //   for(int iomega=0; iomega<nomega; iomega++)
-        //     sum_tmp += 2.0/beta*weight[ik]*( one/(im*freq[iomega]+mu-epsilon[iband]
-        //               -latt_sigma[ik_count][is][iomega][iband]) -
-        //               one/(im*freq[iomega]+mu-epsilon[iband]-sigma_N) ).real();
+        sigma.evalute_lattice_sigma_infty(
+            0, mag, is, wbands, atom, 
+            proj.proj_access(ik_count), 
+            lattice_Sigma_infty);
 
-        //   sum_tmp += weight[ik]/(1.0+std::exp(beta*(epsilon[iband]+sigma_N-mu)));
-
-        // }//iband
-
+        const auto& epsilon = space.eigen_val()[is][ik];
         std::vector<std::vector<std::complex<double>>> KS_Gw(nomega);
-        for(int iomega=0; iomega<nomega; iomega++)
+        std::vector<std::vector<std::complex<double>>> KS_Gw_infty(nomega);
+        for(int iomega=0; iomega<nomega; iomega++){
           KS_Gw[iomega].resize(wbands[is]*wbands[is]);
+          KS_Gw_infty[iomega].resize(wbands[is]*wbands[is]);
+        }
 
         std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
         for(int iomega=0; iomega<nomega; iomega++)
@@ -209,35 +247,45 @@ namespace DFT_plus_DMFT
           {
             for(int iband2=0; iband2<wbands[is]; iband2++)
             {           
-              if(iband1==iband2)
+              if(iband1==iband2){
                 KS_Gw[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
-                  -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
-              else
+                  -epsilon[iband1]-lattice_Sigma[iomega][iband1*wbands[is]+iband2];
+                
+                KS_Gw_infty[iomega][iband1*wbands[is]+iband2] = im*freq[iomega] + mu 
+                  -epsilon[iband1]-lattice_Sigma_infty[iband1*wbands[is]+iband2];
+              }
+              else{
                 KS_Gw[iomega][iband1*wbands[is]+iband2] = 
-                  -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+                  -lattice_Sigma[iomega][iband1*wbands[is]+iband2];
+                
+                KS_Gw_infty[iomega][iband1*wbands[is]+iband2] = 
+                  -lattice_Sigma_infty[iband1*wbands[is]+iband2];
+              }
             }
           }
           general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
+
+          general_complex_matrix_inverse(&KS_Gw_infty[iomega][0], wbands[is], &ipiv[0]);
         }//iomega
 
         for(int iband=0; iband<wbands[is]; iband++)
         {
           double fik_tmp = 0.0;
-          const double sigma_oo = latt_sigma[is][nomega-1][iband*wbands[is]+iband].real();
 
           for(int iomega=0; iomega<nomega; iomega++)
             fik_tmp += 2.0/beta*( KS_Gw[iomega][iband*wbands[is]+iband] -
-                      one/(im*freq[iomega] + mu - epsilon[iband]-sigma_oo) ).real();
+                        KS_Gw_infty[iomega][iband*wbands[is]+iband] ).real();
 
-          fik_tmp += 1.0/(1.0+std::exp(beta*(epsilon[iband]+sigma_oo-mu)));
+          fik_tmp += 1.0/(1.0+std::exp(beta*(this->epsilon_infty[is][ik_count][iband]-mu)));
 
           this->fik_wind[is][ik_count][iband] = fik_tmp;
-
+          
           sum_tmp += fik_tmp*weight[ik];
         }//iband
-      }//is
-      ik_count++;
-    }//ik
+
+        ik_count++;
+      }//ik
+    }//is
 
     MPI_Allreduce(&sum_tmp, &nele_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   

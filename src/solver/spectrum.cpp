@@ -68,28 +68,25 @@ void spectrum::eva_spectrum(
   }
 
   //===========evaluation===============
-  for(int ik=0; ik<k_map.size(); ik++)
-  {
-    const int i_k_point = k_map[ik];
+  for(int is=0; is<nspin; is++){
+    std::vector<std::vector<std::complex<double>>> lattice_Sigma(nomega);
+      for(int iomega=0; iomega<nomega; iomega++)
+        lattice_Sigma[iomega].resize(wbands[is]*wbands[is]);
 
-    sigma.evalute_lattice_sigma(
-        1, mag, nspin, wbands, atom, 
-        proj.proj_access(ik) );
-
-    const std::vector<std::vector<std::vector<std::complex<double>>>>&
-          latt_sigma = sigma.lattice_sigma(1);
- 
-    for(int is=0; is<nspin; is++)
+    for(int ik=0; ik<k_map.size(); ik++)
     {
-      const auto& epsilon=space.eigen_val()[is][i_k_point];
+      const int i_k_point = k_map[ik];
 
+      sigma.evalute_lattice_sigma(
+          1, mag, is, wbands, atom, 
+          proj.proj_access(ik), lattice_Sigma);
+
+      const auto& epsilon=space.eigen_val()[is][i_k_point];
       std::vector<std::vector<std::complex<double>>> KS_Gw(nomega);
       for(int iomega=0; iomega<nomega; iomega++)
         KS_Gw[iomega].resize(wbands[is]*wbands[is]);
- 
+  
       int* ipiv = new int [wbands[is]];
-
- 
       for(int iomega=0; iomega<nomega; iomega++)
       {        
         for(int iband1=0; iband1<wbands[is]; iband1++)
@@ -98,15 +95,15 @@ void spectrum::eva_spectrum(
           {           
             if(iband1==iband2)
               KS_Gw[iomega][iband1*wbands[is]+iband2] = this->freq[iomega] + mu 
-                -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+                -epsilon[iband1]-lattice_Sigma[iomega][iband1*wbands[is]+iband2];
             else
               KS_Gw[iomega][iband1*wbands[is]+iband2] = 
-                -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+                -lattice_Sigma[iomega][iband1*wbands[is]+iband2];
           }
         }
 
         general_complex_matrix_inverse(&KS_Gw[iomega][0], wbands[is], &ipiv[0]);
-        
+
         for(int iband=0; iband<wbands[is]; iband++)
           this->Awk[is][iomega][i_k_point] -= KS_Gw[iomega][iband*wbands[is]+iband].imag()/GLC::PI;
 
@@ -135,11 +132,10 @@ void spectrum::eva_spectrum(
           }//m
         }//ineq
       }//iomega
-
       delete [] ipiv;
-    }//is
-  }//ik
-
+    }//ik
+  }//is
+  
   for(int is=0; is<nspin; is++)
   {
     for(int iomega=0; iomega<nomega; iomega++)
@@ -256,22 +252,21 @@ void spectrum::eva_spectrum_normalization(
   }
 
   //===========evaluation===============
-  for(int ik=0; ik<k_map.size(); ik++)
-  {
-    const int i_k_point = k_map[ik];
+  for(int is=0; is<nspin; is++){
+    std::vector<std::vector<std::complex<double>>> lattice_Sigma(nomega);
+      for(int iomega=0; iomega<nomega; iomega++)
+        lattice_Sigma[iomega].resize(wbands[is]*wbands[is]);
 
-    sigma.evalute_lattice_sigma(
-        1, mag, nspin, wbands, atom, 
-        proj.proj_access(ik) );
-
-    const std::vector<std::vector<std::vector<std::complex<double>>>>&
-          latt_sigma = sigma.lattice_sigma(1);
- 
-    for(int is=0; is<nspin; is++)
+    for(int ik=0; ik<k_map.size(); ik++)
     {
+      const int i_k_point = k_map[ik];
+
+      sigma.evalute_lattice_sigma(
+          1, mag, is, wbands, atom, 
+          proj.proj_access(ik), lattice_Sigma);
+ 
       const auto& epsilon=space.eigen_val()[is][i_k_point];
       const auto& DOS_epsilon=space.DOS_eigen_val()[is][i_k_point];
-
       std::vector<std::vector<std::complex<double>>> KS_Gw(nomega);
       for(int iomega=0; iomega<nomega; iomega++)
         KS_Gw[iomega].resize(DOS_wbands[is]*DOS_wbands[is], zero);
@@ -282,7 +277,7 @@ void spectrum::eva_spectrum_normalization(
         //=====Uncorrelated subset======
         for(int iband=0; iband<DOS_wbands[is]; iband++)
           KS_Gw[iomega][iband*DOS_wbands[is]+iband] = 
-              this->freq[iomega] + mu -DOS_epsilon[iband] + eta;
+              this->freq[iomega] + mu - DOS_epsilon[iband] + eta;
 
         //======Correlated subset======
         for(int iband1=0; iband1<wbands[is]; iband1++)
@@ -293,20 +288,17 @@ void spectrum::eva_spectrum_normalization(
             int iDOS_band2 = corr_DOS_bands[is][iband2];    
             if(iband1==iband2)
               KS_Gw[iomega][iDOS_band1*DOS_wbands[is]+iDOS_band2] = this->freq[iomega] + mu 
-                -epsilon[iband1]-latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+                -epsilon[iband1]-lattice_Sigma[iomega][iband1*wbands[is]+iband2];
             else
               KS_Gw[iomega][iDOS_band1*DOS_wbands[is]+iDOS_band2] = 
-                -latt_sigma[is][iomega][iband1*wbands[is]+iband2];
+                -lattice_Sigma[iomega][iband1*wbands[is]+iband2];
           }
         }
-
         general_complex_matrix_inverse(&KS_Gw[iomega][0], DOS_wbands[is], &ipiv[0]);
-        
+
         for(int iband=0; iband<DOS_wbands[is]; iband++)
           this->Aw_ik_iband[is][ik][iband][iomega] -= KS_Gw[iomega][iband*DOS_wbands[is]+iband].imag();
-
       }//iomega
-
       delete [] ipiv;
 
       //Re-normalization
@@ -319,7 +311,7 @@ void spectrum::eva_spectrum_normalization(
         for(int iomega=0; iomega<this->Aw_ik_iband[is][ik][iband].size(); iomega++)
           this->Aw_ik_iband[is][ik][iband][iomega] /= norm;
       }
-      
+
       for(int iomega=0; iomega<nomega; iomega++){
         for(int iband=0; iband<DOS_wbands[is]; iband++)
           this->Awk[is][iomega][i_k_point] += this->Aw_ik_iband[is][ik][iband][iomega];
@@ -328,7 +320,6 @@ void spectrum::eva_spectrum_normalization(
         {
           const int iatom = atom.ineq_iatom(ineq);
           const int m_tot = norb_sub[iatom];
-
           const std::vector<std::complex<double>>& projector = proj.proj_access(ik)[iatom][is];
 
           for(int m=0; m<m_tot; m++)
@@ -338,6 +329,7 @@ void spectrum::eva_spectrum_normalization(
             {
               int index = iband*m_tot + m;
               int iDOS_band = corr_DOS_bands[is][iband];
+
               this->Aw_loc[ineq][is][iomega][m] += 
                   ( std::conj(projector[index])*
                   this->Aw_ik_iband[is][ik][iDOS_band][iomega]
@@ -346,8 +338,8 @@ void spectrum::eva_spectrum_normalization(
           }//m
         }//ineq
       }//iomega
-    }//is
-  }//ik
+    }//ik
+  }//is
 
   for(int is=0; is<nspin; is++)
   {

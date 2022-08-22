@@ -81,10 +81,11 @@ namespace DMFT
 
   void self_energy::evalute_lattice_sigma(
         const int axis_flag, const int mag, 
-        const int nspin, const std::vector<int>& wbands,
+        const int ispin, const std::vector<int>& wbands,
         DFT_output::atoms_info& atom, 
         const std::vector<std::vector<std::vector<
-        std::complex<double>>>>&  projector )
+        std::complex<double>>>>&  projector,
+        std::vector<std::vector<std::complex<double>>>& Simga )
   {
     debug::codestamp("self_energy::evalute_lattice_sigma");
 
@@ -95,38 +96,14 @@ namespace DMFT
     const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
 
     int nbands = wbands[0];
-    if(nspin==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
-
-    std::vector<std::vector<std::vector<std::complex<double>>>>&
-          latt_sigma=this->lattice_sigma(axis_flag);
+    if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
           dleta_sigma = this->correlated_sigma(axis_flag);
 
-    if(latt_sigma.empty())
-    {
-      latt_sigma.resize(nspin);
-      for(int ispin=0; ispin<nspin; ispin++)
-      {
-        latt_sigma[ispin].resize(omega_num);
-        for(int iomega=0; iomega<omega_num; iomega++)
-        {
-          latt_sigma[ispin][iomega].resize(wbands[ispin]*wbands[ispin], zero);
-        }
-      }
-    }
-    else
-    {
-      for(int index=0; index<omega_num*nspin; index++) //omega and spin
-      {
-        int ispin = index/omega_num;
-        int iomega = index%omega_num;
-
-        auto& la=latt_sigma[ispin][iomega];
-        for(int band_index=0; band_index<wbands[ispin]*wbands[ispin]; band_index++)
-          la[band_index] = zero;
-      }
-    }
+    for(std::vector<std::complex<double>>& iter1 : Simga)
+      for(std::complex<double>& iter2 : iter1)
+        iter2 = zero;
 
     for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
     {
@@ -134,11 +111,8 @@ namespace DMFT
       const int m_tot = norb_sub[iatom];
       
       std::vector<std::complex<double>> mat_tmp(nbands*m_tot);
-      for(int index=0; index<omega_num*nspin; index++)
+      for(int iomega=0; iomega<omega_num; iomega++)
       {
-        int ispin = index/omega_num;
-        int iomega = index%omega_num;
-
         for(int iband=0; iband<wbands[ispin]; iband++)
           for(int m=0; m<m_tot; m++)
             mat_tmp[iband*m_tot+m] = projector[iatom][ispin][iband*m_tot+m]*
@@ -155,7 +129,7 @@ namespace DMFT
                     &mat_tmp[0], m_tot,
                     &projector[iatom][ispin][0], m_tot,
                     &one,
-                    &latt_sigma[ispin][iomega][0], wbands[ispin]);
+                    &Simga[iomega][0], wbands[ispin]);
      
         for(int iatom1=0; iatom1<natom; iatom1++)
         {
@@ -179,11 +153,91 @@ namespace DMFT
                         &mat_tmp[0], m_tot,
                         &projector[iatom1][ispin][0], m_tot,
                         &one,
-                        &latt_sigma[ispin][iomega][0], wbands[ispin]);
+                        &Simga[iomega][0], wbands[ispin]);
 
           }
         }//iatom1
       }//index
+    }//ineq
+
+    return;
+  }
+
+  void self_energy::evalute_lattice_sigma_infty(
+        const int axis_flag, const int mag, 
+        const int ispin, const std::vector<int>& wbands, 
+        DFT_output::atoms_info& atom,
+        const std::vector<std::vector<std::vector<
+        std::complex<double>>>>&  projector,
+        std::vector<std::complex<double>>& Simga_infty)
+  {
+    debug::codestamp("self_energy::evalute_lattice_sigma_infty");
+
+    const int natom = atom.total_atoms();
+    const std::vector<int>& norb_sub = atom.iatom_norb();
+    const int norb = atom.norb();
+    const int omega_num = this->nomega(axis_flag);
+    const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
+
+    int nbands = wbands[0];
+    if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
+
+    const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
+          dleta_sigma = this->correlated_sigma(axis_flag);
+
+    for(std::complex<double>& iter : Simga_infty)
+      iter = zero;
+
+    for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
+    {
+      const int iatom = atom.ineq_iatom(ineq);
+      const int m_tot = norb_sub[iatom];
+
+      std::vector<std::complex<double>> mat_tmp(nbands*m_tot);
+
+      for(int iband=0; iband<wbands[ispin]; iband++)
+        for(int m=0; m<m_tot; m++)
+          mat_tmp[iband*m_tot+m] = projector[iatom][ispin][iband*m_tot+m]*
+                                  dleta_sigma[ineq][ispin][omega_num-1][m*m_tot+m].real();
+
+      // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
+      //      CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
+      //      *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
+      //      *beta, void *c, const MKL_INT ldc);
+
+      cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
+                  wbands[ispin], wbands[ispin], m_tot,
+                  &one,
+                  &mat_tmp[0], m_tot,
+                  &projector[iatom][ispin][0], m_tot,
+                  &one,
+                  &Simga_infty[0], wbands[ispin]);
+   
+      for(int iatom1=0; iatom1<natom; iatom1++)
+      {
+        if(iatom1==iatom) continue;
+        else if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
+        {
+          int symm=0;            //symmetry
+          if(mag==1)             //AFM
+          {
+            if(atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry
+          }
+
+          for(int iband=0; iband<wbands[ispin]; iband++)
+            for(int m=0; m<m_tot; m++)
+              mat_tmp[iband*m_tot+m] = projector[iatom1][ispin][iband*m_tot+m]*
+                          dleta_sigma[ineq][(ispin+symm)%2][omega_num-1][m*m_tot+m];
+          
+          cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
+                      wbands[ispin], wbands[ispin], m_tot,
+                      &one,
+                      &mat_tmp[0], m_tot,
+                      &projector[iatom1][ispin][0], m_tot,
+                      &one,
+                      &Simga_infty[0], wbands[ispin]);
+        }
+      }//iatom1
     }//ineq
 
     return;
@@ -302,151 +356,5 @@ namespace DMFT
       std::exit(EXIT_FAILURE);
     }
   }
-
-  std::vector<std::vector<std::vector<std::complex<double>>>>&
-        self_energy::lattice_sigma(const int axis_flag)
-  {
-    switch(axis_flag)
-    {
-    case 0:
-      return this->sigma_imag.lattice_sigma_access();
-      break;
-    case 1:
-      return this->sigma_real.lattice_sigma_access();
-      break;
-    default:
-      std::cerr << "Error parameter of axis_flag" << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-  }
-
-  void self_energy::evalute_lattice_sigma_test(
-        const int impurity_solver, const int mag, 
-        const int nspin, const std::vector<int>& wbands,
-        DFT_output::atoms_info& atom, 
-        const std::vector<std::vector<std::vector<
-        std::complex<double>>>>&  projector,
-        std::vector<std::vector<std::vector<
-        std::vector<std::complex<double>>>>>& sigma_loc,
-        std::vector<std::vector<std::vector<
-        std::complex<double>>>>& lattice_sigma_tmp)
-  {
-    debug::codestamp("self_energy::evalute_lattice_sigma");
-
-    const int natom=atom.total_atoms();
-    const std::vector<int>& norb_sub = atom.iatom_norb();
-    const int omega_num=this->nomega(impurity_solver);
-    const std::complex<double> zero = std::complex<double>(0.0,0.0);
-    const std::complex<double> alpha(1.0,0.0), beta(0.0,0.0);
-
-    std::vector<std::vector<std::vector<std::complex<double>>>>&
-          latt_sigma=this->lattice_sigma(impurity_solver);
-    
-    //======================================================
-    //               Allocation and setting zeros
-    //======================================================
-    if(latt_sigma.empty())
-    {
-      latt_sigma.resize(nspin);
-      for(int ispin=0; ispin<nspin; ispin++)
-      {
-        latt_sigma[ispin].resize(omega_num);
-        for(int i_omega=0; i_omega<omega_num; i_omega++)
-        {
-          latt_sigma[ispin][i_omega].resize(wbands[ispin]*wbands[ispin], zero);
-        }
-      }
-    }
-    else
-    {
-      for(int index=0; index<omega_num*nspin; index++) //omega and spin
-      {
-        int ispin = index/omega_num;
-        int iomega = index%omega_num;
-
-        auto& la=latt_sigma[ispin][iomega];
-        for(int band_index=0; band_index<wbands[ispin]*wbands[ispin]; band_index++)
-          la[band_index] = zero;
-      }
-    }
-
-    for(int ineq=0; ineq<atom.inequ_atoms(); ineq++)
-    {
-      const int iatom = atom.ineq_iatom(ineq);
-      const int m_tot=norb_sub[iatom];
-
-      int nbands = wbands[0];
-      if(nspin==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
-      std::unique_ptr<std::complex<double>[]> mat_tmp(new std::complex<double> [nbands*m_tot]);
-
-      for(int index=0; index<omega_num*nspin; index++)
-      {
-        int ispin = index/omega_num;
-        int iomega = index%omega_num;
-
-        // void cblas_zgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, const
-        //      CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, const MKL_INT k, const void
-        //      *alpha, const void *a, const MKL_INT lda, const void *b, const MKL_INT ldb, const void
-        //      *beta, void *c, const MKL_INT ldc);
-
-        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                wbands[ispin], m_tot, m_tot,
-                &alpha,
-                &projector[ineq][ispin][0], m_tot,
-                &sigma_loc[ineq][ispin][iomega][0], m_tot,
-                &beta,
-                &mat_tmp[0], m_tot);
-        
-        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
-                wbands[ispin], wbands[ispin], m_tot,
-                &alpha,
-                &mat_tmp[0], m_tot,
-                &projector[ineq][ispin][0], m_tot,
-                &beta,
-                &lattice_sigma_tmp[ispin][iomega][0], wbands[ispin]);
-      }
-
-      for(int iatom1=0; iatom1<atom.total_atoms(); iatom1++)
-      {
-        if(iatom1==iatom)
-        {
-          for(int index=0; index<omega_num*nspin; index++)
-          {
-            int ispin = index/omega_num;
-            int iomega = index%omega_num;
-
-            auto& la=latt_sigma[ispin][iomega];
-            auto& la1=lattice_sigma_tmp[ispin][iomega]; 
-
-            for(int band_index=0; band_index<wbands[ispin]*wbands[ispin]; band_index++)
-              la[band_index] += la1[band_index];
-          }
-        }
-        else if(iatom1!=iatom && atom.equ_atom(iatom1)==ineq)
-        {
-          int symm=0;            //symmetry
-          if(mag==1)             //AFM
-          {
-            if(atom.magnetic(iatom)*atom.magnetic(iatom1)==-1) symm=1;  //anti_symmetry
-          }
-
-          for(int index=0; index<omega_num*nspin; index++)
-          {
-            int ispin = index/omega_num;
-            int iomega = index%omega_num;
-
-            auto& la=latt_sigma[ispin][iomega];
-            auto& la1=lattice_sigma_tmp[(ispin+symm)%2][iomega]; 
-               
-            for(int band_index=0; band_index<wbands[ispin]*wbands[ispin]; band_index++)
-              la[band_index] += la1[band_index];
-          }
-        }
-      }//iatom
-
-    }//ineq
-
-    return;
-  }
-
+  
 }

@@ -14,14 +14,14 @@ namespace DFT_output
   {
     debug::codestamp("KS_bands::read");
     
-    GLV::ofs_running << "Reading bands information ......" << std::endl;
+    // GLV::ofs_running << "Reading bands information ......" << std::endl;
 
     int val;
     int spin_index, bands_index, k_index;
 
     std::ifstream if_bands("dft/outputs_to_DMFT/bands.dat", std::ios::in);
 
-    if (!if_bands)
+    if(!if_bands)
 	  {
 	  	std::cerr << "Fail to oepn dft/outputs_to_DMFT/bands.dat" << std::endl;
       std::exit(EXIT_FAILURE);

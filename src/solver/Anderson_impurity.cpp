@@ -191,29 +191,26 @@ namespace DMFT
     }
     
     //evaluation
-    int ik_count=0;
-    for(int ik=0; ik<nks; ik++)
-    {
-      if(ik%nprocs != myid) continue;
+    for(int is=0; is<nspin; is++){
+      std::vector<std::vector<std::complex<double>>> lattice_Sigma(nomega);
+      for(int iomega=0; iomega<nomega; iomega++)
+        lattice_Sigma[iomega].resize(wbands[is]*wbands[is], zero);
 
-      this->sigma.evalute_lattice_sigma(
-            0, mag, nspin, wbands, atom,
-            proj.proj_access(ik_count) );
-
-      const std::vector<std::vector<std::vector<std::complex<double>>>>&
-            latt_sigma = this->sigma.lattice_sigma(0);
-
-      for(int is=0; is<nspin; is++)
+      int ik_count=0;
+      for(int ik=0; ik<nks; ik++)
       {
-        const std::vector<double>& epsilon = space.eigen_val()[is][ik];    
+        if(ik%nprocs != myid) continue;
 
+        this->sigma.evalute_lattice_sigma(
+              0, mag, is, wbands, atom,
+              proj.proj_access(ik_count), lattice_Sigma);
+
+        const std::vector<double>& epsilon = space.eigen_val()[is][ik];    
         std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
         std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
         
         for(int iomega=0; iomega<nomega; iomega++)
         {
-          const std::vector<std::complex<double>>& latt_sigmb = latt_sigma[is][iomega];
-
           for(int iband1=0; iband1<wbands[is]; iband1++)
           {
             for(int iband2=0; iband2<wbands[is]; iband2++)
@@ -222,9 +219,9 @@ namespace DMFT
 
               if(iband1==iband2)
                   Gf_latt[band_index] = im*freq[iomega] + mu
-                        -epsilon[iband1] - latt_sigmb[band_index];
+                        -epsilon[iband1] - lattice_Sigma[is][band_index];
               else
-                  Gf_latt[band_index] = -latt_sigmb[band_index];
+                  Gf_latt[band_index] = -lattice_Sigma[is][band_index];
 
             }//iband2
           }//iband1
@@ -237,7 +234,6 @@ namespace DMFT
             const int m_tot=norb_sub[iatom];
 
             auto& Gf = this->Green_fun_omega[ineq][is];
-
             const std::vector<std::complex<double>>& projector = proj.proj_access(ik_count)[iatom][is];
 
             for(int m1=0; m1<m_tot; m1++)
@@ -258,12 +254,10 @@ namespace DMFT
               }//m2
             }//m1
           }//ineq
-
-        }//iomega
-        
-      }//is
-      ik_count++;
-    }//ik
+        }//iomega      
+        ik_count++;
+      }//ik
+    }//is
     
     for(int ineq=0; ineq<ineq_num; ineq++)
     {

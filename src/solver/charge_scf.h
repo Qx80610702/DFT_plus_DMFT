@@ -64,15 +64,6 @@ namespace DFT_plus_DMFT
         DMFT::input_info& in,
         DFT_plus_DMFT::Hilbert_space& space );
 
-    void eva_fik_DMFT_imag_axis(
-        const double mu,
-        DFT_output::KS_bands& band, 
-        DFT_output::atoms_info& atom, 
-        DFT_plus_DMFT::projector& proj,
-        DMFT::self_energy& sigma,
-        DMFT::input_info& in,
-        DFT_plus_DMFT::Hilbert_space& space );
-
     void eva_DFT_DMFT_k_densmat(
         const int dft_solver,
         const int ik,

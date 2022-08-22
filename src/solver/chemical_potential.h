@@ -70,5 +70,7 @@ namespace DFT_plus_DMFT
 
     std::vector<std::vector<std::vector<double>>> fik_wind;       //fik_wind[is][ik][iband]
 
+    std::vector<std::vector<std::vector<double>>> epsilon_infty;  //epsilon_infty[is][ik][iband]
+
   };
 }

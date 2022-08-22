@@ -34,9 +34,6 @@ namespace DMFT
     inline std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& 
             correlated_sigma_access(){return correlated_sigma_omega_n;}
 
-    inline std::vector<std::vector<std::vector<std::complex<double>>>>&
-            lattice_sigma_access(){return lattice_sigma;}
-
     std::vector<double>& Matsubara_freq(){return imag_frequency;}
 
     int& nomega(){return n_omega;} 
@@ -60,10 +57,6 @@ namespace DMFT
     //the self energy where double counting term is subtracted
     //correlated_sigma_omega_n[ineq][ispin][omega_n][m_index]
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> correlated_sigma_omega_n;
-
-    //the lattice self energy 
-    //lattice_sigma[ispin][omega_n][band_index]
-    std::vector<std::vector<std::vector<std::complex<double>>>> lattice_sigma;
 
     std::map<int, bool> self_energy_convergence;    //whether self-energy converged
 

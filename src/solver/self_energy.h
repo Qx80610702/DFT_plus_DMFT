@@ -32,10 +32,19 @@ namespace DMFT
 
     void evalute_lattice_sigma(
         const int axis_flag, const int mag, 
+        const int ispin, const std::vector<int>& wbands, 
+        DFT_output::atoms_info& atom,
+        const std::vector<std::vector<std::vector<
+        std::complex<double>>>>&  projector,
+        std::vector<std::vector<std::complex<double>>>& Simga);
+
+    void evalute_lattice_sigma_infty(
+        const int axis_flag, const int mag, 
         const int nspin, const std::vector<int>& wbands, 
         DFT_output::atoms_info& atom,
         const std::vector<std::vector<std::vector<
-        std::complex<double>>>>&  projector );
+        std::complex<double>>>>&  projector,
+        std::vector<std::complex<double>>& Simga_infty);
 
     // void embeding_self_energy(const int impurity_solver, )
 
@@ -54,20 +63,6 @@ namespace DMFT
 
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
               correlated_sigma(const int axis_flag); //0: imaginary axis, 1:real axis
-
-    std::vector<std::vector<std::vector<std::complex<double>>>>&
-              lattice_sigma(const int axis_flag); //0: imaginary axis, 1:real axis
-              
-void evalute_lattice_sigma_test(
-    const int impurity_solver, const int mag, 
-    const int nspin, const std::vector<int>& nbands, 
-    DFT_output::atoms_info& atom,
-    const std::vector<std::vector<std::vector<
-    std::complex<double>>>>&  projector,
-    std::vector<std::vector<std::vector<
-    std::vector<std::complex<double>>>>>& sigma_loc,
-    std::vector<std::vector<std::vector<
-    std::complex<double>>>>& lattice_sigma_tmp);
-
+  
   };
 }

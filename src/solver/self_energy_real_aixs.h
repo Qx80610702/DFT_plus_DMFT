@@ -35,9 +35,6 @@ namespace DMFT
     inline std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>& 
             correlated_sigma_access(){return correlated_sigma_omega_n;}
 
-    inline std::vector<std::vector<std::vector<std::complex<double>>>>&
-            lattice_sigma_access(){return lattice_sigma;}
-
     private:
     int n_omega;   //Num of real frequency points
 
@@ -54,10 +51,6 @@ namespace DMFT
     //the self energy where double counting term is subtracted
     //correlated_sigma_omega_n[ineq][ispin][omega_n][m_index]
     std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>> correlated_sigma_omega_n;
-
-    //the lattice self energy 
-    //lattice_sigma[ispin][omega_n][band_index]
-    std::vector<std::vector<std::vector<std::complex<double>>>> lattice_sigma;
 
   };
 }
