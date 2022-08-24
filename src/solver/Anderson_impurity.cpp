@@ -8,7 +8,6 @@
 
 #include <mkl.h>
 #include <mpi.h>
-#include <memory>
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
@@ -63,7 +62,7 @@ namespace DMFT
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot=norb_sub[iatom];
 
-      std::unique_ptr<std::complex<double>[]> tmp(new std::complex<double> [m_tot*m_tot]);
+      std::vector<std::complex<double>> tmp(m_tot*m_tot);
 
       for(int is=0; is<nspin; is++)
       {
@@ -203,11 +202,12 @@ namespace DMFT
 
         this->sigma.evalute_lattice_sigma(
               0, mag, is, wbands, atom,
-              proj.proj_access(ik_count), lattice_Sigma);
+              proj.proj_access(ik_count),
+              lattice_Sigma);
 
         const std::vector<double>& epsilon = space.eigen_val()[is][ik];    
-        std::unique_ptr<std::complex<double>[]> Gf_latt(new std::complex<double> [wbands[is]*wbands[is]]);
-        std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
+        std::vector<std::complex<double>> Gf_latt(wbands[is]*wbands[is]);
+        std::vector<int> ipiv(wbands[is],0);
         
         for(int iomega=0; iomega<nomega; iomega++)
         {
@@ -219,9 +219,9 @@ namespace DMFT
 
               if(iband1==iband2)
                   Gf_latt[band_index] = im*freq[iomega] + mu
-                        -epsilon[iband1] - lattice_Sigma[is][band_index];
+                        -epsilon[iband1] - lattice_Sigma[iomega][band_index];
               else
-                  Gf_latt[band_index] = -lattice_Sigma[is][band_index];
+                  Gf_latt[band_index] = -lattice_Sigma[iomega][band_index];
 
             }//iband2
           }//iband1
@@ -517,7 +517,7 @@ namespace DMFT
       }//ineq
     }
 
-    std::unique_ptr<double[]> tau(new double [ntau+1]);
+    std::vector<double> tau(ntau+1,0.0);
     for(int itau=0; itau<ntau+1; itau++)
       tau[itau] = (beta/ntau)*itau;
     tau[0] = 1.0e-3*beta/ntau;
@@ -828,8 +828,7 @@ namespace DMFT
       for(double& iter : this->scf_delta)
         iter = 1.0e-9;
 
-    std::unique_ptr<bool[]> flag_conver(new bool [ineq_num]);
-
+    bool* flag_conver = new bool [ineq_num];
     for(int ineq=0; ineq<ineq_num; ineq++)
     {
       const int iatom = atom.ineq_iatom(ineq);
@@ -874,6 +873,8 @@ namespace DMFT
           for(int mindex=0; mindex<sigma_new[ineq][is][iomega].size(); mindex++)
             sigma_save[ineq][is][iomega][mindex] = sigma_new[ineq][is][iomega][mindex];
 
+    delete [] flag_conver;
+
     return convergency;
   }
 
@@ -915,7 +916,7 @@ namespace DMFT
       std::vector<std::vector<std::vector<std::complex<double>>>>&
           sigma_newa =sigma_new[ineq];
 
-      std::unique_ptr<int[]> ipiv(new int [m_tot]);
+      std::vector<int> ipiv(m_tot,0);
 
       for(int iomega=0; iomega<nomega; iomega++)   
       {          

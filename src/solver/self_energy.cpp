@@ -5,7 +5,6 @@
 #include "../constants.h"
 #include "../global_variables.h"
 
-#include <memory>
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -95,7 +94,7 @@ namespace DMFT
     const int omega_num = this->nomega(axis_flag);
     const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
 
-    int nbands = wbands[0];
+    int nbands = wbands[ispin];
     if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
@@ -179,7 +178,7 @@ namespace DMFT
     const int omega_num = this->nomega(axis_flag);
     const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
 
-    int nbands = wbands[0];
+    int nbands = wbands[ispin];
     if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&

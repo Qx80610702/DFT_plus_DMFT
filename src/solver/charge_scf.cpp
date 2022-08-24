@@ -7,7 +7,6 @@
 #include "../timer.h"
 
 #include <mpi.h>
-#include <memory>
 #include <fstream>
 #include <iomanip>
 

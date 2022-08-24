@@ -557,7 +557,7 @@ namespace DFT_plus_DMFT
           this->flag_axis, this->pars.bands, 
           this->pars.atom, this->pars.in );
 
-    GLV::ofs_running << "\nSelf-consistency of self-energy in charge step " 
+    GLV::ofs_running << "Self-consistency of self-energy in charge step " 
               << charge_step 
               << " DMFT step " << DMFT_step;
     if(convergency)
@@ -571,7 +571,8 @@ namespace DFT_plus_DMFT
     for(int ineq=0; ineq<this->pars.atom.inequ_atoms(); ineq++){
       GLV::ofs_running << "    impurity" << ineq << "              "
                 // << std::setprecision(3) << std::setiosflags(std::ios::scientific)
-                << std::setprecision(3) << this->imp.delta_scf()[ineq] << std::endl;
+                << std::setprecision(3) << this->imp.delta_scf()[ineq] 
+                << "\n" << std::endl;
     }
     GLV::ofs_running.unsetf(std::ios::scientific);
 

@@ -7,7 +7,6 @@
 #include "../global_variables.h"
 #include "../utilities.h"
 
-#include <memory>
 #include <cmath>
 #include <iostream>
 #include <fstream>

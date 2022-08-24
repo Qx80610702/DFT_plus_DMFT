@@ -8,7 +8,6 @@
 
 #include <mkl.h>
 #include <mpi.h>
-#include <memory>
 #include <iostream>
 #include <cmath>
 #include <cstdlib> 
@@ -106,17 +105,21 @@ namespace DFT_plus_DMFT
       this->epsilon_infty.resize(nspin);
       for(int is=0; is<nspin; is++){
         this->epsilon_infty[is].resize(task_nks);
-        for(int ik=0; ik<task_nks; ik++)
-          this->epsilon_infty[is][ik].resize(wbands[is], 0.0);
+        for(int ik_count=0; ik_count<task_nks; ik_count++)
+          this->epsilon_infty[is][ik_count].resize(wbands[is], 0.0);
       }
     }
 
     for(int is=0; is<nspin; is++){
       std::vector<std::complex<double>> Hij(wbands[is]*wbands[is],zero);
-      for(int ik=0; ik<task_nks; ik++){
+
+      int ik_count = 0;
+      for(int ik=0; ik<band.nk(); ik++){
+        if(ik%mpi_ntasks() != mpi_rank()) continue;  //k_points are divided acording to process id
+
         sigma.evalute_lattice_sigma_infty(
           0, magnetism, is, wbands, atom, 
-          proj.proj_access(ik), Hij);
+          proj.proj_access(ik_count), Hij);
 
         const auto& epsilon = space.eigen_val()[is][ik];
         
@@ -128,11 +131,12 @@ namespace DFT_plus_DMFT
  
         lapack_int info_zheev = LAPACKE_zheev(LAPACK_ROW_MAJOR, 'N', 'U', wbands[is], 
                                               reinterpret_cast<MKL_Complex16*>(Hij.data()), 
-                                              wbands[is], &this->epsilon_infty[is][ik][0] );
+                                              wbands[is], &this->epsilon_infty[is][ik_count][0] );
         if(info_zheev != 0){
           std::cerr << "Failed to compute the eigenvalues of the H_ij(\\bfk,i\\omega_{\\infty})" << std::endl;
           std::exit(EXIT_FAILURE);
         }
+        ik_count++;
       }//ik
     }//is
 
@@ -209,8 +213,8 @@ namespace DFT_plus_DMFT
 
     double nele_sum=0.0;
     double sum_tmp=0.0;
-
-    for(int is=0; is<nspin; is++){
+    for(int is=0; is<nspin; is++)
+    {
       std::vector<std::vector<std::complex<double>>> lattice_Sigma(nomega);
       for(int iomega=0; iomega<nomega; iomega++)
         lattice_Sigma[iomega].resize(wbands[is]*wbands[is], zero);
@@ -240,7 +244,7 @@ namespace DFT_plus_DMFT
           KS_Gw_infty[iomega].resize(wbands[is]*wbands[is]);
         }
 
-        std::unique_ptr<int[]> ipiv(new int [wbands[is]]);
+        int* ipiv = new int [wbands[is]];
         for(int iomega=0; iomega<nomega; iomega++)
         {
           for(int iband1=0; iband1<wbands[is]; iband1++)
@@ -267,6 +271,7 @@ namespace DFT_plus_DMFT
 
           general_complex_matrix_inverse(&KS_Gw_infty[iomega][0], wbands[is], &ipiv[0]);
         }//iomega
+        delete [] ipiv;
 
         for(int iband=0; iband<wbands[is]; iband++)
         {

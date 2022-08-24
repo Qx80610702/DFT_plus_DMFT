@@ -11,7 +11,6 @@
 #include "../utilities.h"
 
 #include <mpi.h>
-#include <memory>
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -678,7 +677,7 @@ namespace DMFT
 
       GLV::ofs_running << "             " << hours << "h " 
                            << minutes << "m "
-                           << (int)seconds << "s" << std::endl;
+                           << (int)seconds << "s\n" << std::endl;
 
       ierr = chdir("../../../../");
       if(ierr != 0){

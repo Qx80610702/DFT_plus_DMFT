@@ -79,7 +79,8 @@ void spectrum::eva_spectrum(
 
       sigma.evalute_lattice_sigma(
           1, mag, is, wbands, atom, 
-          proj.proj_access(ik), lattice_Sigma);
+          proj.proj_access(ik), 
+          lattice_Sigma );
 
       const auto& epsilon=space.eigen_val()[is][i_k_point];
       std::vector<std::vector<std::complex<double>>> KS_Gw(nomega);
@@ -263,7 +264,8 @@ void spectrum::eva_spectrum_normalization(
 
       sigma.evalute_lattice_sigma(
           1, mag, is, wbands, atom, 
-          proj.proj_access(ik), lattice_Sigma);
+          proj.proj_access(ik), 
+          lattice_Sigma );
  
       const auto& epsilon=space.eigen_val()[is][i_k_point];
       const auto& DOS_epsilon=space.DOS_eigen_val()[is][i_k_point];

@@ -5,7 +5,6 @@
 #include "../mpi_environment.h"
 #include "../global_variables.h"
 
-#include <memory>
 #include <fstream>
 #include <iostream>
 #include <cstring>
@@ -164,7 +163,7 @@ namespace DFT_output
 
     int iatom, magnetic_num, ibasis;
     char word[40];
-    std::unique_ptr<std::unique_ptr<int[]>[]> tmp;
+    std::vector<std::vector<int>> tmp;
     
     this->angular_momment.resize(this->n_DMFT_atoms);
     this->magnetic_number.resize(this->n_DMFT_atoms);
@@ -182,7 +181,7 @@ namespace DFT_output
       this->occ_number_m[iatom].resize(2);
     }
 
-    tmp = std::make_unique<std::unique_ptr<int[]>[]>(this->n_DMFT_atoms);
+    tmp.resize(this->n_DMFT_atoms);
 
     // if(mpi_rank()==0) std::cerr << "Reading correlated_atoms.info ......" << std::endl;
 
@@ -245,7 +244,8 @@ namespace DFT_output
 
       this->DMFT_orb_index[iatom].resize(this->sub_norb[iatom]);
       this->magnetic_number[iatom].resize(this->sub_norb[iatom]);
-      tmp[iatom] = std::make_unique<int[]>(this->sub_norb[iatom]);
+      tmp[iatom].resize(this->sub_norb[iatom]);
+
       int m_count=0;
       for(int m=0; m<2*this->angular_momment[iatom]+1; m++)
       {

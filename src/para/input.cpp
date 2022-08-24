@@ -112,7 +112,7 @@ namespace DMFT
     this->n_tau = 25/(this->temperature*GLC::K_BOLTZMAN_EV);
     // this->n_omega = this->n_tau > 500 ? 500 : this->n_tau;
     //the energy maximum is 100eV, which may be a safe value to guarantee the Asymptotic behavior of hybridization function
-    this->n_omega = 50/(GLC::PI*this->temperature*GLC::K_BOLTZMAN_EV); 
+    this->n_omega = 100/(GLC::PI*this->temperature*GLC::K_BOLTZMAN_EV); 
     // this->n_omega = 500; // ? 500 : this->n_tau;
     if(this->n_tau%2==1) this->n_tau++;   //n_tau+1 must be odd for Simpson integral
     if(this->n_omega%2==1) this->n_omega++;
