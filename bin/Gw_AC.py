@@ -4,7 +4,7 @@ from scipy import integrate, interpolate, optimize
 import os, sys, shutil
 from mpi4py import MPI
 
-maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/build/maxent/maxent"
+maxent_exe="/home/quxin/softwares/DFT_plus_DMFT/bin/maxent"
 
 def Broad(width, om, fw):
     '''
@@ -64,25 +64,43 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
 
     #Parsing command line
+    char_step=1
     DMFT_step=1
-    if len(sys.argv)<2:
-        for step_dir in os.listdir("impurity_solving/"):
-            if step_dir.find("step") != -1:
+    if len(sys.argv) != 5:
+        for step_dir in os.listdir("dmft/"):
+            if step_dir.find("charge_step") != -1:
+                N=int(step_dir.split("p")[-1])
+                if N > char_step:
+                    char_step=N
+        
+        for step_dir in os.listdir("dmft/charge_step" + str(char_step)):
+            if step_dir.find("dmft_step") != -1:
                 N=int(step_dir.split("p")[-1])
                 if N > DMFT_step:
                     DMFT_step=N
-    else: 
-        DMFT_step = int(sys.argv[1])
+    else:
+        i=1
+        while i < len(sys.argv):
+            if sys.argv[i].lower() == "-charge_step": char_step=int(sys.argv[i+1])
+            elif sys.argv[i].lower() == "-dmft_step": DMFT_step=int(sys.argv[i+1])
+            else: 
+                print("Unsupported parameters ", sys.argv[i])
+                exit
+            i = i + 2 
+
+    # print("charge step: ", char_step)
+    # print("dmft step:", DMFT_step)
     
     #Number of inequivalent impuritys
-    sym = open("../DFT/outputs_to_DMFT/symmetry.dat",'r')
+    sym = open("dft/outputs_to_DMFT/symmetry.dat",'r')
     ineq_num=int(sym.readlines()[1])
 
     impurity_solver="pacs"
     for line in open("./DMFT.in"):
         strings = line.strip().split()
-        if strings[0].lower() == "impurity_solver":
-            impurity_solver=strings[1].lower()
+        if len(strings)>1:
+          if strings[0].lower() == "impurity_solver":
+              impurity_solver=strings[1].lower()
 
     Gtf="GtRaw.dat"
     if impurity_solver == "pacs":
@@ -103,9 +121,9 @@ if __name__ == '__main__':
     iorb2ineqm = []
     Norb=0
     for ineq in range(ineq_num):
-        Gt_tmp=np.loadtxt("impurity_solving/step" \
-                        +str(DMFT_step)+"/impurity"\
-                        +str(ineq)+"/" + Gtf, dtype=float)
+        Gt_tmp=np.loadtxt("dmft/charge_step" + str(char_step) \
+                        +"/dmft_step" + str(DMFT_step) \
+                        +"/impurity" + str(ineq) + "/" + Gtf, dtype=float)
         Norb += Gt_tmp.shape[1]-1
         Gt_data.append(Gt_tmp)
         for m in range(Gt_tmp.shape[1]-1):

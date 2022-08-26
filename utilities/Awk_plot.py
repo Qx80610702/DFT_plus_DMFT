@@ -9,7 +9,7 @@ import sys
 def read_latt_vector(DFT_solver):
     latvec = []
     if DFT_solver.lower() == "aims":
-        for line in open("../DFT/geometry.in"):
+        for line in open("./dft/geometry.in"):
             line = line.strip().split("#")[0]
             words = line.strip().split()
             if len(words) == 0:
@@ -21,7 +21,7 @@ def read_latt_vector(DFT_solver):
                 latvec += [ np.array(list(map(float,words[1:4]))) ]
     elif DFT_solver.lower() == "abacus":
         latt=1.0
-        STRU=open("../DFT/STRU",'r')
+        STRU=open("./dft/STRU",'r')
         lines=STRU.readlines()
         i=0
         while i < len(lines):
@@ -30,7 +30,7 @@ def read_latt_vector(DFT_solver):
                 i += 1
                 continue
             if words[0].lower() == "lattice_constant":
-                latt=float(lines[i+1])
+                latt=float(lines[i+1].split()[0])
                 i += 2
                 continue
             elif words[0].lower() == "lattice_vectors":
@@ -194,6 +194,7 @@ if __name__ == '__main__':
     vmm = [0,max(map(max,Awkw))*intensity]
 
     plt.xticks([])
+    plt.ylabel("Energy (eV)")
     plt.imshow(Awkw, origin='lower', interpolation='bilinear', cmap=cm.plasma, vmin=vmm[0], vmax=vmm[1], aspect='auto')
     if showcolorbar==1: plt.colorbar()
 

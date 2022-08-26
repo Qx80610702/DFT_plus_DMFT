@@ -7,7 +7,7 @@ from math import ceil
 def read_latt_vector(DFT_solver):
     latvec = []
     if DFT_solver.lower() == "aims":
-        for line in open("../DFT/geometry.in"):
+        for line in open("./dft/geometry.in"):
             line = line.strip().split("#")[0]
             words = line.strip().split()
             if len(words) == 0:
@@ -19,7 +19,7 @@ def read_latt_vector(DFT_solver):
                 latvec += [ np.array(list(map(float,words[1:4]))) ]
     elif DFT_solver.lower() == "abacus":
         latt=1.0
-        STRU=open("../DFT/STRU",'r')
+        STRU=open("./dft/STRU",'r')
         lines=STRU.readlines()
         i=0
         while i < len(lines):
@@ -28,13 +28,13 @@ def read_latt_vector(DFT_solver):
                 i += 1
                 continue
             if words[0].lower() == "lattice_constant":
-                latt=float(lines[i+1])
+                latt=float(lines[i+1].split()[0])
                 i += 2
                 continue
             elif words[0].lower() == "lattice_vectors":
-                latvec += [ latt*np.array(list(map(float,lines[i+1].strip().split()))) ]
-                latvec += [ latt*np.array(list(map(float,lines[i+2].strip().split()))) ]
-                latvec += [ latt*np.array(list(map(float,lines[i+3].strip().split()))) ]
+                latvec += [ latt*np.array(list(map(float,lines[i+1].strip().split()[0:3]))) ]
+                latvec += [ latt*np.array(list(map(float,lines[i+2].strip().split()[0:3]))) ]
+                latvec += [ latt*np.array(list(map(float,lines[i+3].strip().split()[0:3]))) ]
                 break
             else:
                 i += 1
@@ -121,7 +121,7 @@ def cal_kpoints(kpath, knames, nks, rlatvec):
 def out_kpoints_to_dft_solver(DFT_solver,kponits):
     kweight = float(1.0/len(kpoints))
     if DFT_solver == "aims":
-        ofs = open("../DFT/k_list.in", 'w')
+        ofs = open("./dft/k_list.in", 'w')
         print("1 1 1", file=ofs)
         print(len(kpoints), file=ofs)
         for ik in range(len(kpoints)):
@@ -131,7 +131,7 @@ def out_kpoints_to_dft_solver(DFT_solver,kponits):
             print("{:20.15f}".format(kweight), file=ofs)
         ofs.close()
     elif DFT_solver == "abacus":
-        ofs = open("../DFT/KPT", 'w')
+        ofs = open("./dft/KPT", 'w')
         print("K_POINTS   //keyword for start", file=ofs)
         print("%d   //total number of k-point"%len(kpoints), file=ofs)
         print("Direct  //‘Direct’ or ‘Cartesian’ coordinate", file=ofs)

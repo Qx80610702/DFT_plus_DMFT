@@ -1,0 +1,15 @@
+*~
+*.o
+*.a
+*.x
+*.mod
+*.dat
+*.log
+*.out
+*.swp
+*.data
+*.optrpt
+*.dSYM
+.DS_Store
+fort.*
+docs/build
