@@ -330,6 +330,7 @@ namespace DFT_plus_DMFT
         std::cerr << "Not supported impurity solver" << std::endl;
         std::exit(EXIT_FAILURE);
     }
+    
 
     return;
   }
@@ -438,7 +439,7 @@ namespace DFT_plus_DMFT
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
     int ierr = chdir("./dft");
     if(ierr != 0){
-      std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
+      std::cerr << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     if(mpi_rank()==0){
@@ -449,7 +450,7 @@ namespace DFT_plus_DMFT
     }
     ierr = chdir("../");
     if(ierr != 0){
-      std::cout << "Process " << mpi_rank() << " fails to enter to the root directory of the DFT+DMFT calculation" << std::endl;
+      std::cerr << "Process " << mpi_rank() << " fails to enter to the root directory of the DFT+DMFT calculation" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -481,7 +482,7 @@ namespace DFT_plus_DMFT
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
     ierr = chdir("./dft");
     if(ierr != 0){
-      std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
+      std::cerr << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     if(mpi_rank()==0){
@@ -490,7 +491,7 @@ namespace DFT_plus_DMFT
     }
     ierr = chdir("../");
     if(ierr != 0){
-      std::cout << "Process " << mpi_rank() << " fails to enter to the root directory of the DFT+DMFT calculation" << std::endl;
+      std::cerr << "Process " << mpi_rank() << " fails to enter to the root directory of the DFT+DMFT calculation" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     MPI_Barrier(MPI_COMM_WORLD);  //Blocks until all processes reach here
@@ -572,8 +573,9 @@ namespace DFT_plus_DMFT
       GLV::ofs_running << "    impurity" << ineq << "              "
                 // << std::setprecision(3) << std::setiosflags(std::ios::scientific)
                 << std::setprecision(3) << this->imp.delta_scf()[ineq] 
-                << "\n" << std::endl;
+                << std::endl;
     }
+    GLV::ofs_running << std::endl;
     GLV::ofs_running.unsetf(std::ios::scientific);
 
     return convergency;
@@ -673,14 +675,14 @@ namespace DFT_plus_DMFT
 
     int ierr = chdir("./dft");
     if(ierr != 0){
-      std::cout << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
+      std::cerr << "Process " << mpi_rank() << " fails to enter to the directory dft" << std::endl;
       std::exit(EXIT_FAILURE);
     }
     if(mpi_rank()==0){
       if(access("outputs_to_DMFT",0)==0){
         int info = rm_dir("outputs_to_DMFT");
         if(info==-1){
-          std::cout << "Fail to remove the directory outputs_to_DMFT!!!" << std::endl;
+          std::cerr << "Fail to remove the directory outputs_to_DMFT!!!" << std::endl;
           std::exit(EXIT_FAILURE);
         }
       }
@@ -737,7 +739,7 @@ namespace DFT_plus_DMFT
 
     ierr = chdir("../");
     if(ierr != 0){
-      std::cout << "Process " << mpi_rank() << " fails to return to root directory " << std::endl;
+      std::cerr << "Process " << mpi_rank() << " fails to return to root directory " << std::endl;
       std::exit(EXIT_FAILURE);
     }
 

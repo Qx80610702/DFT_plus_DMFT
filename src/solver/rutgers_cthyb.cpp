@@ -782,7 +782,7 @@ namespace DMFT
 
       GLV::ofs_running << "             " << hours << "h " 
                            << minutes << "m "
-                           << (int)seconds << "s\n" << std::endl;
+                           << (int)seconds << "s" << std::endl;
 
       ierr = chdir("../../../../");
       if(ierr != 0){

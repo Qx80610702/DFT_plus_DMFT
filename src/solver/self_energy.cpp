@@ -94,8 +94,13 @@ namespace DMFT
     const int omega_num = this->nomega(axis_flag);
     const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
 
-    int nbands = wbands[ispin];
-    if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
+    if(omega_num != Simga.size()){
+      std::cerr << "Fatal error in calculating lattice self-energy!!!" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    // int nbands = wbands[ispin];
+    // if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
           dleta_sigma = this->correlated_sigma(axis_flag);
@@ -109,7 +114,7 @@ namespace DMFT
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot = norb_sub[iatom];
       
-      std::vector<std::complex<double>> mat_tmp(nbands*m_tot);
+      std::vector<std::complex<double>> mat_tmp(wbands[ispin]*m_tot);
       for(int iomega=0; iomega<omega_num; iomega++)
       {
         for(int iband=0; iband<wbands[ispin]; iband++)
@@ -156,7 +161,7 @@ namespace DMFT
 
           }
         }//iatom1
-      }//index
+      }//iomega
     }//ineq
 
     return;
@@ -178,8 +183,8 @@ namespace DMFT
     const int omega_num = this->nomega(axis_flag);
     const std::complex<double> one(1.0,0.0), zero(0.0,0.0);
 
-    int nbands = wbands[ispin];
-    if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
+    // int nbands = wbands[ispin];
+    // if(wbands.size()==2) nbands = wbands[0] > wbands[1] ? wbands[0] : wbands[1];
 
     const std::vector<std::vector<std::vector<std::vector<std::complex<double>>>>>&
           dleta_sigma = this->correlated_sigma(axis_flag);
@@ -192,7 +197,7 @@ namespace DMFT
       const int iatom = atom.ineq_iatom(ineq);
       const int m_tot = norb_sub[iatom];
 
-      std::vector<std::complex<double>> mat_tmp(nbands*m_tot);
+      std::vector<std::complex<double>> mat_tmp(wbands[ispin]*m_tot);
 
       for(int iband=0; iband<wbands[ispin]; iband++)
         for(int m=0; m<m_tot; m++)
@@ -253,20 +258,20 @@ namespace DMFT
             sigma_new = this->sigma_new(axis_flag);
 
     //Allocation
-    if(sigma_correlatd.empty())
-    {
-      sigma_correlatd.resize(this->dc.Vdc().size());
-      for(int ineq=0; ineq<this->dc.Vdc().size(); ineq++)
-      {
-        sigma_correlatd[ineq].resize(this->dc.Vdc()[ineq].size());    
-        for(int is=0; is<this->dc.Vdc().at(0).size(); is++)
-        {
-          sigma_correlatd[ineq][is].resize(this->nomega(axis_flag));
-          for(int iomega=0; iomega<this->nomega(axis_flag); iomega++)
-            sigma_correlatd[ineq][is][iomega].resize(this->dc.Vdc()[ineq][is].size());
-        }//i_omega
-      }//ineq
-    }
+    if(sigma_correlatd.empty()) sigma_correlatd = sigma_new;
+    // {
+    //   sigma_correlatd.resize(this->dc.Vdc().size());
+    //   for(int ineq=0; ineq<this->dc.Vdc().size(); ineq++)
+    //   {
+    //     sigma_correlatd[ineq].resize(this->dc.Vdc()[ineq].size());    
+    //     for(int is=0; is<this->dc.Vdc().at(0).size(); is++)
+    //     {
+    //       sigma_correlatd[ineq][is].resize(this->nomega(axis_flag));
+    //       for(int iomega=0; iomega<this->nomega(axis_flag); iomega++)
+    //         sigma_correlatd[ineq][is][iomega].resize(this->dc.Vdc()[ineq][is].size());
+    //     }//i_omega
+    //   }//ineq
+    // }
 
     for(int ineq=0; ineq<this->dc.Vdc().size(); ineq++)
     {

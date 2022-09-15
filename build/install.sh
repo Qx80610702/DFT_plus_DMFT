@@ -451,7 +451,7 @@ all:\${OBJS}
 clean:
 	rm *.o
 	rm -f ../bin/DFTDMFT
-#	rm -f ../bin/maxent
+	rm -f ../bin/maxent
 
 #==========================
 #       rules
@@ -532,7 +532,7 @@ all:\${OBJS}
 clean:
 	rm *.o
 	rm -f ../bin/DFTDMFT
-#	rm -f ../bin/maxent
+	rm -f ../bin/maxent
 
 #==========================
 #       rules
