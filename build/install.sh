@@ -305,6 +305,11 @@ if [ ! -f libgsl.la ];then
     exit
   fi
 fi
+# Check the lib folder name for good
+if [ ! -d lib ] && [ -d lib64 ]; then
+  ln -s lib64 lib
+fi
+
 cd $root_dir/build
 
 cd impurities/Rutgers
@@ -446,7 +451,7 @@ all:\${OBJS}
 clean:
 	rm *.o
 	rm -f ../bin/DFTDMFT
-#	rm -f ../bin/maxent
+	rm -f ../bin/maxent
 
 #==========================
 #       rules
@@ -527,7 +532,7 @@ all:\${OBJS}
 clean:
 	rm *.o
 	rm -f ../bin/DFTDMFT
-#	rm -f ../bin/maxent
+	rm -f ../bin/maxent
 
 #==========================
 #       rules

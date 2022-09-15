@@ -253,10 +253,11 @@ void spectrum::eva_spectrum_normalization(
   }
 
   //===========evaluation===============
-  for(int is=0; is<nspin; is++){
+  for(int is=0; is<nspin; is++)
+  {
     std::vector<std::vector<std::complex<double>>> lattice_Sigma(nomega);
-      for(int iomega=0; iomega<nomega; iomega++)
-        lattice_Sigma[iomega].resize(wbands[is]*wbands[is]);
+    for(int iomega=0; iomega<nomega; iomega++)
+      lattice_Sigma[iomega].resize(wbands[is]*wbands[is], zero);
 
     for(int ik=0; ik<k_map.size(); ik++)
     {
@@ -269,16 +270,17 @@ void spectrum::eva_spectrum_normalization(
  
       const auto& epsilon=space.eigen_val()[is][i_k_point];
       const auto& DOS_epsilon=space.DOS_eigen_val()[is][i_k_point];
-      std::vector<std::vector<std::complex<double>>> KS_Gw(nomega);
-      for(int iomega=0; iomega<nomega; iomega++)
-        KS_Gw[iomega].resize(DOS_wbands[is]*DOS_wbands[is], zero);
 
-      int* ipiv = new int [DOS_wbands[is]];
+      std::vector<std::complex<double>> KS_Gw(DOS_wbands[is]*DOS_wbands[is]);
+      int* ipiv = new int [ DOS_wbands[is] ];
       for(int iomega=0; iomega<nomega; iomega++)
       {
+        for(std::complex<double>& iter : KS_Gw)
+          iter = zero;
+
         //=====Uncorrelated subset======
         for(int iband=0; iband<DOS_wbands[is]; iband++)
-          KS_Gw[iomega][iband*DOS_wbands[is]+iband] = 
+          KS_Gw[iband*DOS_wbands[is]+iband] = 
               this->freq[iomega] + mu - DOS_epsilon[iband] + eta;
 
         //======Correlated subset======
@@ -289,17 +291,18 @@ void spectrum::eva_spectrum_normalization(
           {       
             int iDOS_band2 = corr_DOS_bands[is][iband2];    
             if(iband1==iband2)
-              KS_Gw[iomega][iDOS_band1*DOS_wbands[is]+iDOS_band2] = this->freq[iomega] + mu 
+              KS_Gw[iDOS_band1*DOS_wbands[is]+iDOS_band2] = this->freq[iomega] + mu 
                 -epsilon[iband1]-lattice_Sigma[iomega][iband1*wbands[is]+iband2];
             else
-              KS_Gw[iomega][iDOS_band1*DOS_wbands[is]+iDOS_band2] = 
+              KS_Gw[iDOS_band1*DOS_wbands[is]+iDOS_band2] = 
                 -lattice_Sigma[iomega][iband1*wbands[is]+iband2];
           }
         }
-        general_complex_matrix_inverse(&KS_Gw[iomega][0], DOS_wbands[is], &ipiv[0]);
+        general_complex_matrix_inverse(&KS_Gw[0], DOS_wbands[is], &ipiv[0]);
 
         for(int iband=0; iband<DOS_wbands[is]; iband++)
-          this->Aw_ik_iband[is][ik][iband][iomega] -= KS_Gw[iomega][iband*DOS_wbands[is]+iband].imag();
+          this->Aw_ik_iband[is][ik][iband][iomega] = -KS_Gw[iband*DOS_wbands[is]+iband].imag();
+          
       }//iomega
       delete [] ipiv;
 
@@ -314,7 +317,8 @@ void spectrum::eva_spectrum_normalization(
           this->Aw_ik_iband[is][ik][iband][iomega] /= norm;
       }
 
-      for(int iomega=0; iomega<nomega; iomega++){
+      for(int iomega=0; iomega<nomega; iomega++)
+      {
         for(int iband=0; iband<DOS_wbands[is]; iband++)
           this->Awk[is][iomega][i_k_point] += this->Aw_ik_iband[is][ik][iband][iomega];
 

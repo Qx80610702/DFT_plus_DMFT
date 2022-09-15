@@ -110,7 +110,8 @@ namespace DFT_plus_DMFT
       }
     }
 
-    for(int is=0; is<nspin; is++){
+    for(int is=0; is<nspin; is++)
+    {
       std::vector<std::complex<double>> Hij(wbands[is]*wbands[is],zero);
 
       int ik_count = 0;
@@ -382,7 +383,7 @@ namespace DFT_plus_DMFT
     char word[100], word_low[100];
 
     std::ifstream ifs("DMFT_running.log", std::ios::in);
-    if (!ifs)  {
+    if (!ifs){
       std::cerr << "Error: fail to oepnDMFT_running.log!!!" << std::endl;
       std::exit(EXIT_FAILURE);
     }
