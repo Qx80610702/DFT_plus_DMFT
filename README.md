@@ -9,7 +9,7 @@ This is a standalone open-source package for density functional theory plus dyna
 - [Introduction](#introduction)
 - [Table of contents](#table-of-contents)
 - [Compilation](docs/compilation.md)
-- [Quickstart guide](docs/quickstart-guide.md)
+- [Quickstart guide](#quickstart-guide)
   - [Input and output files](docs/input-output-files.md)
   - [Hands-on examples](docs/examples/hands-on-examples.md)
 - [Developer manual](docs/developer.md)

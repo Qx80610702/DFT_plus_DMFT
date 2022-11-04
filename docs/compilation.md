@@ -1,5 +1,5 @@
 
-# Prerequisites
+## Prerequisites
 
 To install this package, the minimal requirements are listed as following:
 - `C++ compiler:` Intel >= 18.0
@@ -7,12 +7,12 @@ To install this package, the minimal requirements are listed as following:
 - `System environment:` gcc>=6.3.0, python3, scipy, numpy, mpi4py
 - `Libraries:` Intel MKL
 
-# Complilation
+## Complilation
 
-## Building DFT codes
+### Building DFT codes
 If you want to do DFT+DMFT calculations based on the ABACUS, you need to build the ABACUS at first (Refer to [Building ABACUS](#building-abacus)). If you want to do DFT+DMFT calculations based on the FHI-aims, you need to build the FHI-aims at first (Refer to [Building FHI-aims](#building-fhi-aims)). We suggest you to use the same compliers and libraries when building the DFT codes and this DFT+DMFT package.
 
-### Building ABACUS
+#### Building ABACUS
 
 This is optional. It's required if you want to do DFT+DMFT calcualtions with ABACUS.
 
@@ -21,7 +21,7 @@ This is optional. It's required if you want to do DFT+DMFT calcualtions with ABA
 - `Compilation:` Compile the ABACUS following the introduction in its manual.
 
 
-### Building FHI-aims
+#### Building FHI-aims
 
 This is optional. It's required if you want to do DFT+DMFT calcualtions with FHI-aims.
 
@@ -53,29 +53,33 @@ This is optional. It's required if you want to do DFT+DMFT calcualtions with FHI
     ```
     to the file .bashrc
 
-- `Build DFT+DMFT code:`
-    i) Go to the directory `build/` under the root directory of the DFT+DMFT code
-    ii) Adjust the follwing variables according to the environment of your system in the file install.vars
-    ```bash 
-    #============Compilers===============
-    CXX     =   icpc          #C++ compiler
-    CC      =   icc           #C complier
-    FC      =   ifort         #Fortran compiler
-    MPI_FC  =   mpiifort      #MPI version fortran compiler
-    MPI_CXX =   mpiicpc       #MPI version C++ compiler
-    MPI_CC  =   mpiicc        #MPI version C compiler
+### Building DFT+DMFT codes
+i) Go to the directory `build/` under the root directory of the DFT+DMFT code
 
-    #============DFT library path=========
-    FHIaims_lib_path   =  path_to_installing_aims_shared_lib   #Required if DFT calculations are carried out by FHI-aims
-    ABACUS_lib_path    =  path_of_ABACUS                       #Required if DFT calculations are carried out by ABACUS
-    ```
-    iii) Type the following command in the teminate
-    ```bash 
-    bash install.sh
-    ```
-    The compilation will take several minutes. If the compilation runs successfully, there will be two binary executables, i.e., DFTDMFT and maxent, and three executable python scripts in the directory `bin/` under the root directory of the DFT+DMFT code
-    iv) Add the following paht 
-    ```bash 
-    export PATH=root_DFT_plus_DMFT/bin:$PATH
-    ```
-    to the file .bashrc
+ii) Adjust the follwing variables according to the environment of your system in the file install.vars
+    
+  ```bash 
+  #============Compilers===============
+  CXX     =   icpc          #C++ compiler
+  CC      =   icc           #C complier
+  FC      =   ifort         #Fortran compiler
+  MPI_FC  =   mpiifort      #MPI version fortran compiler
+  MPI_CXX =   mpiicpc       #MPI version C++ compiler
+  MPI_CC  =   mpiicc        #MPI version C compiler
+
+  #============DFT library path=========
+  FHIaims_lib_path   =  path_to_installing_aims_shared_lib  #Required if DFT calculations were carried out by FHI-aims
+  ABACUS_lib_path    =  path_of_ABACUS                      #Required if DFT calculations were carried out by ABACUS
+  ```
+  
+iii) Type the following command in the teminate to start compilation
+  ```bash 
+  bash install.sh
+   ```
+The compilation will take several minutes. If the compilation runs successfully, there will be two binary executables, i.e., DFTDMFT and maxent, and three executable python scripts, i.e., Gw_AC.py, kpath_generate.py and Sigma_AC.py, in the directory `bin/` under the root directory of the DFT+DMFT code
+
+iv) Add the following paht 
+  ```bash 
+  export PATH=root_DFT_plus_DMFT/bin:$PATH
+  ```
+to the file .bashrc
