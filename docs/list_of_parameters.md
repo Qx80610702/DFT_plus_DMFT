@@ -1,1 +1,1 @@
-## List of all avaible parameters
+## List of all available parameters

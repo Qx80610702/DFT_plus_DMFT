@@ -57,7 +57,7 @@ This is optional. It's required if you want to do DFT+DMFT calcualtions with FHI
 i) Go to the directory `build/` under the root directory of the DFT+DMFT code
 
 ii) Adjust the follwing variables according to the environment of your system in the file install.vars
-    
+ 
   ```bash 
   #============Compilers===============
   CXX     =   icpc          #C++ compiler
