@@ -3,7 +3,7 @@ Two kinds of input files, i.e., DFT and DMFT files, are required if one wants to
 
 ### How to prepare DFT files
   -i) Create a folder named dft under the root working directory. 
-  
+
   -ii) Do a scf DFT calculation in the `dft/` directory as introduced in the manual of FHI-aims and ABACUS. In the DFT calculations, several extra parameters are required in the DFT input files, e.g., the INPUT file in ABACUS and control.in file in FHI-aims. Thoese parameters are listed in the manual of FHI-aims and ABACUS with explanations. There will be a folder named outputs_to_DMFT, which contains all data need to be passed to DMFT by DFT, after the DFT calculation finished.
 
 ### How to prepare DMFT files
@@ -24,7 +24,7 @@ Two kinds of input files, i.e., DFT and DMFT files, are required if one wants to
     energy_window -2.0 1.0
     local_symmetry 1
     ```
-    All available parameters are explictly explained in [here](list_of_parameters.md). Note that all parameters and their values are case-insensitive.
+    All available parameters are explictly explained [here](list_of_parameters.md). Note that all parameters and their values are case-insensitive. The symbol `#` uses for annotating.
 
 
 ## Output files
