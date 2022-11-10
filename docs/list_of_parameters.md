@@ -64,7 +64,8 @@
 
 ### max_charge_step
 - **Type**: Integer
-- **Description**: Specify the maximum charge loop. If you want to do one-shot DFT+DMFT, it should be set to be 1.
+- **Description**: Specify the maximum charge loop. If you want to do one-shot DFT+DMFT, it should be set to be 1. If you want to do charge self-consistent DFT+DMFT, it should be set to be greater than 1.
+- **!!!NOTE**: At present, only the FHI-aims supports charge self-consistent DFT+DMFT calculations.
 - **Default**: 1.
 
 [back to top](#list-of-all-available-parameters)

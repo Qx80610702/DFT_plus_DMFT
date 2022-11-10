@@ -30,7 +30,8 @@ This is optional. It's required if you want to do DFT+DMFT calcualtions with FHI
 - `Build the FHI-aims executable:`Compile the FHI-aims as introduced in its manual. 
 
 - `Build the FHI-aims shared library:`
-    i) copy the file libaims.intel.cmake to the builindg directory from the aims_root_dir/cmake/toolchains/
+    i) copy the file libaims.intel.cmake to the building directory from the aims_root_dir/cmake/toolchains/
+
     ii) Type the following command in the teminate
     ```bash
     cmake -C libaims.intel.cmake aims_root_dir -DCMAKE_INSTALL_PREFIX=path_to_installing_aims_shared_lib
@@ -39,14 +40,17 @@ This is optional. It's required if you want to do DFT+DMFT calcualtions with FHI
     ```bash
     make -j
     ```
+
     iv) Type the following command in the teminate
     ```bash 
     make install
     ```
+
     v) Type the following command in the teminate
     ```bash
     cp libaims.so path_to_installing_aims_shared_lib/lib/
     ```
+    
     vi) Add the follwing path 
     ```bash 
     export LD_LIBRARY_PATH=path_to_installing_aims_shared_lib/lib:$LD_LIBRARY_PATH
