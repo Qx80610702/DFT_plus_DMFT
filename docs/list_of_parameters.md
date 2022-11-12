@@ -107,7 +107,7 @@
 
 ### delta_rho
 - **Type**: Real
-- **Description**: The convergrncy criterion for charge density.
+- **Description**: The convergrncy criterion for charge density. It works only in the charge self-consistent DFT+DMFT calculations.
 - **Default**: 1.0e-3.
 
 [back to top](#list-of-all-available-parameters)

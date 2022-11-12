@@ -1,5 +1,8 @@
+### Introduction
 
 SrVO$_3$ has a simple cubic perovskite structure without magnetism. The V$^{4+}$ cation with only one 3$d$ electron is located in the center of the octahedron formed by its six surrounding axial O$^{2−}$ ligand anions. In the presence of an octahedral crystal field, the five degenerate d orbitals split into two subsets: three folddegenerate $t_{2g}$ orbitals (i.e., $d_{xy}$, $d_{yz}$, and $d_{xz}$), and twofold degenerate $e_g$ orbitals (i.e., $d_{z^2}$ and $d_{x^2−y^2}$). The single 3$d$ electron of V$^{4+}$ occupies the lower-energy $t_{2g}$ orbitals, and the higher-energy $e_g$ orbitals are empty. As a common practice, we considered only the three degenerate $t_{2g}$ orbitals in our DFT+DMFT calculation.
+
+### DFT+DMFT calculation 
 
 Now we will explain how to do DFT+DMFT calculations on SrVO$_3$ step by step.
 
@@ -351,7 +354,7 @@ Now we will explain how to do DFT+DMFT calculations on SrVO$_3$ step by step.
   hubbard_u    4.00  0.0 0.0
   hund_j       0.65  0.0 0.0
   ```
-  should be added to the `INPUT` file. After the DFT iterartion converged, a folder named `outputs_to_DMFT` will be created. Unfortunately, ABACUS can not output the structure symmetry, a file named `symmetry.dat` must be added to the directory `outputs_to_DMFT`. For the conventional cell of SrVO$_3$, the `symmetry.dat` likes as 
+  should be added to the `INPUT` file. After the DFT iterartion converged, a folder named `outputs_to_DMFT` will be created. Unfortunately, ABACUS can not output the structure symmetry, a file named `symmetry.dat` must be added to the directory `outputs_to_DMFT`. For the conventional cell of SrVO$_3$, i.e., the `geometry.in` in FHI-aims, the `symmetry.dat` likes as 
   ```bash 
   1
   1
