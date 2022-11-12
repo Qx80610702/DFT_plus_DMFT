@@ -267,7 +267,7 @@ Now we will explain how to do DFT+DMFT calculations on NiO step by step.
   - `Step 3:` Create a file `DMFT.in`
   ```bash 
   DFT_solver   AIMS
-  calculation  spectra
+  calculation  scf
   temperature   1160
   impurity_solver rutgers-cthyb
   magnetism     para
@@ -287,7 +287,8 @@ Now we will explain how to do DFT+DMFT calculations on NiO step by step.
   ```bash
   mpirun -n 48 DFTDMFT
   ```
-  This step is very computationally cost. You can monitor the job through the log fie `DMFT_running.log`.
+  This step is very computationally cost. You can monitor the job through the log fie `DMFT_r
+  unning.log`.
 
   **!!!Note:** The number of cores must be equal to the job of the DFT scf calculation if you want to do charge self-consistent DFT+DMFT calculation.
 
@@ -321,5 +322,59 @@ Now we will explain how to do DFT+DMFT calculations on NiO step by step.
 </p>
 
 - `Step 6:` Calculate the k-resolved spectral function
+  - `Analytical continuation of self-energy:` To calculate k-resolved spectral function, the imaginary frequency slef-energy should be analytically continued to the real axis. Using the above `maxent_params.dat` to do analytical continuation of the self-energy through the follwing command line
+  ```bash 
+  mpirun -n 10 Sigma_AC.py
+  ```
+  The Sigma_AC.py are orbital-paralleled. For NiO, there are 10 3$d$ orbitals (including spin freedom), so you can run this script with 10 cores. After the analytical continuation finished, a folder named `self-energy` will be created. In this folder, the `Sigma_omega.dat` contians the real frequency self-energy. 
+
+  - `Do a scf DFT calculation along high symmetry k-path:` Firstly, set the high symmetry k-path in the file `kpath.in`. For NiO, you can use the following `kpath.in`
+  ```bash
+  Path 0.0 0.0 0.0 Gamma
+  path 0.5 0.5 0.5 L
+  path 0.5 0.25 0.75 W
+  path 0.5 0.0 0.5 X
+  path 0.0 0.0 0.0 Gamma
+
+  Total_kpoints 1000
+  ```
+  The corresponding k-path is $\Gamma$-L-W-X-$\Gamma$, and 1000 points are sampled along this path. Secondly, run the following command 
+  ```bash
+  kpath_generate.py
+  ```
+  to prepare the required input files for DFT calculation along the specified high symmetry k-path. Thirdly, enter into the directory `dft/` and do a scf DFT calculation. 
+
+  - `Evaluate the k-resolved spectral function along the high symmetry k-path:` Firstly, set the parameter `calculation` to be `spectra` and keep other paramters unchanged in the `DMFT.in`, i.e.,
+  ```bash 
+  DFT_solver   AIMS
+  calculation  spectra
+  temperature   1160
+  impurity_solver rutgers-cthyb
+  magnetism     para
+  max_charge_step  1
+  max_DMFT_step     10
+  max_DFT_step 1
+  delta_sigma  0.01
+  delta_rho  1.0e-4
+  MC_step      100000000
+  projection_window -2.0 1.0
+  dos_window   -20.0 20.0
+  local_symmetry 1
+  ```
+  Secondly, calculate the k-resolved spectral function along the high symmetry k-path through following command
+  ```bash
+  mpirun -n 48 DFTDMFT
+  ```
+  The job will run fastly and take little time. After the job finished, there will be two files, i.e., `Awk_spin0.dat` and `Aw_imp0_spin0.dat`. The `Aw_imp0_spin0.dat` is the DOS of the imprity 0 under spin 0. The `Awk_spin0.dat` is the k-resolved spectral function of NiO under spin 0. You can plot the k-resolved spectral function thorug the script `Awk_plot.py` in the folder `utilities` within the root directory of the code. For NiO in this case, you can plot the k-resolved spectral function throgh the following command
+  ```bash
+  python Awk_plot.py Awk_spin0.dat -edw -8.0 -eup 10.0 -eticks 2.0 -colorbar 0 -contarst 0.2 -o NiO-bands.png
+  ```
+  The meanings of the parameters of the python script Awk_plot.py are clearly seen. Then the k-resolved spectral funciton of Ni is ploted in the file `NiO-bands.png`, which likes
+<p align="center">
+  <img src="./NiO-Awk-aims.png">
+</p>
+
+
+[Back to hand-on examples](../hands-on-examples.md)
 
 
