@@ -637,7 +637,7 @@ namespace DFT_plus_DMFT
     }
 
     //debug
-    bool debug = true;
+    bool debug = false;
     if(debug){
       std::stringstream ss1;
       ss1 << "debug_proc" << mpi_rank() << ".log";
