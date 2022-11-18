@@ -452,10 +452,13 @@ namespace DFT_plus_DMFT
               ofs << "  elsi_restart read 1" << std::endl;
             }
             else{
-              if(std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
+              if(std::strcmp(param.c_str(), "output") ==0) 
+                ofs << "# " << line_str << std::endl;
+              else if(std::strcmp(param.c_str(), "charge_mix_param")!=0 &&
                 std::strcmp(param.c_str(), "elsi_restart") !=0 &&
                 std::strcmp(param.c_str(), "sc_iter_limit") !=0 &&
-                std::strcmp(param.c_str(), "mixer") !=0 )
+                std::strcmp(param.c_str(), "mixer") !=0 &&
+                std::strcmp(param.c_str(), "output") !=0)
                 ofs << line_str << std::endl;
             }
           }

@@ -39,7 +39,13 @@ if [ -z MPI_CC ];then
 fi
 
 #============DFT softwares path=========
-FHIaims_lib_path=`grep "FHIaims_lib_path" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+FHIaims_lib_path_tmp=`grep "FHIaims_lib_path" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
+if [ ${FHIaims_lib_path_tmp: -1} = '/' ];then
+  FHIaims_lib_path=${FHIaims_lib_path_tmp: 0:-1}
+else
+  FHIaims_lib_path=$FHIaims_lib_path_tmp
+fi
+
 ABACUS_lib_path=`grep "ABACUS_lib_path" install.vars | awk '{sub(/^[ \t]+/,"");print $3}'`
 
 #========Starting compilation========
